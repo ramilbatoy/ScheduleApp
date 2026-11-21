@@ -405,6 +405,7 @@ export function Segmented<T extends string>({ options, value, onChange, testID }
         return (
           <Pressable
             key={o.value}
+            testID={testID ? `${testID}-${o.value}` : undefined}
             accessibilityRole="tab"
             accessibilityState={{ selected: active }}
             onPress={() => onChange(o.value)}

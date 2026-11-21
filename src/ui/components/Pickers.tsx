@@ -10,7 +10,7 @@ import { radius, spacing } from '../theme';
 import { MonthGrid } from './MonthGrid';
 import { AppText, Button, IconButton } from './primitives';
 
-function Sheet({ visible, onClose, children, title }: { visible: boolean; onClose: () => void; children: React.ReactNode; title: string }) {
+export function Sheet({ visible, onClose, children, title }: { visible: boolean; onClose: () => void; children: React.ReactNode; title: string }) {
   const p = useTheme();
   return (
     <Modal transparent visible={visible} animationType="fade" onRequestClose={onClose}>

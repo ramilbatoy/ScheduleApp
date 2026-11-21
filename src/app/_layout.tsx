@@ -29,6 +29,7 @@ function Navigation() {
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
         <Stack.Screen name="item/[id]" options={{ title: 'Details' }} />
         <Stack.Screen name="item/edit" options={{ title: 'Edit', presentation: 'modal' }} />
+        <Stack.Screen name="categories" options={{ title: 'Categories' }} />
         <Stack.Screen
           name="quick-add"
           options={{ headerShown: false, presentation: 'transparentModal', animation: 'fade', contentStyle: { backgroundColor: 'transparent' } }}

@@ -34,6 +34,21 @@ describe.each(DRIVERS)('categories (%s)', (_name, open) => {
     expect(renamed).toMatchObject({ name: 'Chores', color: '#84CC16' });
   });
 
+  it('deleting a category keeps its items, uncategorized, with their history', async () => {
+    const work = (await app.categories.list()).find((c) => c.name === 'Work')!;
+    const occ = await app.tasks.create({
+      kind: 'task', title: 'Quarterly plan', notes: '', categoryId: work.id, priority: 'high', date: '2026-03-10',
+      allDay: false, startTime: null, endTime: null, deadlineAt: null, reminderOffsetMinutes: null,
+      deadlineReminderOffsetMinutes: null, recurrence: null,
+    });
+    expect(await app.categories.usage()).toEqual({ [work.id]: 1 });
+    expect(await app.categories.delete(work.id)).toBe(1);
+    const d = await app.tasks.getDetail(occ.id);
+    expect(d.task.categoryId).toBeNull();
+    expect(d.history.map((h) => h.eventType)).toContain('created');
+    expect(await app.categories.usage()).toEqual({});
+  });
+
   it('persists settings', async () => {
     expect((await app.settings.get()).autoCarryForward).toBe(true);
     await app.settings.set('autoCarryForward', false);

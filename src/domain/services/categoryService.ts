@@ -57,6 +57,15 @@ export class CategoryService {
     return createRepos(this.db).categories.list();
   }
 
+  /** Number of not-deleted tasks and events in each category. */
+  async usage(): Promise<Record<string, number>> {
+    const out: Record<string, number> = {};
+    for (const t of await createRepos(this.db).tasks.listActive()) {
+      if (t.categoryId) out[t.categoryId] = (out[t.categoryId] ?? 0) + 1;
+    }
+    return out;
+  }
+
   private validate(name: string, color: string, existing: Category[], selfId?: string) {
     const trimmed = name.trim();
     if (!trimmed) throw new ValidationError('Category name is required.');
