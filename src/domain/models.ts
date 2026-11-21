@@ -1,0 +1,159 @@
+export type ItemKind = 'task' | 'event';
+export type Priority = 'low' | 'medium' | 'high' | 'urgent';
+/** `missed`: a past recurring instance superseded by a newer instance of the same series. */
+export type OccurrenceStatus = 'pending' | 'completed' | 'cancelled' | 'missed';
+export type OccurrenceSource = 'manual' | 'recurrence' | 'carry_forward';
+export type Frequency = 'daily' | 'weekly' | 'monthly' | 'yearly';
+export type ThemePreference = 'system' | 'light' | 'dark';
+export type ReminderKind = 'deadline' | 'start' | 'custom';
+export type HistoryEventType =
+  | 'created'
+  | 'completed'
+  | 'reopened'
+  | 'carried_forward'
+  | 'deleted'
+  | 'date_changed'
+  | 'missed'
+  | 'restored';
+
+export const PRIORITIES: Priority[] = ['low', 'medium', 'high', 'urgent'];
+export const PRIORITY_RANK: Record<Priority, number> = { urgent: 4, high: 3, medium: 2, low: 1 };
+
+/** Civil calendar date `YYYY-MM-DD` in the device's local zone. */
+export type DateKey = string;
+/** Local wall-clock time `HH:mm`. */
+export type TimeOfDay = string;
+
+export interface Category {
+  id: string;
+  name: string;
+  color: string;
+  isDefault: boolean;
+  sortOrder: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface RecurringRule {
+  id: string;
+  frequency: Frequency;
+  interval: number;
+  /** ISO weekdays, Mon=1 … Sun=7. Used by weekly rules. */
+  byWeekday: number[] | null;
+  /** Day of month for monthly rules (clamped to month length). */
+  byMonthday: number | null;
+  startDate: DateKey;
+  endDate: DateKey | null;
+  timezone: string;
+  /** Last civil date for which instances have been generated. */
+  generatedUntil: DateKey | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface Task {
+  id: string;
+  kind: ItemKind;
+  title: string;
+  notes: string;
+  categoryId: string | null;
+  priority: Priority;
+  allDay: boolean;
+  defaultStartTime: TimeOfDay | null;
+  defaultEndTime: TimeOfDay | null;
+  /** Absolute ISO-8601 instant; independent of the assigned date. */
+  deadlineAt: string | null;
+  recurringRuleId: string | null;
+  seriesId: string | null;
+  reminderOffsetMinutes: number | null;
+  deadlineReminderOffsetMinutes: number | null;
+  createdAt: string;
+  updatedAt: string;
+  deletedAt: string | null;
+}
+
+export interface Occurrence {
+  id: string;
+  taskId: string;
+  date: DateKey;
+  startTime: TimeOfDay | null;
+  endTime: TimeOfDay | null;
+  status: OccurrenceStatus;
+  completedAt: string | null;
+  isCarriedForward: boolean;
+  carryForwardCount: number;
+  source: OccurrenceSource;
+  recurrenceInstanceKey: string | null;
+  originalDate: DateKey | null;
+  isException: boolean;
+  titleOverride: string | null;
+  notesOverride: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface Reminder {
+  id: string;
+  taskId: string;
+  occurrenceId: string | null;
+  triggerAt: string;
+  kind: ReminderKind;
+  offsetMinutes: number | null;
+  notificationId: string | null;
+  enabled: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface HistoryEntry {
+  id: string;
+  taskId: string;
+  occurrenceId: string | null;
+  eventType: HistoryEventType;
+  fromDate: DateKey | null;
+  toDate: DateKey | null;
+  payload: Record<string, unknown> | null;
+  createdAt: string;
+}
+
+export interface AppSettings {
+  autoCarryForward: boolean;
+  theme: ThemePreference;
+  defaultReminderOffsetMinutes: number | null;
+  lastCarryForwardRunDate: DateKey | null;
+  notificationsEnabled: boolean;
+  lastBackupAt: string | null;
+  categoriesSeeded: boolean;
+}
+
+export const DEFAULT_SETTINGS: AppSettings = {
+  autoCarryForward: true,
+  theme: 'system',
+  defaultReminderOffsetMinutes: 15,
+  lastCarryForwardRunDate: null,
+  notificationsEnabled: true,
+  lastBackupAt: null,
+  categoriesSeeded: false,
+};
+
+/** An occurrence joined with its parent definition — what most screens render. */
+export interface Agenda {
+  occurrence: Occurrence;
+  task: Task;
+  rule: RecurringRule | null;
+  category: Category | null;
+}
+
+export class ValidationError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = 'ValidationError';
+  }
+}
+
+export class NotFoundError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = 'NotFoundError';
+  }
+}
