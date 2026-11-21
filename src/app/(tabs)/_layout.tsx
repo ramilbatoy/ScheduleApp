@@ -22,8 +22,8 @@ export default function TabLayout() {
         headerShown: false,
         tabBarActiveTintColor: p.primary,
         tabBarInactiveTintColor: p.textMuted,
-        tabBarStyle: { backgroundColor: p.surface, borderTopColor: p.border },
-        tabBarLabelStyle: { fontSize: 11, fontWeight: '600' },
+        tabBarStyle: { backgroundColor: p.surface, borderTopColor: p.border, minHeight: 64, paddingTop: 6 },
+        tabBarLabelStyle: { fontSize: 11, fontWeight: '600', lineHeight: 14 },
       }}>
       {TABS.map((t) => (
         <Tabs.Screen

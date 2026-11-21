@@ -342,18 +342,20 @@ export function Input(props: TextInputProps & { invalid?: boolean }) {
 export function SelectButton({ value, placeholder, icon, onPress, onClear, testID }: { value: string | null; placeholder: string; icon: IconName; onPress: () => void; onClear?: () => void; testID?: string }) {
   const p = useTheme();
   return (
-    <Pressable
-      testID={testID}
-      accessibilityRole="button"
-      accessibilityLabel={value ?? placeholder}
-      onPress={onPress}
-      style={[styles.input, styles.select, { backgroundColor: p.surface, borderColor: p.border }]}>
-      <Ionicons name={icon} size={18} color={p.textMuted} />
-      <AppText style={{ flex: 1 }} color={value ? p.text : p.textMuted}>
-        {value ?? placeholder}
-      </AppText>
+    <View style={[styles.input, styles.select, { backgroundColor: p.surface, borderColor: p.border, paddingHorizontal: 0 }]}>
+      <Pressable
+        testID={testID}
+        accessibilityRole="button"
+        accessibilityLabel={value ?? placeholder}
+        onPress={onPress}
+        style={[styles.select, { flex: 1, alignSelf: 'stretch', paddingLeft: spacing.md }]}>
+        <Ionicons name={icon} size={18} color={p.textMuted} />
+        <AppText style={{ flex: 1 }} color={value ? p.text : p.textMuted} numberOfLines={1}>
+          {value ?? placeholder}
+        </AppText>
+      </Pressable>
       {value && onClear ? <IconButton icon="close-circle" label={`Clear ${placeholder}`} size={18} color={p.textMuted} onPress={onClear} /> : null}
-    </Pressable>
+    </View>
   );
 }
 
@@ -369,7 +371,13 @@ export function SwitchRow({ label, description, value, onChange, testID }: { lab
           </AppText>
         ) : null}
       </View>
-      <Switch value={value} onValueChange={onChange} trackColor={{ true: p.primary, false: p.border }} thumbColor="#FFFFFF" />
+      <Switch
+        value={value}
+        onValueChange={onChange}
+        trackColor={{ true: p.primary, false: p.border }}
+        thumbColor="#FFFFFF"
+        {...({ activeThumbColor: '#FFFFFF' } as object)}
+      />
     </Pressable>
   );
 }

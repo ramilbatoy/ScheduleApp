@@ -27,6 +27,12 @@ function Navigation() {
           contentStyle: { backgroundColor: p.background },
         }}>
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+        <Stack.Screen name="item/[id]" options={{ title: 'Details' }} />
+        <Stack.Screen name="item/edit" options={{ title: 'Edit', presentation: 'modal' }} />
+        <Stack.Screen
+          name="quick-add"
+          options={{ headerShown: false, presentation: 'transparentModal', animation: 'fade', contentStyle: { backgroundColor: 'transparent' } }}
+        />
       </Stack>
       <DialogHost />
       <ToastHost />

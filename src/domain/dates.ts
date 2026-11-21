@@ -1,4 +1,4 @@
-import { addDays, differenceInCalendarDays, format, isValid, parse } from 'date-fns';
+import { addDays, addMonths, differenceInCalendarDays, format, isValid, parse } from 'date-fns';
 
 import type { DateKey, TimeOfDay } from './models';
 
@@ -55,6 +55,11 @@ export function todayKey(clock: Clock): DateKey {
 
 export function addDaysKey(key: DateKey, n: number): DateKey {
   return toDateKey(addDays(fromDateKey(key), n));
+}
+
+/** Adds calendar months, clamping to the last day of shorter months. */
+export function addMonthsKeySafe(key: DateKey, n: number): DateKey {
+  return toDateKey(addMonths(fromDateKey(key), n));
 }
 
 export function diffDays(later: DateKey, earlier: DateKey): number {
