@@ -21,7 +21,8 @@ Use this skill for **any** work on `ramilbatoy/ScheduleApp` (DayPlanner): featur
 3. `/cursor/stores/self/docs/project-context.md`
 4. `/cursor/stores/self/docs/architecture-plan.md` (full design)
 5. `/cursor/stores/self/internal/requirements-spec.md` (acceptance requirements)
-6. Latest open PRs / tip of stack branch (do not reinvent against `main` alone while the stack is unmerged)
+6. `/cursor/stores/self/internal/dashboard-ui-brief.md` (Today | Week | Month dashboard structure)
+7. Latest open PRs / tip of stack branch (do not reinvent against `main` alone while the stack is unmerged)
 
 ## Non-negotiables
 
@@ -61,10 +62,9 @@ Use this skill for **any** work on `ramilbatoy/ScheduleApp` (DayPlanner): featur
 ## Data model (summary)
 
 - Unified `tasks` + `task_occurrences` with `item_kind` = `task` | `event`
-- Also: `recurring_rules`, `categories`, `reminders`, `app_settings`, `completion_history`, `task_subtasks` (nested checklist per occurrence)
+- Also: `recurring_rules`, `categories`, `reminders`, `app_settings`, `completion_history`, `task_subtasks` (nested per occurrence)
 - Unique: one active occurrence per task per day; unique recurrence instance key
 - Soft-delete definitions (`deleted_at`); keep history
-- Nested subtasks: keyed by `occurrence_id` (+ `parent_subtask_id`); ride with carry-forward; new recurrence instances start empty
 
 ## Product rules already implemented
 
@@ -76,6 +76,8 @@ Use this skill for **any** work on `ramilbatoy/ScheduleApp` (DayPlanner): featur
 - Theme: system / light / dark persisted
 - Timed items apply Settings default reminder offset; OS alarms use `alarmClock` when exact-alarm granted else `bestEffort`
 - Android button/chip/segment labels: `includeFontPadding: false` + vertical padding; EmptyState labels use `flexShrink: 0` + `textBreakStrategy: simple` (Phase 5 clipping fix)
+- Nested subtasks: per-occurrence checklist tree; shown on agenda rows and item detail/edit
+- Dashboard Today tab: Today | Week (Mon–Sun) | Month segmented views; safe back via `goBackOrDashboard` (no unhandled `GO_BACK`)
 
 ## Accomplishments (keep current)
 
@@ -92,12 +94,13 @@ Update this section whenever a phase finishes, a PR merges, or acceptance status
 | Phase 5 Android + web | Merged to main (2026-11-22) | https://github.com/ramilbatoy/ScheduleApp/pull/5 — APKs in `/cursor/stores/self/artifacts/` |
 | Phase 6 QA + audit | Merged with #5 | `/cursor/stores/self/docs/acceptance-audit.md`; 149 tests |
 | PR stack merge | Done | `#1` → `#2` → `#4` → `#5` merged into `main` (async stack merge) |
+| Nested subtasks + Node ≥22.13.0 | Merged to main (2026-11-22) | https://github.com/ramilbatoy/ScheduleApp/pull/6 — schema v2 `task_subtasks`; engines `>=22.13.0` |
 
 ### In progress / remaining
 
 | Item | Status | Notes |
 | --- | --- | --- |
-| Nested subtasks + Node ≥22.13 | Open PR (2026-11-22) | https://github.com/ramilbatoy/ScheduleApp/pull/6 — schema v2 `task_subtasks`; 157 tests |
+| Dashboard Week/Month + safe back | Open PR (2026-11-22) | Branch `cursor/dashboard-week-month-nav-0012` — Today\|Week\|Month on Today tab; `goBackOrDashboard`; 159 tests |
 | Device re-verify | Optional | Emulator/device smoke of clipping + scheduled alarms on a physical phone |
 | Production signing | Optional | Replace debug-keystore release with Play/EAS credentials when publishing |
 
@@ -112,9 +115,9 @@ Update this section whenever a phase finishes, a PR merges, or acceptance status
 
 ## How to work
 
-1. Work from `main` (stack merged 2026-11-22). Open new branches off `main` for follow-ups.
+1. Work from `main` (stack merged 2026-11-22; PR #6 nested subtasks also on `main`). Open new branches off `main` for follow-ups.
 2. Keep domain services pure of UI; add tests on **both** SQLite and IndexedDB drivers for storage-touching logic.
-3. Run `npm test` and `npm run typecheck` before declaring a slice done.
+3. Run `npm test` and `npm run typecheck` before declaring a slice done. Node engines: `>=22.13.0`.
 4. After each completed phase or merged PR: **update Accomplishments above** and `project-context.md`.
 5. Kickoff workers with this skill path: `/cursor/stores/self/skills/schedule/SKILL.md`.
 6. Mirror into the repo at `.cursor/skills/schedule/SKILL.md` so checkout-local agents see it; **Project store copy remains authoritative** until mirrors sync.

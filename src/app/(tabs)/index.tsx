@@ -3,14 +3,22 @@ import { useState } from 'react';
 import { RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { formatDateKey } from '@/domain/dates';
-import type { Agenda } from '@/domain/models';
-import { useAppStore, useSettings } from '@/state/appStore';
+import { formatDateKey, todayKey } from '@/domain/dates';
+import type { Agenda, DateKey } from '@/domain/models';
+import { useAppStore, useServices, useSettings } from '@/state/appStore';
 import { AgendaRow, formatDeadline } from '@/ui/components/AgendaRow';
-import { AppText, Button, Card, EmptyState, ErrorState, LoadingState, SectionHeader } from '@/ui/components/primitives';
+import {
+  DashboardMonthView,
+  DashboardWeekView,
+  shiftMonthAnchor,
+  shiftWeekAnchor,
+} from '@/ui/components/DashboardPlanner';
+import { AppText, Button, Card, EmptyState, ErrorState, LoadingState, SectionHeader, Segmented } from '@/ui/components/primitives';
 import { QuickAddButton } from '@/ui/components/QuickAddButton';
 import { useAction, useQuery, useTheme } from '@/ui/hooks';
 import { radius, spacing } from '@/ui/theme';
+
+type DashMode = 'today' | 'week' | 'month';
 
 function ProgressCard({ completed, total, carried }: { completed: number; total: number; carried: number }) {
   const p = useTheme();
@@ -57,15 +65,117 @@ function List({ items, testPrefix }: { items: Agenda[]; testPrefix: string }) {
   );
 }
 
+function TodayDashboard() {
+  const settings = useSettings();
+  const run = useAction();
+  const dash = useQuery((s) => s.agenda.dashboard(), []);
+  const d = dash.data;
+  const pastOverdue = d?.overdue.filter((a) => a.occurrence.date < d.today) ?? [];
+  const pendingTasks = d?.tasks.filter((a) => a.occurrence.status === 'pending') ?? [];
+  const doneTasks = d?.tasks.filter((a) => a.occurrence.status === 'completed') ?? [];
+
+  return (
+    <View style={{ gap: spacing.md }} testID="dashboard-today">
+      <View style={{ paddingTop: spacing.sm }}>
+        <AppText variant="label" muted>
+          {d ? formatDateKey(d.today, 'EEEE').toUpperCase() : ''}
+        </AppText>
+        <AppText variant="display">{d ? formatDateKey(d.today, 'MMMM d, yyyy') : 'Today'}</AppText>
+      </View>
+
+      {dash.error ? <ErrorState message={dash.error} onRetry={dash.reload} /> : null}
+      {!d && !dash.error ? <LoadingState /> : null}
+
+      {d ? (
+        <>
+          <ProgressCard completed={d.completed} total={d.total} carried={d.carriedCount} />
+
+          {pastOverdue.length > 0 ? (
+            <>
+              <SectionHeader
+                title="Overdue"
+                count={pastOverdue.length}
+                right={
+                  <Button
+                    testID="move-all-today"
+                    label="Move all to today"
+                    compact
+                    tone="secondary"
+                    onPress={() => run((s) => s.tasks.moveToToday(pastOverdue.map((a) => a.occurrence.id)), 'Moved to today')}
+                  />
+                }
+              />
+              {!settings.autoCarryForward ? (
+                <AppText variant="caption" muted>
+                  Automatic carry-forward is off. Move items manually or turn it on in Settings.
+                </AppText>
+              ) : null}
+              <List items={pastOverdue} testPrefix="overdue" />
+            </>
+          ) : null}
+
+          <SectionHeader title="Schedule" count={d.events.length} />
+          {d.events.length ? (
+            <List items={d.events} testPrefix="event" />
+          ) : (
+            <AppText muted>No events today.</AppText>
+          )}
+
+          <SectionHeader title="To-do" count={pendingTasks.length} />
+          {pendingTasks.length ? (
+            <List items={pendingTasks} testPrefix="todo" />
+          ) : d.tasks.length ? (
+            <AppText muted>All of today&apos;s tasks are done.</AppText>
+          ) : (
+            <EmptyState
+              icon="checkbox-outline"
+              title="Nothing planned for today"
+              message="Use the + button to add a task or event."
+              action={<Button label="Add a task" tone="secondary" icon="add" onPress={() => router.push('/quick-add')} />}
+            />
+          )}
+
+          {doneTasks.length ? (
+            <>
+              <SectionHeader title="Completed" count={doneTasks.length} />
+              <List items={doneTasks} testPrefix="done" />
+            </>
+          ) : null}
+
+          {d.upcomingDeadlines.length ? (
+            <>
+              <SectionHeader title="Upcoming deadlines" count={d.upcomingDeadlines.length} />
+              <Card>
+                {d.upcomingDeadlines.map((a) => (
+                  <Button
+                    key={a.occurrence.id}
+                    tone="ghost"
+                    compact
+                    icon="hourglass-outline"
+                    label={`${a.task.title} — ${formatDeadline(a.task.deadlineAt!)}`}
+                    onPress={() => router.push({ pathname: '/item/[id]', params: { id: a.occurrence.id } })}
+                    style={{ justifyContent: 'flex-start' }}
+                  />
+                ))}
+              </Card>
+            </>
+          ) : null}
+        </>
+      ) : null}
+    </View>
+  );
+}
+
 export default function TodayScreen() {
   const p = useTheme();
   const insets = useSafeAreaInsets();
-  const settings = useSettings();
-  const services = useAppStore((s) => s.services)!;
+  const services = useServices();
   const invalidate = useAppStore((s) => s.invalidate);
-  const run = useAction();
+  const today = todayKey(services.clock);
+  const [mode, setMode] = useState<DashMode>('today');
+  const [weekAnchor, setWeekAnchor] = useState<DateKey>(today);
+  const [monthAnchor, setMonthAnchor] = useState<DateKey>(today);
   const [refreshing, setRefreshing] = useState(false);
-  const dash = useQuery((s) => s.agenda.dashboard(), []);
 
   async function refresh() {
     setRefreshing(true);
@@ -77,104 +187,44 @@ export default function TodayScreen() {
     }
   }
 
-  const d = dash.data;
-  const pastOverdue = d?.overdue.filter((a) => a.occurrence.date < d.today) ?? [];
-  const pendingTasks = d?.tasks.filter((a) => a.occurrence.status === 'pending') ?? [];
-  const doneTasks = d?.tasks.filter((a) => a.occurrence.status === 'completed') ?? [];
+  const quickAddDate = mode === 'month' ? monthAnchor : mode === 'week' ? weekAnchor : today;
 
   return (
     <View style={{ flex: 1, backgroundColor: p.background, paddingTop: insets.top }}>
       <ScrollView
         contentContainerStyle={{ padding: spacing.lg, paddingBottom: 120, gap: spacing.md }}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={refresh} />}>
-        <View style={{ paddingTop: spacing.sm }}>
-          <AppText variant="label" muted>
-            {d ? formatDateKey(d.today, 'EEEE').toUpperCase() : ''}
-          </AppText>
-          <AppText variant="display">{d ? formatDateKey(d.today, 'MMMM d, yyyy') : 'Today'}</AppText>
-        </View>
+        <Segmented<DashMode>
+          testID="dashboard-mode"
+          value={mode}
+          onChange={setMode}
+          options={[
+            { value: 'today', label: 'Today' },
+            { value: 'week', label: 'Week' },
+            { value: 'month', label: 'Month' },
+          ]}
+        />
 
-        {dash.error ? <ErrorState message={dash.error} onRetry={dash.reload} /> : null}
-        {!d && !dash.error ? <LoadingState /> : null}
-
-        {d ? (
-          <>
-            <ProgressCard completed={d.completed} total={d.total} carried={d.carriedCount} />
-
-            {pastOverdue.length > 0 ? (
-              <>
-                <SectionHeader
-                  title="Overdue"
-                  count={pastOverdue.length}
-                  right={
-                    <Button
-                      testID="move-all-today"
-                      label="Move all to today"
-                      compact
-                      tone="secondary"
-                      onPress={() => run((s) => s.tasks.moveToToday(pastOverdue.map((a) => a.occurrence.id)), 'Moved to today')}
-                    />
-                  }
-                />
-                {!settings.autoCarryForward ? (
-                  <AppText variant="caption" muted>
-                    Automatic carry-forward is off. Move items manually or turn it on in Settings.
-                  </AppText>
-                ) : null}
-                <List items={pastOverdue} testPrefix="overdue" />
-              </>
-            ) : null}
-
-            <SectionHeader title="Schedule" count={d.events.length} />
-            {d.events.length ? (
-              <List items={d.events} testPrefix="event" />
-            ) : (
-              <AppText muted>No events today.</AppText>
-            )}
-
-            <SectionHeader title="To-do" count={pendingTasks.length} />
-            {pendingTasks.length ? (
-              <List items={pendingTasks} testPrefix="todo" />
-            ) : d.tasks.length ? (
-              <AppText muted>All of today&apos;s tasks are done.</AppText>
-            ) : (
-              <EmptyState
-                icon="checkbox-outline"
-                title="Nothing planned for today"
-                message="Use the + button to add a task or event."
-                action={<Button label="Add a task" tone="secondary" icon="add" onPress={() => router.push('/quick-add')} />}
-              />
-            )}
-
-            {doneTasks.length ? (
-              <>
-                <SectionHeader title="Completed" count={doneTasks.length} />
-                <List items={doneTasks} testPrefix="done" />
-              </>
-            ) : null}
-
-            {d.upcomingDeadlines.length ? (
-              <>
-                <SectionHeader title="Upcoming deadlines" count={d.upcomingDeadlines.length} />
-                <Card>
-                  {d.upcomingDeadlines.map((a) => (
-                    <Button
-                      key={a.occurrence.id}
-                      tone="ghost"
-                      compact
-                      icon="hourglass-outline"
-                      label={`${a.task.title} — ${formatDeadline(a.task.deadlineAt!)}`}
-                      onPress={() => router.push({ pathname: '/item/[id]', params: { id: a.occurrence.id } })}
-                      style={{ justifyContent: 'flex-start' }}
-                    />
-                  ))}
-                </Card>
-              </>
-            ) : null}
-          </>
+        {mode === 'today' ? <TodayDashboard /> : null}
+        {mode === 'week' ? (
+          <DashboardWeekView
+            anchor={weekAnchor}
+            today={today}
+            onShiftWeek={(dir) => setWeekAnchor((a) => shiftWeekAnchor(a, dir))}
+            onJumpThisWeek={() => setWeekAnchor(today)}
+          />
+        ) : null}
+        {mode === 'month' ? (
+          <DashboardMonthView
+            anchor={monthAnchor}
+            today={today}
+            onSelectDay={setMonthAnchor}
+            onShiftMonth={(dir) => setMonthAnchor((a) => shiftMonthAnchor(a, dir))}
+            onJumpThisMonth={() => setMonthAnchor(today)}
+          />
         ) : null}
       </ScrollView>
-      <QuickAddButton date={d?.today} />
+      <QuickAddButton date={quickAddDate} />
     </View>
   );
 }

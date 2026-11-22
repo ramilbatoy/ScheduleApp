@@ -8,12 +8,14 @@ import { Sheet } from '@/ui/components/Pickers';
 import { AppText, Button, Card, Divider, EmptyState, ErrorState, Field, Icon, IconButton, Input, LoadingState } from '@/ui/components/primitives';
 import { useAppStore, useServices } from '@/state/appStore';
 import { errorMessage, useAction, useQuery, useTheme, useToast } from '@/ui/hooks';
+import { useSafeAndroidBack } from '@/ui/navigation';
 import { radius, spacing } from '@/ui/theme';
 
 type Editing = { category: Category | null } | null;
 
 export default function CategoriesScreen() {
   const p = useTheme();
+  useSafeAndroidBack();
   const list = useQuery(async (s) => ({ categories: await s.categories.list(), usage: await s.categories.usage() }), []);
   const [editing, setEditing] = useState<Editing>(null);
 

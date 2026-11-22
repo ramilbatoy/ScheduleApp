@@ -14,6 +14,7 @@ import { AppText, Button, Card, Chip, ErrorState, Field, Input, LoadingState, Se
 import { RecurrenceEditor } from '../components/RecurrenceEditor';
 import { SubtaskEditor } from '../components/SubtaskList';
 import { errorMessage, useQuery, useTheme, useToast } from '../hooks';
+import { goBackOrDashboard, useSafeAndroidBack } from '../navigation';
 import { spacing } from '../theme';
 
 const START_OFFSETS = [0, 5, 10, 15, 30, 60, 120, 1440];
@@ -86,6 +87,7 @@ function Form({
   const settings = useSettings();
   const invalidate = useAppStore((s) => s.invalidate);
   const toast = useToast((s) => s.show);
+  useSafeAndroidBack();
   const today = todayKey(services.clock);
   const [v, setV] = useState<ItemInput>(initial);
   const [error, setError] = useState<string | null>(null);
@@ -133,7 +135,7 @@ function Form({
         const updated = await services.tasks.update(occurrenceId, v, scope);
         invalidate();
         toast('Saved', 'success');
-        router.back();
+        goBackOrDashboard();
         // A series edit can regenerate the instance being viewed; point the detail screen at its replacement.
         if (updated.id !== occurrenceId) setTimeout(() => router.setParams({ id: updated.id }), 0);
       } else {
@@ -260,7 +262,7 @@ function Form({
         ) : null}
 
         <View style={{ flexDirection: 'row', gap: spacing.md }}>
-          <Button label="Cancel" tone="secondary" onPress={() => router.back()} style={{ flex: 1 }} />
+          <Button label="Cancel" tone="secondary" onPress={goBackOrDashboard} style={{ flex: 1 }} />
           <Button testID="save-item" label={editing ? 'Save changes' : isEvent ? 'Add event' : 'Add task'} onPress={save} loading={saving} disabled={!v.title.trim()} style={{ flex: 2 }} />
         </View>
       </ScrollView>

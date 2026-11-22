@@ -15,6 +15,7 @@ import { DatePickerModal } from '@/ui/components/Pickers';
 import { AppText, Button, Card, Divider, EmptyState, Icon, LoadingState, type IconName } from '@/ui/components/primitives';
 import { SubtaskEditor } from '@/ui/components/SubtaskList';
 import { useAction, useQuery, useTheme } from '@/ui/hooks';
+import { goBackOrDashboard, useSafeAndroidBack } from '@/ui/navigation';
 import { spacing } from '@/ui/theme';
 
 const HISTORY_LABEL: Record<HistoryEntry['eventType'], string> = {
@@ -47,6 +48,7 @@ export default function ItemDetailScreen() {
   const services = useServices();
   const run = useAction();
   const [reschedule, setReschedule] = useState(false);
+  useSafeAndroidBack();
   const detail = useQuery((s) => s.tasks.getDetail(id), [id]);
   const reminders = useQuery((s) => (detail.data ? s.reminders.forTask(detail.data.task.id) : Promise.resolve([])), [detail.data?.task.id]);
   const today = todayKey(services.clock);
@@ -55,7 +57,7 @@ export default function ItemDetailScreen() {
     return (
       <>
         <Stack.Screen options={{ title: 'Details' }} />
-        <EmptyState icon="trash-outline" title="Not available" message={detail.error} action={<Button label="Go back" tone="secondary" onPress={() => router.back()} />} />
+        <EmptyState icon="trash-outline" title="Not available" message={detail.error} action={<Button label="Go back" tone="secondary" onPress={goBackOrDashboard} />} />
       </>
     );
   }
@@ -89,7 +91,7 @@ export default function ItemDetailScreen() {
     if (!scope) return;
     if (!recurring && !(await confirm('Delete this item?', `"${displayTitle(d)}" will be removed. Completed history is kept.`, 'Delete', true))) return;
     const ok = await run((s) => s.tasks.delete(o.id, scope).then(() => true), 'Deleted');
-    if (ok) router.back();
+    if (ok) goBackOrDashboard();
   }
 
   return (
