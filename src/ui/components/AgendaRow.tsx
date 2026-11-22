@@ -55,9 +55,21 @@ export function AgendaRow({ a, showDate, testID }: { a: Agenda; showDate?: boole
   const title = displayTitle(a);
   const time = o.startTime ? `${formatTime(o.startTime)}${o.endTime ? ` – ${formatTime(o.endTime)}` : ''}` : a.task.allDay ? 'All day' : null;
   const accent = a.task.kind === 'event' ? (a.category?.color ?? p.primary) : p.priority[a.task.priority];
+  const hasSubtasks = a.task.kind === 'task' && a.subtasks.length > 0;
 
   return (
-    <View style={[styles.row, { backgroundColor: p.surface, borderColor: p.border }]}>
+    <View
+      style={[
+        styles.row,
+        styles.mainTask,
+        {
+          backgroundColor: p.surface,
+          borderColor: hasSubtasks ? accent : p.border,
+          borderLeftColor: accent,
+        },
+      ]}
+      testID={testID ? `${testID}-main` : undefined}
+      accessibilityHint={hasSubtasks ? 'Main task with nested subtasks' : undefined}>
       <View style={[styles.accent, { backgroundColor: accent }]} />
       <View style={{ flex: 1 }}>
         <View style={{ flexDirection: 'row', alignItems: 'stretch' }}>
@@ -100,8 +112,10 @@ export function AgendaRow({ a, showDate, testID }: { a: Agenda; showDate?: boole
             <ItemBadges a={a} showDate={showDate} />
           </Pressable>
         </View>
-        {a.task.kind === 'task' && a.subtasks.length > 0 ? (
-          <AgendaSubtasks nodes={a.subtasks} testID={testID ? `${testID}-subs` : undefined} />
+        {hasSubtasks ? (
+          <View style={[styles.subtaskRail, { borderLeftColor: accent, backgroundColor: p.surfaceAlt }]}>
+            <AgendaSubtasks nodes={a.subtasks} testID={testID ? `${testID}-subs` : undefined} />
+          </View>
         ) : null}
       </View>
     </View>
@@ -110,7 +124,17 @@ export function AgendaRow({ a, showDate, testID }: { a: Agenda; showDate?: boole
 
 const styles = StyleSheet.create({
   row: { flexDirection: 'row', alignItems: 'stretch', borderRadius: radius.lg, borderWidth: StyleSheet.hairlineWidth, overflow: 'hidden' },
+  /** Main tasks: thicker left edge so hierarchy reads before nested subtasks. */
+  mainTask: { borderLeftWidth: 3 },
   accent: { width: 4 },
   check: { width: TOUCH, alignItems: 'center', justifyContent: 'center' },
   badges: { flexDirection: 'row', flexWrap: 'wrap', gap: 4 },
+  subtaskRail: {
+    marginLeft: TOUCH,
+    marginRight: spacing.md,
+    marginBottom: spacing.sm,
+    paddingTop: spacing.xs,
+    borderLeftWidth: 2,
+    borderRadius: radius.sm,
+  },
 });

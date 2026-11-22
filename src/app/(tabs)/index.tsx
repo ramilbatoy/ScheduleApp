@@ -1,19 +1,23 @@
 import { router } from 'expo-router';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { formatDateKey, todayKey } from '@/domain/dates';
 import type { Agenda, DateKey } from '@/domain/models';
+import { filterAgendaItems } from '@/domain/services/agendaService';
 import { useAppStore, useServices, useSettings } from '@/state/appStore';
 import { AgendaRow, formatDeadline } from '@/ui/components/AgendaRow';
+import { AgendaFilterBar, AGENDA_SORT_OPTIONS, useAgendaFilterState } from '@/ui/components/AgendaFilterBar';
 import {
   DashboardMonthView,
   DashboardWeekView,
+  WeeklyGoalsSection,
+  mondayWeekRange,
   shiftMonthAnchor,
   shiftWeekAnchor,
 } from '@/ui/components/DashboardPlanner';
-import { AppText, Button, Card, EmptyState, ErrorState, LoadingState, SectionHeader, Segmented } from '@/ui/components/primitives';
+import { AppText, Button, Card, Chip, EmptyState, ErrorState, LoadingState, SectionHeader, Segmented } from '@/ui/components/primitives';
 import { QuickAddButton } from '@/ui/components/QuickAddButton';
 import { useAction, useQuery, useTheme } from '@/ui/hooks';
 import { radius, spacing } from '@/ui/theme';
@@ -55,6 +59,70 @@ function ProgressCard({ completed, total, carried }: { completed: number; total:
   );
 }
 
+/** Lightweight StatsService snapshot for Today (day + week completion). */
+function TodayStatsSummary() {
+  const p = useTheme();
+  const day = useQuery((s) => s.stats.report('day'), []);
+  const week = useQuery((s) => s.stats.report('week'), []);
+  if (day.error && week.error) return <ErrorState message={day.error} onRetry={day.reload} />;
+  if (!day.data || !week.data) return day.error || week.error ? null : <LoadingState />;
+  const d = day.data.period;
+  const w = week.data.period;
+  const dayRate = d.completionRate === null ? '—' : `${Math.round(d.completionRate * 100)}%`;
+  const weekRate = w.completionRate === null ? '—' : `${Math.round(w.completionRate * 100)}%`;
+  return (
+    <Card testID="today-stats-summary">
+      <AppText variant="label" muted>
+        STATISTICS
+      </AppText>
+      <View style={styles.statsRow}>
+        <View style={styles.statCell}>
+          <AppText variant="caption" muted>
+            Today done
+          </AppText>
+          <AppText variant="heading">
+            {d.completed}/{d.total}
+          </AppText>
+          <AppText variant="caption" color={p.primary}>
+            {dayRate}
+          </AppText>
+        </View>
+        <View style={styles.statCell}>
+          <AppText variant="caption" muted>
+            Remaining
+          </AppText>
+          <AppText variant="heading">{d.pending}</AppText>
+          <AppText variant="caption" muted>
+            {d.overdue ? `${d.overdue} overdue` : 'on track'}
+          </AppText>
+        </View>
+        <View style={styles.statCell}>
+          <AppText variant="caption" muted>
+            Carried
+          </AppText>
+          <AppText variant="heading" color={d.carryMoves ? p.warning : p.text}>
+            {d.carryMoves}
+          </AppText>
+          <AppText variant="caption" muted>
+            this day
+          </AppText>
+        </View>
+        <View style={styles.statCell}>
+          <AppText variant="caption" muted>
+            This week
+          </AppText>
+          <AppText variant="heading">
+            {w.completed}/{w.total}
+          </AppText>
+          <AppText variant="caption" color={p.primary}>
+            {weekRate}
+          </AppText>
+        </View>
+      </View>
+    </Card>
+  );
+}
+
 function List({ items, testPrefix }: { items: Agenda[]; testPrefix: string }) {
   return (
     <View style={{ gap: spacing.sm }}>
@@ -65,9 +133,102 @@ function List({ items, testPrefix }: { items: Agenda[]; testPrefix: string }) {
   );
 }
 
+/** Soonest deadlines / next upcoming tasks with search, sort, and date filters. */
+function NearDueTracker({ upcoming, today }: { upcoming: Agenda[]; today: DateKey }) {
+  const services = useServices();
+  const filterCtl = useAgendaFilterState({ sort: 'deadline', status: 'all' });
+  const [dateMode, setDateMode] = useState<'any' | 'today' | 'week'>('any');
+  const now = services.clock.now();
+  const [weekStart, weekEnd] = mondayWeekRange(today);
+  const scheduledSoon = useQuery(
+    (s) => s.agenda.list({ status: 'upcoming', kinds: ['task'], sort: 'date' }),
+    [],
+  );
+
+  const pool = useMemo(() => {
+    const byId = new Map<string, Agenda>();
+    for (const a of upcoming) byId.set(a.occurrence.id, a);
+    for (const a of scheduledSoon.data ?? []) {
+      if (!byId.has(a.occurrence.id)) byId.set(a.occurrence.id, a);
+    }
+    return [...byId.values()];
+  }, [upcoming, scheduledSoon.data]);
+
+  const scoped = useMemo(() => {
+    let items = pool;
+    if (dateMode === 'today') {
+      items = items.filter((a) => {
+        if (a.occurrence.date === today) return true;
+        if (!a.task.deadlineAt) return false;
+        return a.task.deadlineAt.slice(0, 10) === today;
+      });
+    }
+    if (dateMode === 'week') {
+      items = items.filter((a) => {
+        if (a.occurrence.date >= weekStart && a.occurrence.date <= weekEnd) return true;
+        if (!a.task.deadlineAt) return false;
+        const due = a.task.deadlineAt.slice(0, 10);
+        return due >= weekStart && due <= weekEnd;
+      });
+    }
+    return filterAgendaItems(items, filterCtl.filter, today, now);
+  }, [pool, dateMode, today, weekStart, weekEnd, filterCtl.state.text, filterCtl.state.status, filterCtl.state.priority, filterCtl.state.categoryId, filterCtl.state.sort, filterCtl.filter, now]);
+
+  return (
+    <View style={{ gap: spacing.sm }} testID="near-due-tracker">
+      <SectionHeader title="Near-due / upcoming" count={scoped.length} />
+      <AppText variant="caption" muted>
+        Soonest deadlines and next tasks — search, sort, and narrow by date.
+      </AppText>
+      <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm }} testID="near-due-date">
+        {(
+          [
+            { value: 'any' as const, label: 'Any date' },
+            { value: 'today' as const, label: 'Today' },
+            { value: 'week' as const, label: 'This week' },
+          ] as const
+        ).map((o) => (
+          <Chip key={o.value} testID={`near-due-date-${o.value}`} label={o.label} selected={dateMode === o.value} onPress={() => setDateMode(o.value)} />
+        ))}
+      </View>
+      <AgendaFilterBar
+        testID="near-due-filter"
+        state={filterCtl.state}
+        onText={filterCtl.setText}
+        onStatus={filterCtl.setStatus}
+        onPriority={filterCtl.setPriority}
+        onCategoryId={filterCtl.setCategoryId}
+        onSort={filterCtl.setSort}
+        showStatusRow={false}
+        sorts={AGENDA_SORT_OPTIONS}
+        matchCount={scoped.length}
+        searchPlaceholder="Search near-due tasks"
+      />
+      {scoped.length ? (
+        <View style={{ gap: spacing.sm }}>
+          {scoped.map((a, i) => (
+            <View key={a.occurrence.id} style={{ gap: 4 }}>
+              {a.task.deadlineAt ? (
+                <AppText variant="caption" muted>
+                  Due {formatDeadline(a.task.deadlineAt)}
+                </AppText>
+              ) : null}
+              <AgendaRow a={a} showDate testID={`near-due-${i}`} />
+            </View>
+          ))}
+        </View>
+      ) : (
+        <AppText muted>{pool.length ? 'No matches for these filters.' : 'No near-due or upcoming tasks.'}</AppText>
+      )}
+    </View>
+  );
+}
+
 function TodayDashboard() {
   const settings = useSettings();
   const run = useAction();
+  const services = useServices();
+  const today = todayKey(services.clock);
   const dash = useQuery((s) => s.agenda.dashboard(), []);
   const d = dash.data;
   const pastOverdue = d?.overdue.filter((a) => a.occurrence.date < d.today) ?? [];
@@ -89,6 +250,7 @@ function TodayDashboard() {
       {d ? (
         <>
           <ProgressCard completed={d.completed} total={d.total} carried={d.carriedCount} />
+          <TodayStatsSummary />
 
           {pastOverdue.length > 0 ? (
             <>
@@ -142,24 +304,8 @@ function TodayDashboard() {
             </>
           ) : null}
 
-          {d.upcomingDeadlines.length ? (
-            <>
-              <SectionHeader title="Upcoming deadlines" count={d.upcomingDeadlines.length} />
-              <Card>
-                {d.upcomingDeadlines.map((a) => (
-                  <Button
-                    key={a.occurrence.id}
-                    tone="ghost"
-                    compact
-                    icon="hourglass-outline"
-                    label={`${a.task.title} — ${formatDeadline(a.task.deadlineAt!)}`}
-                    onPress={() => router.push({ pathname: '/item/[id]', params: { id: a.occurrence.id } })}
-                    style={{ justifyContent: 'flex-start' }}
-                  />
-                ))}
-              </Card>
-            </>
-          ) : null}
+          <NearDueTracker upcoming={d.upcomingDeadlines} today={d.today} />
+          <WeeklyGoalsSection anchor={today} testID="today-weekly-goals" />
         </>
       ) : null}
     </View>
@@ -232,4 +378,6 @@ export default function TodayScreen() {
 const styles = StyleSheet.create({
   track: { height: 10, borderRadius: radius.pill, overflow: 'hidden' },
   fill: { height: '100%', borderRadius: radius.pill },
+  statsRow: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.md, marginTop: spacing.sm },
+  statCell: { minWidth: '40%', flexGrow: 1, gap: 2 },
 });

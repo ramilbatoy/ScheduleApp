@@ -28,9 +28,17 @@ export function AgendaSubtasks({ nodes, testID }: { nodes: SubtaskNode[]; testID
   const flat = flattenSubtaskTree(nodes);
   if (!flat.length) return null;
   return (
-    <View style={styles.agendaNest} testID={testID}>
+    <View style={styles.agendaNest} testID={testID} accessibilityLabel="Subtasks">
       {flat.map((n) => (
-        <View key={n.id} style={[styles.agendaRow, { paddingLeft: spacing.md + n.depth * INDENT }]}>
+        <View
+          key={n.id}
+          style={[
+            styles.agendaRow,
+            {
+              paddingLeft: spacing.sm + n.depth * INDENT,
+              borderLeftColor: n.depth === 0 ? p.primary : p.border,
+            },
+          ]}>
           <Pressable
             testID={testID ? `${testID}-toggle-${n.id}` : undefined}
             accessibilityRole="checkbox"
@@ -101,10 +109,16 @@ export function SubtaskEditor({
   }
 
   return (
-    <View style={[styles.editor, { borderColor: p.border, backgroundColor: p.surface }]} testID={testID}>
+    <View
+      style={[styles.editor, { borderColor: p.border, backgroundColor: p.surface, borderLeftColor: p.primary }]}
+      testID={testID}
+      accessibilityLabel="Subtask checklist under main task">
       <View style={styles.editorHeader}>
         <AppText variant="label" muted>
           SUBTASKS{total ? ` · ${completed}/${total}` : ''}
+        </AppText>
+        <AppText variant="caption" muted>
+          Nested under this main task
         </AppText>
       </View>
 
@@ -115,7 +129,18 @@ export function SubtaskEditor({
       ) : null}
 
       {flat.map((n) => (
-        <View key={n.id} style={[styles.editRow, { borderTopColor: p.border, paddingLeft: spacing.md + n.depth * INDENT }]}>
+        <View
+          key={n.id}
+          style={[
+            styles.editRow,
+            {
+              borderTopColor: p.border,
+              paddingLeft: spacing.md + n.depth * INDENT,
+              borderLeftColor: n.depth === 0 ? p.primary : p.border,
+              borderLeftWidth: 2,
+              backgroundColor: n.depth === 0 ? p.surfaceAlt : undefined,
+            },
+          ]}>
           {editingId === n.id ? (
             <View style={{ flex: 1, gap: spacing.sm, paddingVertical: spacing.sm }}>
               <Input testID={`${testID}-edit-title`} value={editTitle} onChangeText={setEditTitle} placeholder="Title" maxLength={200} />
@@ -220,11 +245,19 @@ export function SubtaskEditor({
 }
 
 const styles = StyleSheet.create({
-  agendaNest: { paddingBottom: spacing.sm, gap: 2 },
-  agendaRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, paddingRight: spacing.md },
+  agendaNest: { paddingBottom: spacing.xs, gap: 2 },
+  agendaRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    paddingRight: spacing.sm,
+    paddingVertical: 2,
+    borderLeftWidth: 2,
+    marginVertical: 1,
+  },
   miniCheck: { width: TOUCH * 0.7, height: TOUCH * 0.7, alignItems: 'center', justifyContent: 'center' },
-  editor: { borderRadius: radius.lg, borderWidth: StyleSheet.hairlineWidth, overflow: 'hidden' },
-  editorHeader: { paddingHorizontal: spacing.md, paddingTop: spacing.md, paddingBottom: spacing.sm },
+  editor: { borderRadius: radius.lg, borderWidth: StyleSheet.hairlineWidth, borderLeftWidth: 3, overflow: 'hidden' },
+  editorHeader: { paddingHorizontal: spacing.md, paddingTop: spacing.md, paddingBottom: spacing.sm, gap: 2 },
   editRow: { flexDirection: 'row', alignItems: 'flex-start', gap: spacing.sm, borderTopWidth: StyleSheet.hairlineWidth, paddingRight: spacing.sm },
   rowActions: { flexDirection: 'row', alignItems: 'center', paddingTop: spacing.sm },
   iconHit: { width: 32, height: 32, alignItems: 'center', justifyContent: 'center' },

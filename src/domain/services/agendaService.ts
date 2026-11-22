@@ -73,6 +73,66 @@ export function compareAgenda(a: Agenda, b: Agenda): number {
   return PRIORITY_RANK[b.task.priority] - PRIORITY_RANK[a.task.priority];
 }
 
+/** Pure status/kind/priority/category/text match — shared by Tasks list and Week/Month filters. */
+export function matchesAgendaFilter(a: Agenda, filter: ListFilter, today: DateKey, now: Date): boolean {
+  if (filter.kinds?.length && !filter.kinds.includes(a.task.kind)) return false;
+  if (filter.priorities?.length && !filter.priorities.includes(a.task.priority)) return false;
+  if (filter.categoryIds?.length && !(a.task.categoryId && filter.categoryIds.includes(a.task.categoryId))) return false;
+  const text = filter.text?.trim().toLowerCase();
+  if (text) {
+    const hay = [
+      displayTitle(a),
+      a.occurrence.notesOverride ?? a.task.notes,
+      a.category?.name ?? '',
+      ...flattenSubtaskTitles(a.subtasks),
+    ];
+    if (!hay.some((s) => s.toLowerCase().includes(text))) return false;
+  }
+  const status = filter.status ?? 'all';
+  const pending = a.occurrence.status === 'pending';
+  switch (status) {
+    case 'pending':
+      return pending;
+    case 'completed':
+      return !pending;
+    case 'overdue':
+      return isOverdue(a, today, now);
+    case 'carried':
+      return pending && a.occurrence.isCarriedForward;
+    case 'upcoming':
+      return pending && a.occurrence.date > today;
+    default:
+      return true;
+  }
+}
+
+export function sortAgendaItems(items: Agenda[], sort: SortKey = 'date'): Agenda[] {
+  const out = [...items];
+  const byDate = compareAgenda;
+  out.sort((a, b) => {
+    if (sort === 'priority') {
+      const d = PRIORITY_RANK[b.task.priority] - PRIORITY_RANK[a.task.priority];
+      return d || byDate(a, b);
+    }
+    if (sort === 'deadline') {
+      const da = a.task.deadlineAt ?? '\uffff';
+      const db = b.task.deadlineAt ?? '\uffff';
+      return da === db ? byDate(a, b) : da < db ? -1 : 1;
+    }
+    if (sort === 'created') return a.task.createdAt === b.task.createdAt ? byDate(a, b) : a.task.createdAt < b.task.createdAt ? 1 : -1;
+    return byDate(a, b);
+  });
+  return out;
+}
+
+/** Apply ListFilter to an already-loaded agenda slice (Week/Month day lists, trackers). */
+export function filterAgendaItems(items: Agenda[], filter: ListFilter, today: DateKey, now: Date): Agenda[] {
+  return sortAgendaItems(
+    items.filter((a) => matchesAgendaFilter(a, filter, today, now)),
+    filter.sort ?? 'date',
+  );
+}
+
 export class AgendaService {
   constructor(
     private readonly db: Database,
@@ -204,54 +264,6 @@ export class AgendaService {
       return true;
     });
 
-    if (filter.kinds?.length) items = items.filter((a) => filter.kinds!.includes(a.task.kind));
-    if (filter.priorities?.length) items = items.filter((a) => filter.priorities!.includes(a.task.priority));
-    if (filter.categoryIds?.length) items = items.filter((a) => a.task.categoryId && filter.categoryIds!.includes(a.task.categoryId));
-    const text = filter.text?.trim().toLowerCase();
-    if (text) {
-      items = items.filter((a) => {
-        const hay = [
-          displayTitle(a),
-          a.occurrence.notesOverride ?? a.task.notes,
-          a.category?.name ?? '',
-          ...flattenSubtaskTitles(a.subtasks),
-        ];
-        return hay.some((s) => s.toLowerCase().includes(text));
-      });
-    }
-    items = items.filter((a) => {
-      const pending = a.occurrence.status === 'pending';
-      switch (status) {
-        case 'pending':
-          return pending;
-        case 'completed':
-          return !pending;
-        case 'overdue':
-          return isOverdue(a, today, now);
-        case 'carried':
-          return pending && a.occurrence.isCarriedForward;
-        case 'upcoming':
-          return pending && a.occurrence.date > today;
-        default:
-          return true;
-      }
-    });
-
-    const sort = filter.sort ?? 'date';
-    const byDate = compareAgenda;
-    items.sort((a, b) => {
-      if (sort === 'priority') {
-        const d = PRIORITY_RANK[b.task.priority] - PRIORITY_RANK[a.task.priority];
-        return d || byDate(a, b);
-      }
-      if (sort === 'deadline') {
-        const da = a.task.deadlineAt ?? '\uffff';
-        const db = b.task.deadlineAt ?? '\uffff';
-        return da === db ? byDate(a, b) : da < db ? -1 : 1;
-      }
-      if (sort === 'created') return a.task.createdAt === b.task.createdAt ? byDate(a, b) : a.task.createdAt < b.task.createdAt ? 1 : -1;
-      return byDate(a, b);
-    });
-    return items;
+    return filterAgendaItems(items, { ...filter, status }, today, now);
   }
 }
