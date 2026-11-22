@@ -108,6 +108,7 @@ Update this section whenever a phase finishes, a PR merges, or acceptance status
 | Centralized theme + Paper UI | Open PR (2026-11-22) | https://github.com/ramilbatoy/ScheduleApp/pull/13 — Paper MD3, 10 presets, Theme Settings (HEX/preview/apply/reset/restore), semantic tokens app-wide; audit `/cursor/stores/self/docs/theme-ui-audit.md`; **207** tests |
 | Folders / projects + navigation drawer | On main (2026-11-23) | https://github.com/ramilbatoy/ScheduleApp/pull/15 — schema v3, backup format 2, Projects + folder detail, customizable drawer; **230** tests |
 | Shared header, NeoOrganizer branding, folder-first Tasks | Open PR (2026-11-23) | https://github.com/ramilbatoy/ScheduleApp/pull/16 — `AppHeader` once in the layouts; logo bytes in `app_settings` (no schema bump); Tasks list groups folder tasks; **238** tests |
+| Nested buttons after header and folders | Open PR (2026-11-23) | Folder chip no longer sits inside a row `<button>`; folder-card reorder buttons sit beside the open control. Month cells, drawer rows, header menu, and checkbox/switch rows stay non-nested. **238** tests |
 
 ### In progress / remaining
 

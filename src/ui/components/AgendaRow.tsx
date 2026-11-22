@@ -47,7 +47,11 @@ export function ItemBadges({ a, showDate }: { a: Agenda; showDate?: boolean }) {
           testID={`folder-chip-${a.folder.id}`}
           accessibilityRole="button"
           accessibilityLabel={`Open folder ${a.folder.name}`}
-          onPress={() => router.push({ pathname: '/folder/[id]', params: { id: a.folder!.id } })}>
+          onPress={(e) => {
+            // Chip is a real <button>. Stop the row press so web does not open the task too.
+            e.stopPropagation();
+            router.push({ pathname: '/folder/[id]', params: { id: a.folder!.id } });
+          }}>
           <Badge label={a.folder.name} color={a.folder.color} background={`${a.folder.color}22`} icon="folder-outline" />
         </Pressable>
       ) : null}
@@ -115,7 +119,9 @@ export function AgendaRow({ a, showDate, testID }: { a: Agenda; showDate?: boole
           <Pressable
             testID={testID}
             onPress={() => router.push({ pathname: '/item/[id]', params: { id: o.id } })}
-            accessibilityRole="button"
+            // A folder chip inside this row is its own <button>. Omit the button role then so
+            // RN-web renders a <div> (still pressable) instead of nesting buttons.
+            accessibilityRole={a.folder ? undefined : 'button'}
             accessibilityLabel={`${title}${done ? ', completed' : ''}`}
             style={({ pressed }) => [{ flex: 1, gap: 4, paddingVertical: spacing.md, paddingRight: spacing.md }, pressed && { opacity: 0.7 }]}>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm }}>

@@ -1,6 +1,6 @@
 import { router, Stack } from 'expo-router';
 import { useState } from 'react';
-import { ScrollView, View } from 'react-native';
+import { Pressable, ScrollView, View } from 'react-native';
 
 import type { FolderCard, FolderListFilter, FolderSortKey } from '@/domain/folderProgress';
 import { useServices } from '@/state/appStore';
@@ -100,49 +100,58 @@ export default function ProjectsScreen() {
         ) : null}
         {shown.data?.map((card, index) => {
           const due = targetLabel(card);
+          const open = () => router.push({ pathname: '/folder/[id]', params: { id: card.id } });
           return (
-            <Card key={card.id} testID={`project-card-${index}`} onPress={() => router.push({ pathname: '/folder/[id]', params: { id: card.id } })}>
-              <View style={{ flexDirection: 'row', gap: spacing.md, alignItems: 'center' }}>
-                <View style={{ width: 40, height: 40, borderRadius: radius.md, backgroundColor: `${card.color}22`, alignItems: 'center', justifyContent: 'center' }}>
-                  <Icon name={card.icon as IconName} color={card.color} />
-                </View>
-                <View style={{ flex: 1, gap: 2 }}>
-                  <AppText variant="heading" numberOfLines={1}>
-                    {card.name}
-                  </AppText>
-                  <AppText variant="caption" muted>
-                    {card.progress.completed}/{card.progress.total || 0} done · {card.progress.percent}%
-                    {card.progress.pending ? ` · ${card.progress.pending} pending` : ''}
-                    {card.progress.overdue ? ` · ${card.progress.overdue} overdue` : ''}
-                  </AppText>
-                </View>
+            <Card key={card.id} testID={`project-card-${index}`}>
+              <View style={{ flexDirection: 'row', gap: spacing.md, alignItems: 'flex-start' }}>
+                <Pressable
+                  accessibilityRole="button"
+                  accessibilityLabel={`Open ${card.name}`}
+                  onPress={open}
+                  style={({ pressed }) => [{ flex: 1, gap: spacing.sm }, pressed && { opacity: 0.85 }]}>
+                  <View style={{ flexDirection: 'row', gap: spacing.md, alignItems: 'center' }}>
+                    <View style={{ width: 40, height: 40, borderRadius: radius.md, backgroundColor: `${card.color}22`, alignItems: 'center', justifyContent: 'center' }}>
+                      <Icon name={card.icon as IconName} color={card.color} />
+                    </View>
+                    <View style={{ flex: 1, gap: 2 }}>
+                      <AppText variant="heading" numberOfLines={1}>
+                        {card.name}
+                      </AppText>
+                      <AppText variant="caption" muted>
+                        {card.progress.completed}/{card.progress.total || 0} done · {card.progress.percent}%
+                        {card.progress.pending ? ` · ${card.progress.pending} pending` : ''}
+                        {card.progress.overdue ? ` · ${card.progress.overdue} overdue` : ''}
+                      </AppText>
+                    </View>
+                  </View>
+                  <View style={[styles.track, { backgroundColor: p.surfaceVariant }]}>
+                    <View style={{ width: `${card.progress.percent}%`, height: 6, backgroundColor: card.color, borderRadius: radius.sm }} />
+                  </View>
+                  <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm }}>
+                    <AppText variant="caption" color={p.priority[card.priority]}>
+                      {PRIORITY_LABEL[card.priority]}
+                    </AppText>
+                    {due ? (
+                      <AppText variant="caption" color={card.target.overdue && card.progress.percent < 100 ? p.overdue : p.textSecondary}>
+                        {due}
+                      </AppText>
+                    ) : (
+                      <AppText variant="caption" muted>
+                        No target
+                      </AppText>
+                    )}
+                    {card.status !== 'active' ? (
+                      <AppText variant="caption" muted>
+                        {card.status}
+                      </AppText>
+                    ) : null}
+                  </View>
+                </Pressable>
                 {sort === 'manual' ? (
                   <View>
                     <Button label="Up" compact tone="ghost" onPress={() => move(card.id, -1)} />
                     <Button label="Down" compact tone="ghost" onPress={() => move(card.id, 1)} />
                   </View>
-                ) : null}
-              </View>
-              <View style={[styles.track, { backgroundColor: p.surfaceVariant }]}>
-                <View style={{ width: `${card.progress.percent}%`, height: 6, backgroundColor: card.color, borderRadius: radius.sm }} />
-              </View>
-              <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm }}>
-                <AppText variant="caption" color={p.priority[card.priority]}>
-                  {PRIORITY_LABEL[card.priority]}
-                </AppText>
-                {due ? (
-                  <AppText variant="caption" color={card.target.overdue && card.progress.percent < 100 ? p.overdue : p.textSecondary}>
-                    {due}
-                  </AppText>
-                ) : (
-                  <AppText variant="caption" muted>
-                    No target
-                  </AppText>
-                )}
-                {card.status !== 'active' ? (
-                  <AppText variant="caption" muted>
-                    {card.status}
-                  </AppText>
                 ) : null}
               </View>
             </Card>
