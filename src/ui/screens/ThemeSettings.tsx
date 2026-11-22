@@ -18,7 +18,7 @@ import {
   type SemanticColors,
   type ThemeSnapshot,
 } from '@/theme';
-import { AppBadge, AppButton, AppCard, AppCheckbox, AppEmptyState, AppInput, AppLoading, AppSwitch } from '@/ui/components/app';
+import { AppBadge, AppButton, AppCard, AppCheckbox, AppInput, AppSwitch } from '@/ui/components/app';
 import { AppText, Field, Screen, Segmented } from '@/ui/components/primitives';
 import { errorMessage, useToast } from '@/ui/hooks';
 
@@ -296,8 +296,6 @@ export function ThemeSettingsScreen() {
           <AppSwitch value={demoSwitch} onChange={setDemoSwitch} />
         </View>
         <AppInput placeholder="Sample input" editable={false} />
-        <AppEmptyState icon="color-palette-outline" title="Nothing here" />
-        <AppLoading label="Loading…" />
       </AppCard>
 
       <View style={styles.actions}>
