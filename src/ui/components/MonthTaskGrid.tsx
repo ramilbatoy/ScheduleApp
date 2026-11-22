@@ -3,6 +3,7 @@ import { Pressable, StyleSheet, View } from 'react-native';
 
 import { fromDateKey } from '@/domain/dates';
 import type { Agenda, DateKey } from '@/domain/models';
+import { monthDayMarkers } from '@/domain/plannerGroups';
 import { cellTaskPreview, monthPrefix } from '@/domain/monthTable';
 import { agendaPriority, displayTitle, formatOverdueLabels, isOverdue, overdueTimeline } from '@/domain/services/agendaService';
 
@@ -21,6 +22,7 @@ export function MonthTaskGrid({
   now,
   onSelectDay,
   onSelectTask,
+  presentation = 'tasks',
   testID = 'month-task-grid',
 }: {
   month: DateKey;
@@ -29,7 +31,10 @@ export function MonthTaskGrid({
   itemsByDate: Record<DateKey, Agenda[]>;
   now: Date;
   onSelectDay: (d: DateKey) => void;
-  onSelectTask: (a: Agenda) => void;
+  /** Task chips. Omitted when `presentation` is `folders` — markers are not buttons. */
+  onSelectTask?: (a: Agenda) => void;
+  /** `folders` draws color markers and counts instead of task titles. */
+  presentation?: 'tasks' | 'folders';
   testID?: string;
 }) {
   const p = useTheme();
@@ -53,14 +58,19 @@ export function MonthTaskGrid({
             const isSel = d === selected;
             const isToday = d === today;
             const dayItems = itemsByDate[d] ?? [];
-            const preview = cellTaskPreview(dayItems, CELL_LIMIT);
+            const preview = presentation === 'tasks' ? cellTaskPreview(dayItems, CELL_LIMIT) : null;
+            const markers = presentation === 'folders' ? monthDayMarkers(dayItems) : null;
+            const markerBits = markers?.folders.map((f) => `${f.count} in ${f.name}`) ?? [];
+            if (markers?.unassigned) markerBits.push(`${markers.unassigned} unassigned`);
+            const folderLabel = markerBits.length ? `, ${markerBits.join(', ')}` : '';
             return (
-              // Outer Pressable has no button role so RN-web renders a <div>; task chips
-              // keep accessibilityRole="button" → real <button>s without nesting.
+              // Task mode: no button role on the cell so title chips can be real buttons.
+              // Folder mode: markers are views, so the cell itself is the only button.
               <Pressable
                 key={d}
                 testID={`month-cell-${d}`}
-                accessibilityLabel={`${format(fromDateKey(d), 'EEEE, MMMM d')}${dayItems.length ? `, ${dayItems.length} items` : ''}`}
+                accessibilityRole={presentation === 'folders' ? 'button' : undefined}
+                accessibilityLabel={`${format(fromDateKey(d), 'EEEE, MMMM d')}${presentation === 'folders' ? folderLabel : dayItems.length ? `, ${dayItems.length} items` : ''}`}
                 accessibilityState={{ selected: isSel }}
                 onPress={() => onSelectDay(d)}
                 style={[
@@ -79,7 +89,26 @@ export function MonthTaskGrid({
                   {Number(d.slice(8))}
                 </AppText>
                 <View style={styles.tasks}>
-                  {preview.shown.map((a) => {
+                  {markers
+                    ? markers.folders.slice(0, CELL_LIMIT).map((f) => (
+                        <View key={f.folderId} testID={`month-marker-${d}-${f.folderId}`} style={[styles.marker, { backgroundColor: `${f.color}22`, borderLeftColor: f.color }]}>
+                          <AppText numberOfLines={1} color={p.text} style={{ fontSize: 10, lineHeight: 13 }}>
+                            {f.name} {f.count}
+                          </AppText>
+                        </View>
+                      ))
+                    : null}
+                  {markers && markers.folders.length > CELL_LIMIT ? (
+                    <AppText variant="caption" muted style={{ fontSize: 10, lineHeight: 12 }}>
+                      +{markers.folders.length - CELL_LIMIT} folders
+                    </AppText>
+                  ) : null}
+                  {markers && markers.unassigned > 0 ? (
+                    <AppText variant="caption" muted style={{ fontSize: 10, lineHeight: 12 }} testID={`month-marker-unassigned-${d}`}>
+                      {markers.unassigned} other
+                    </AppText>
+                  ) : null}
+                  {preview?.shown.map((a) => {
                     const done = a.occurrence.status === 'completed';
                     const overdue = isOverdue(a, today, now);
                     const timeline = overdue && !done ? overdueTimeline(a, today, now) : null;
@@ -98,7 +127,7 @@ export function MonthTaskGrid({
                         onPress={(e) => {
                           // Avoid also selecting the day when opening a chip (web).
                           (e as { stopPropagation?: () => void }).stopPropagation?.();
-                          onSelectTask(a);
+                          onSelectTask?.(a);
                         }}
                         style={[styles.taskChip, { backgroundColor: `${accent}22`, borderLeftColor: accent }]}>
                         <AppText
@@ -118,7 +147,7 @@ export function MonthTaskGrid({
                       </Pressable>
                     );
                   })}
-                  {preview.more > 0 ? (
+                  {preview && preview.more > 0 ? (
                     <AppText variant="caption" muted style={{ fontSize: 10, lineHeight: 12 }}>
                       +{preview.more} more
                     </AppText>
@@ -147,6 +176,12 @@ const styles = StyleSheet.create({
   tasks: { gap: 2, flex: 1 },
   taskChip: {
     borderLeftWidth: 2,
+    borderRadius: 3,
+    paddingHorizontal: 3,
+    paddingVertical: 1,
+  },
+  marker: {
+    borderLeftWidth: 3,
     borderRadius: 3,
     paddingHorizontal: 3,
     paddingVertical: 1,

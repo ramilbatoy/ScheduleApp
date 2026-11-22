@@ -237,7 +237,7 @@ export default function SettingsScreen() {
         <SwitchRow
           testID="toggle-empty-folders"
           label="Show empty folders on Tasks"
-          description="Folders with no tasks stay on the Folders page. Turn this on to list them on Tasks as well."
+          description="Folders with no tasks stay on the Folders page. Turn this on to list them on Tasks and on Today, Week, and Month when nothing in that view matches."
           value={settings.showEmptyFoldersOnTasks}
           onChange={(v) => update('showEmptyFoldersOnTasks', v)}
         />

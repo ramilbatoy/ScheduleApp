@@ -9,21 +9,20 @@ import { groupAgendaByDate, isSameMonth } from '@/domain/monthTable';
 import {
   agendaPriority,
   filterAgendaItems,
-  mergeAgendaUnique,
   projectOverdueOntoToday,
   weeklyGoalItems,
   type ListFilter,
 } from '@/domain/services/agendaService';
-import type { EditScope } from '@/domain/services/taskService';
+import { groupDayByFolder, groupWeekByFolder, type WeekFolderGroups } from '@/domain/plannerGroups';
+import { selectEmptyFoldersForTasks } from '@/domain/taskListFolders';
 import { AgendaRow } from '@/ui/components/AgendaRow';
 import { AgendaFilterBar, useAgendaFilterState } from '@/ui/components/AgendaFilterBar';
-import { choose } from '@/ui/components/dialogs';
 import { DatePickerModal } from '@/ui/components/Pickers';
 import { MonthTaskGrid } from '@/ui/components/MonthTaskGrid';
-import { TaskEditModal } from '@/ui/components/TaskEditModal';
+import { PlannerDayGroups, PlannerWeekGroups } from '@/ui/components/PlannerFolderGroups';
 import { AppText, Button, Card, ErrorState, IconButton, LoadingState, SectionHeader } from '@/ui/components/primitives';
 import { useQuery, useTheme } from '@/ui/hooks';
-import { useServices } from '@/state/appStore';
+import { useServices, useSettings } from '@/state/appStore';
 import { radius, spacing } from '@/ui/theme';
 
 /** Notion weekly planner: Monday–Sunday. */
@@ -50,17 +49,6 @@ export function shiftWeekAnchor(anchor: DateKey, dir: 1 | -1): DateKey {
 
 export function shiftMonthAnchor(anchor: DateKey, dir: 1 | -1): DateKey {
   return toDateKey(addMonths(fromDateKey(anchor), dir));
-}
-
-function AgendaList({ items, testPrefix, emptyText }: { items: Agenda[]; testPrefix: string; emptyText: string }) {
-  if (!items.length) return <AppText muted>{emptyText}</AppText>;
-  return (
-    <View style={{ gap: spacing.sm }}>
-      {items.map((a, i) => (
-        <AgendaRow key={a.occurrence.id} a={a} testID={`${testPrefix}-${i}`} />
-      ))}
-    </View>
-  );
 }
 
 function applyPlannerFilter(items: Agenda[], filter: ListFilter, today: DateKey, now: Date): Agenda[] {
@@ -108,6 +96,28 @@ export function WeeklyGoalsSection({
   );
 }
 
+function weekDayTasks(groups: WeekFolderGroups, date: DateKey): Agenda[] {
+  const inFolders = groups.folders.flatMap((g) => g.days.find((d) => d.date === date)?.tasks ?? []);
+  const loose = groups.unassignedByDay.find((d) => d.date === date)?.tasks ?? [];
+  return [...inFolders, ...loose];
+}
+
+function usePlannerFolderContext(today: DateKey, filter: { text: string; status?: ListFilter['status']; hasPriority: boolean; hasCategory: boolean }) {
+  const showEmpty = useSettings().showEmptyFoldersOnTasks;
+  const cards = useQuery((s) => s.folders.cards(), []);
+  const overall = new Map((cards.data ?? []).map((c) => [c.id, c.progress]));
+  const emptyFolders = selectEmptyFoldersForTasks(cards.data ?? [], {
+    enabled: showEmpty,
+    search: filter.text,
+    status: filter.status,
+    hasPriority: filter.hasPriority,
+    hasCategory: filter.hasCategory,
+    includeOnThisKind: true,
+    today,
+  });
+  return { overall, emptyFolders };
+}
+
 export function DashboardWeekView({
   anchor,
   today,
@@ -127,9 +137,29 @@ export function DashboardWeekView({
   const overdue = useQuery((s) => s.agenda.pendingOverdueBeforeToday(), []);
   const filterCtl = useAgendaFilterState({ sort: 'date', status: 'all' });
   const now = services.clock.now();
+  const folderCtx = usePlannerFolderContext(today, {
+    text: filterCtl.state.text,
+    status: filterCtl.state.status,
+    hasPriority: !!filterCtl.state.priority,
+    hasCategory: !!filterCtl.state.categoryId,
+  });
   const overdueRaw = overdue.data ?? [];
   const filtered = items.data ? applyPlannerFilter(items.data, filterCtl.filter, today, now) : [];
   const overdueFiltered = applyPlannerFilter(overdueRaw, filterCtl.filter, today, now);
+  const days = Array.from({ length: 7 }, (_, i) => addDaysKey(start, i));
+  const earlier = overdueFiltered.filter((a) => a.occurrence.date < start);
+  const grouped = groupWeekByFolder(days, [...filtered, ...earlier], {
+    today,
+    now,
+    sort: filterCtl.filter.sort,
+    ...folderCtx,
+  });
+  const allGrouped = groupWeekByFolder(days, [...(items.data ?? []), ...overdueRaw.filter((a) => a.occurrence.date < start)], {
+    today,
+    now,
+    sort: 'date',
+    overall: folderCtx.overall,
+  });
   const title = `${formatDateKey(start, 'MMM d')} – ${formatDateKey(end, start.slice(5, 7) === end.slice(5, 7) ? 'd' : 'MMM d')}`;
 
   return (
@@ -152,49 +182,42 @@ export function DashboardWeekView({
         onPriority={filterCtl.setPriority}
         onCategoryId={filterCtl.setCategoryId}
         onSort={filterCtl.setSort}
-        matchCount={items.data ? filtered.length : undefined}
+        matchCount={items.data ? filtered.length + earlier.length : undefined}
       />
       <WeeklyGoalsSection anchor={anchor} testID="dash-week-goals" />
       {items.error ? <ErrorState message={items.error} onRetry={items.reload} /> : null}
       {!items.data && !items.error ? <LoadingState /> : null}
-      {items.data
-        ? Array.from({ length: 7 }, (_, i) => addDaysKey(start, i)).map((d) => {
-            const onDate = filtered.filter((a) => a.occurrence.date === d);
-            const list = d === today ? mergeAgendaUnique(overdueFiltered, onDate) : onDate;
-            const dayAllBase = items.data!.filter((a) => a.occurrence.date === d);
-            const dayAll = d === today ? mergeAgendaUnique(overdueRaw, dayAllBase) : dayAllBase;
+      {items.data ? (
+        <View style={{ gap: spacing.sm }} testID="dash-week-days">
+          {days.map((d) => {
+            const dayAll = weekDayTasks(allGrouped, d);
+            const shown = weekDayTasks(grouped, d);
             const done = dayAll.filter((a) => a.occurrence.status === 'completed').length;
             return (
-              <View key={d} style={{ gap: spacing.sm }} testID={`dash-week-${d}`}>
-                <View style={styles.weekHeader}>
-                  <View style={{ flex: 1 }}>
-                    <AppText variant="heading" color={d === today ? p.primary : p.text}>
-                      {formatDateKey(d, 'EEEE')}
-                      {d === today ? ' · Today' : ''}
-                    </AppText>
-                    <AppText variant="caption" muted>
-                      {formatDateKey(d, 'MMM d')}
-                      {dayAll.length ? ` · ${done}/${dayAll.length} done` : ' · Free'}
-                      {list.length !== dayAll.length ? ` · ${list.length} shown` : ''}
-                    </AppText>
-                  </View>
-                  <IconButton
-                    icon="add-circle-outline"
-                    label={`Add on ${formatDateKey(d, 'EEEE')}`}
-                    color={p.primary}
-                    onPress={() => router.push({ pathname: '/quick-add', params: { date: d } })}
-                    testID={`dash-week-add-${d}`}
-                  />
+              <View key={d} style={styles.weekHeader} testID={`dash-week-${d}`}>
+                <View style={{ flex: 1 }}>
+                  <AppText variant="heading" color={d === today ? p.primary : p.text}>
+                    {formatDateKey(d, 'EEE d')}
+                    {d === today ? ' · Today' : ''}
+                  </AppText>
+                  <AppText variant="caption" muted>
+                    {dayAll.length ? `${done}/${dayAll.length} done` : 'Free'}
+                    {shown.length !== dayAll.length ? ` · ${shown.length} shown` : ''}
+                  </AppText>
                 </View>
-                <AgendaList
-                  items={list}
-                  testPrefix={`dash-week-item-${d}`}
-                  emptyText={dayAll.length ? 'No matches for this day.' : 'No tasks planned.'}
+                <IconButton
+                  icon="add-circle-outline"
+                  label={`Add on ${formatDateKey(d, 'EEEE')}`}
+                  color={p.primary}
+                  onPress={() => router.push({ pathname: '/quick-add', params: { date: d } })}
+                  testID={`dash-week-add-${d}`}
                 />
               </View>
             );
-          })
-        : null}
+          })}
+        </View>
+      ) : null}
+      {items.data ? <PlannerWeekGroups groups={grouped} today={today} testID="dash-week-groups" /> : null}
     </View>
   );
 }
@@ -214,7 +237,6 @@ export function DashboardMonthView({
 }) {
   const services = useServices();
   const [goToOpen, setGoToOpen] = useState(false);
-  const [edit, setEdit] = useState<{ id: string; scope: EditScope } | null>(null);
   const monthStart = `${anchor.slice(0, 7)}-01` as DateKey;
   const monthEnd = toDateKey(addDays(addMonths(fromDateKey(monthStart), 1), -1));
   const gridFirst = toDateKey(startOfWeek(fromDateKey(monthStart), { weekStartsOn: 0 }));
@@ -223,26 +245,18 @@ export function DashboardMonthView({
   const overdue = useQuery((s) => s.agenda.pendingOverdueBeforeToday(), []);
   const day = useQuery((s) => s.agenda.day(anchor), [anchor]);
   const filterCtl = useAgendaFilterState({ sort: 'date', status: 'all' });
+  const folderCtx = usePlannerFolderContext(today, {
+    text: filterCtl.state.text,
+    status: filterCtl.state.status,
+    hasPriority: !!filterCtl.state.priority,
+    hasCategory: !!filterCtl.state.categoryId,
+  });
   const now = services.clock.now();
   const filteredRange = range.data ? applyPlannerFilter(range.data, filterCtl.filter, today, now) : [];
   const overdueFiltered = applyPlannerFilter(overdue.data ?? [], filterCtl.filter, today, now);
   const itemsByDate = projectOverdueOntoToday(groupAgendaByDate(filteredRange), overdueFiltered, today);
   const filteredDay = day.data ? applyPlannerFilter(day.data, filterCtl.filter, today, now) : [];
-
-  async function openTask(a: Agenda) {
-    onSelectDay(a.occurrence.date);
-    let scope: EditScope = 'series';
-    if (a.rule) {
-      const picked = await choose<EditScope>('Edit recurring item', 'Which occurrences do you want to change?', [
-        { label: 'This occurrence only', value: 'occurrence', tone: 'secondary' },
-        { label: 'This and following', value: 'future', tone: 'secondary' },
-        { label: 'Entire series', value: 'series', tone: 'primary' },
-      ]);
-      if (!picked) return;
-      scope = picked;
-    }
-    setEdit({ id: a.occurrence.id, scope });
-  }
+  const dayGroups = groupDayByFolder(filteredDay, { today, now, ...folderCtx });
 
   return (
     <View style={{ gap: spacing.md }} testID="dashboard-month">
@@ -286,11 +300,11 @@ export function DashboardMonthView({
             today={today}
             itemsByDate={itemsByDate}
             now={now}
+            presentation="folders"
             onSelectDay={onSelectDay}
-            onSelectTask={openTask}
           />
           <AppText variant="caption" muted style={{ marginTop: spacing.sm, textAlign: 'center' }}>
-            Main tasks appear in each day. Tap a task to edit; nested subtasks stay in the editor.
+            Days show folder colors and counts. Open a day for its tasks.
           </AppText>
         </Card>
       ) : null}
@@ -298,10 +312,13 @@ export function DashboardMonthView({
       {day.error ? <ErrorState message={day.error} onRetry={day.reload} /> : null}
       {!day.data && !day.error ? <LoadingState /> : null}
       {day.data ? (
-        <AgendaList
-          items={filteredDay}
-          testPrefix="dash-month-item"
+        <PlannerDayGroups
+          groups={dayGroups}
+          today={today}
+          rangeLabel="This day"
+          testID="dash-month-groups"
           emptyText={day.data.length ? 'No matches for this day.' : 'Nothing scheduled. Tap + to add.'}
+          showTaskDate={(a) => a.occurrence.date !== anchor}
         />
       ) : null}
       <Button label="Add to this day" icon="add" tone="secondary" onPress={() => router.push({ pathname: '/quick-add', params: { date: anchor } })} />
@@ -312,16 +329,6 @@ export function DashboardMonthView({
         title="Go to date"
         onChange={onSelectDay}
         onClose={() => setGoToOpen(false)}
-      />
-      <TaskEditModal
-        visible={!!edit}
-        occurrenceId={edit?.id ?? null}
-        scope={edit?.scope ?? 'series'}
-        onClose={() => {
-          setEdit(null);
-          range.reload();
-          day.reload();
-        }}
       />
     </View>
   );

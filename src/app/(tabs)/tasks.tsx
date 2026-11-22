@@ -4,7 +4,7 @@ import { FlatList, ScrollView, StyleSheet, View } from 'react-native';
 import { todayKey } from '@/domain/dates';
 import { PRIORITIES, type ItemKind, type Priority } from '@/domain/models';
 import type { FolderAssignmentFilter, FolderTargetFilter, SortKey, StatusFilter } from '@/domain/services/agendaService';
-import { groupFolderTasks, selectEmptyFoldersForTasks } from '@/domain/taskListFolders';
+import { groupFolderTasks, selectEmptyFoldersForTasks, type TaskListEntry } from '@/domain/taskListFolders';
 import { useAppStore } from '@/state/appStore';
 import { AgendaRow, PRIORITY_LABEL } from '@/ui/components/AgendaRow';
 import { FolderTaskCard } from '@/ui/components/FolderTaskCard';
@@ -46,6 +46,7 @@ export default function TasksScreen() {
   const [folderAssignment, setFolderAssignment] = useState<FolderAssignmentFilter>('any');
   const [folderTarget, setFolderTarget] = useState<FolderTargetFilter>('any');
   const [sort, setSort] = useState<SortKey>('date');
+  const [groupByFolder, setGroupByFolder] = useState(false);
   const [picker, setPicker] = useState<null | 'sort' | 'category' | 'priority' | 'folder' | 'folderTarget'>(null);
   const categories = useQuery((s) => s.categories.list(), []);
   const folders = useQuery((s) => s.folders.cards(), []);
@@ -67,7 +68,8 @@ export default function TasksScreen() {
   );
   const category = categories.data?.find((c) => c.id === categoryId);
   const rows = useMemo(() => {
-    if (!list.data) return [];
+    if (!list.data) return [] as TaskListEntry[];
+    if (!groupByFolder) return list.data.map((agenda): TaskListEntry => ({ kind: 'item', agenda }));
     const empty = selectEmptyFoldersForTasks(folders.data ?? [], {
       enabled: showEmpty,
       search: text,
@@ -81,7 +83,7 @@ export default function TasksScreen() {
       today,
     });
     return groupFolderTasks(list.data, { search: text, emptyFolders: empty });
-  }, [list.data, folders.data, showEmpty, text, status, priority, categoryId, folderTarget, folderId, folderAssignment, kind, today]);
+  }, [list.data, folders.data, showEmpty, text, status, priority, categoryId, folderTarget, folderId, folderAssignment, kind, today, groupByFolder]);
   const folderRows = rows.filter((row) => row.kind === 'folder').length;
   const itemRows = rows.length - folderRows;
 
@@ -105,6 +107,7 @@ export default function TasksScreen() {
         <Chip testID="filter-priority" icon="flag" label={priority ? PRIORITY_LABEL[priority] : 'Priority'} color={priority ? p.priority[priority] : undefined} selected={!!priority} onPress={() => setPicker('priority')} />
         <Chip testID="filter-category" label={category?.name ?? 'Category'} icon={category ? undefined : 'pricetag-outline'} color={category?.color} selected={!!category} onPress={() => setPicker('category')} />
         <Chip testID="filter-sort" icon="swap-vertical" label={`Sort: ${SORTS.find((s) => s.value === sort)!.label}`} onPress={() => setPicker('sort')} />
+        <Chip testID="group-by-folder" icon="folder-outline" label="Group by folder" selected={groupByFolder} onPress={() => setGroupByFolder((v) => !v)} />
         <Chip
           testID="filter-folder"
           icon="folder-outline"
@@ -127,8 +130,10 @@ export default function TasksScreen() {
       </ScrollView>
       {list.data ? (
         <AppText variant="caption" muted>
-          {folderRows
-            ? `${itemRows} individual · ${folderRows} folder${folderRows === 1 ? '' : 's'}`
+          {groupByFolder
+            ? folderRows
+              ? `${itemRows} individual · ${folderRows} folder${folderRows === 1 ? '' : 's'}`
+              : `${itemRows} item${itemRows === 1 ? '' : 's'}`
             : `${itemRows} item${itemRows === 1 ? '' : 's'}`}
         </AppText>
       ) : null}

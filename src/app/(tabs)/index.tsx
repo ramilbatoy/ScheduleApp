@@ -5,6 +5,8 @@ import { RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
 import { formatDateKey, todayKey } from '@/domain/dates';
 import type { Agenda, DateKey } from '@/domain/models';
 import { filterAgendaItems, matchesNearDueWindow } from '@/domain/services/agendaService';
+import { groupDayByFolder } from '@/domain/plannerGroups';
+import { selectEmptyFoldersForTasks } from '@/domain/taskListFolders';
 import { useAppStore, useServices, useSettings } from '@/state/appStore';
 import { AgendaRow, formatDeadline } from '@/ui/components/AgendaRow';
 import { AgendaFilterBar, AGENDA_SORT_OPTIONS, useAgendaFilterState } from '@/ui/components/AgendaFilterBar';
@@ -17,6 +19,7 @@ import {
   shiftMonthAnchor,
   shiftWeekAnchor,
 } from '@/ui/components/DashboardPlanner';
+import { PlannerDayGroups } from '@/ui/components/PlannerFolderGroups';
 import { AppText, Button, Card, Chip, EmptyState, ErrorState, LoadingState, SectionHeader, Segmented } from '@/ui/components/primitives';
 import { QuickAddButton } from '@/ui/components/QuickAddButton';
 import { useAction, useQuery, useTheme } from '@/ui/hooks';
@@ -215,10 +218,24 @@ function TodayDashboard() {
   const services = useServices();
   const today = todayKey(services.clock);
   const dash = useQuery((s) => s.agenda.dashboard(), []);
+  const cards = useQuery((s) => s.folders.cards(), []);
+  const filterCtl = useAgendaFilterState({ sort: 'date', status: 'all' });
+  const now = services.clock.now();
   const d = dash.data;
   const pastOverdue = d?.overdue.filter((a) => a.occurrence.date < d.today) ?? [];
-  const pendingTasks = d?.tasks.filter((a) => a.occurrence.status === 'pending') ?? [];
-  const doneTasks = d?.tasks.filter((a) => a.occurrence.status === 'completed') ?? [];
+  const overall = new Map((cards.data ?? []).map((c) => [c.id, c.progress]));
+  const emptyFolders = selectEmptyFoldersForTasks(cards.data ?? [], {
+    enabled: settings.showEmptyFoldersOnTasks,
+    search: filterCtl.state.text,
+    status: filterCtl.state.status,
+    hasPriority: !!filterCtl.state.priority,
+    hasCategory: !!filterCtl.state.categoryId,
+    includeOnThisKind: true,
+    today: d?.today ?? today,
+  });
+  const filteredEvents = d ? filterAgendaItems(d.events, filterCtl.filter, d.today, now) : [];
+  const filteredTasks = d ? filterAgendaItems(d.tasks, filterCtl.filter, d.today, now) : [];
+  const todayGroups = groupDayByFolder(filteredTasks, { today: d?.today ?? today, now, overall, emptyFolders });
 
   return (
     <View style={{ gap: spacing.md }} testID="dashboard-today">
@@ -260,27 +277,36 @@ function TodayDashboard() {
             </AppText>
           ) : null}
 
-          <SectionHeader title="Schedule" count={d.events.length} />
-          {d.events.length ? (
-            <List items={d.events} testPrefix="event" />
+          <AgendaFilterBar
+            testID="dash-today-filter"
+            state={filterCtl.state}
+            onText={filterCtl.setText}
+            onStatus={filterCtl.setStatus}
+            onPriority={filterCtl.setPriority}
+            onCategoryId={filterCtl.setCategoryId}
+            onSort={filterCtl.setSort}
+            matchCount={filteredEvents.length + filteredTasks.length}
+          />
+
+          <SectionHeader title="Schedule" count={filteredEvents.length} />
+          {filteredEvents.length ? (
+            <List items={filteredEvents} testPrefix="event" />
           ) : (
-            <AppText muted>No events today.</AppText>
+            <AppText muted>{d.events.length ? 'No events match these filters.' : 'No events today.'}</AppText>
           )}
 
-          <SectionHeader title="To-do" count={pendingTasks.length} />
-          {pendingTasks.length ? (
-            <View style={{ gap: spacing.sm }}>
-              {pendingTasks.map((a, i) => (
-                <AgendaRow
-                  key={a.occurrence.id}
-                  a={a}
-                  showDate={a.occurrence.date < d.today}
-                  testID={`todo-${i}`}
-                />
-              ))}
-            </View>
-          ) : d.tasks.length ? (
-            <AppText muted>All of today&apos;s tasks are done.</AppText>
+          <SectionHeader title="Tasks" count={filteredTasks.length} />
+          {d.tasks.length || emptyFolders.length ? (
+            <PlannerDayGroups
+              groups={todayGroups}
+              today={d.today}
+              rangeLabel="Today"
+              testID="dash-today-groups"
+              emptyText={d.tasks.length ? 'No tasks match these filters.' : 'No tasks today.'}
+              showTaskDate={(a) => a.occurrence.date < d.today}
+            />
+          ) : d.events.length ? (
+            <AppText muted>No tasks today.</AppText>
           ) : (
             <EmptyState
               icon="checkbox-outline"
@@ -289,13 +315,6 @@ function TodayDashboard() {
               action={<Button label="Add a task" tone="secondary" icon="add" onPress={() => router.push('/quick-add')} />}
             />
           )}
-
-          {doneTasks.length ? (
-            <>
-              <SectionHeader title="Completed" count={doneTasks.length} />
-              <List items={doneTasks} testPrefix="done" />
-            </>
-          ) : null}
 
           <NearDueTracker upcoming={d.upcomingDeadlines} today={d.today} />
           <WeeklyGoalsSection anchor={today} testID="today-weekly-goals" />
