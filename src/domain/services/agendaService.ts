@@ -1,10 +1,11 @@
 import type { Database } from '../../db/types';
-import { addDaysKey, combineDateTime, minutesOf, todayKey, type Clock } from '../dates';
+import { addDaysKey, combineDateTime, diffDays, formatDateKey, isDateKey, minutesOf, toDateKey, todayKey, type Clock } from '../dates';
 import {
   PRIORITY_RANK,
   type Agenda,
   type Category,
   type DateKey,
+  type HistoryEntry,
   type ItemKind,
   type Occurrence,
   type Priority,
@@ -62,6 +63,160 @@ export function isOverdue(a: Agenda, today: DateKey, now: Date): boolean {
   if (a.occurrence.status !== 'pending') return false;
   if (a.task.kind === 'task' && a.occurrence.date < today) return true;
   return !!a.task.deadlineAt && new Date(a.task.deadlineAt) < now;
+}
+
+export interface OverdueTimeline {
+  /** First assigned civil date: `original_occurrence_date`, else the current occurrence date. */
+  startedOn: DateKey;
+  /** First civil date the item was overdue. Never synthesized beyond stored dates. */
+  overdueSince: DateKey;
+  /** Calendar days from `overdueSince` to `today` (0 on the day it became overdue). */
+  daysOverdue: number;
+  /** The assigned day, or a carry that fully explains the original day, is before today. */
+  datePassed: boolean;
+  /** Deadline instant is before `now`. */
+  deadlinePassed: boolean;
+}
+
+function pushDate(candidates: DateKey[], key: DateKey, today: DateKey) {
+  if (key <= today) candidates.push(key);
+}
+
+function deadlineDay(iso: string): DateKey | null {
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return null;
+  const key = toDateKey(d);
+  return isDateKey(key) ? key : null;
+}
+
+/**
+ * When an overdue item started, and the first civil date it was overdue.
+ * Sources, in order: current occurrence date (day after a past assignment),
+ * deadline's local date, a carry whose count equals the span back to
+ * `original_occurrence_date`, and history (`carried_forward`, or `date_changed`
+ * only when the previous date had already elapsed). Returns null when the item
+ * is not overdue or no stored date supports a start.
+ */
+export function overdueTimeline(a: Agenda, today: DateKey, now: Date, history?: readonly HistoryEntry[]): OverdueTimeline | null {
+  if (!isOverdue(a, today, now)) return null;
+  const startedOn = a.occurrence.originalDate ?? a.occurrence.date;
+  if (!isDateKey(startedOn)) return null;
+  const deadlinePassed = !!a.task.deadlineAt && new Date(a.task.deadlineAt) < now;
+  const assignedPassed = a.task.kind === 'task' && a.occurrence.date < today;
+  const original = a.occurrence.originalDate;
+  const carryExplainsOriginal =
+    a.task.kind === 'task' &&
+    a.occurrence.isCarriedForward &&
+    !!original &&
+    isDateKey(original) &&
+    a.occurrence.carryForwardCount > 0 &&
+    original < a.occurrence.date &&
+    diffDays(a.occurrence.date, original) === a.occurrence.carryForwardCount;
+  const datePassed = assignedPassed || carryExplainsOriginal;
+
+  const candidates: DateKey[] = [];
+  if (assignedPassed && isDateKey(a.occurrence.date)) pushDate(candidates, addDaysKey(a.occurrence.date, 1), today);
+  if (carryExplainsOriginal && original) pushDate(candidates, addDaysKey(original, 1), today);
+  if (deadlinePassed && a.task.deadlineAt) {
+    const day = deadlineDay(a.task.deadlineAt);
+    if (day) pushDate(candidates, day, today);
+  }
+  for (const h of history ?? a.history ?? []) {
+    if (h.occurrenceId && h.occurrenceId !== a.occurrence.id) continue;
+    if (!h.fromDate || !isDateKey(h.fromDate)) continue;
+    if (h.eventType === 'carried_forward') {
+      pushDate(candidates, addDaysKey(h.fromDate, 1), today);
+    } else if (h.eventType === 'date_changed') {
+      const changed = new Date(h.createdAt);
+      if (Number.isNaN(changed.getTime())) continue;
+      const changedOn = toDateKey(changed);
+      if (!isDateKey(changedOn) || !(h.fromDate < changedOn)) continue;
+      pushDate(candidates, addDaysKey(h.fromDate, 1), today);
+    }
+  }
+  if (!candidates.length) return null;
+  const overdueSince = candidates.reduce((min, d) => (d < min ? d : min));
+  return {
+    startedOn,
+    overdueSince,
+    daysOverdue: Math.max(0, diffDays(today, overdueSince)),
+    datePassed,
+    deadlinePassed,
+  };
+}
+
+function shortCivilDate(key: DateKey, today: DateKey): string {
+  return formatDateKey(key, key.slice(0, 4) === today.slice(0, 4) ? 'MMM d' : 'MMM d, yyyy');
+}
+
+/** Short labels for badges and month cells, e.g. "Started Mar 1" / "Overdue since Mar 2 · 3 days". */
+export function formatOverdueLabels(t: OverdueTimeline, today: DateKey): { started: string; overdue: string } {
+  const days = t.daysOverdue > 0 ? ` · ${t.daysOverdue} day${t.daysOverdue === 1 ? '' : 's'}` : '';
+  const since = shortCivilDate(t.overdueSince, today);
+  return {
+    started: `Started ${shortCivilDate(t.startedOn, today)}`,
+    overdue: t.datePassed ? `Overdue since ${since}${days}` : `Past deadline since ${since}${days}`,
+  };
+}
+
+/** Full dates for the detail screen. */
+export function formatOverdueDetail(t: OverdueTimeline): { started: string; overdue: string } {
+  const days = t.daysOverdue > 0 ? ` · ${t.daysOverdue} day${t.daysOverdue === 1 ? '' : 's'}` : '';
+  const prefix = t.datePassed ? 'Overdue since' : 'Past deadline since';
+  return {
+    started: formatDateKey(t.startedOn, 'EEEE, MMM d, yyyy'),
+    overdue: `${prefix} ${formatDateKey(t.overdueSince, 'EEEE, MMM d, yyyy')}${days}`,
+  };
+}
+
+/** Local civil date of a deadline instant, or null when the timestamp is unusable. */
+export function deadlineDateKey(iso: string | null): DateKey | null {
+  if (!iso) return null;
+  return deadlineDay(iso);
+}
+
+/**
+ * Near-due window. Deadline matching uses the device's local civil date,
+ * not the UTC calendar day embedded in the ISO string.
+ */
+export function matchesNearDueWindow(
+  a: Agenda,
+  mode: 'any' | 'today' | 'week',
+  today: DateKey,
+  weekStart: DateKey,
+  weekEnd: DateKey,
+): boolean {
+  if (mode === 'any') return true;
+  const due = deadlineDateKey(a.task.deadlineAt);
+  const hits = (start: DateKey, end: DateKey) =>
+    (a.occurrence.date >= start && a.occurrence.date <= end) || (due !== null && due >= start && due <= end);
+  if (mode === 'today') return hits(today, today);
+  return hits(weekStart, weekEnd);
+}
+
+/**
+ * Pending tasks for the weekly urgency list. When `today` falls in the week,
+ * unfinished tasks dated before the week (overdue-on-today, not yet carried)
+ * are included — their occurrence date is outside `weekItems`.
+ */
+export function weeklyGoalItems(
+  weekItems: Agenda[],
+  overduePending: Agenda[],
+  weekStart: DateKey,
+  weekEnd: DateKey,
+  today: DateKey,
+): Agenda[] {
+  const pendingTask = (a: Agenda) => a.task.kind === 'task' && a.occurrence.status === 'pending';
+  const inWeek = weekItems.filter(pendingTask);
+  const beforeWeek =
+    today >= weekStart && today <= weekEnd
+      ? overduePending.filter((a) => pendingTask(a) && a.occurrence.date < weekStart)
+      : [];
+  return mergeAgendaUnique(beforeWeek, inWeek).sort((a, b) => {
+    const byPriority = PRIORITY_RANK[b.task.priority] - PRIORITY_RANK[a.task.priority];
+    if (byPriority) return byPriority;
+    return a.occurrence.date < b.occurrence.date ? -1 : a.occurrence.date > b.occurrence.date ? 1 : 0;
+  });
 }
 
 /** Dedupe by occurrence id, then sort. First list wins when ids collide. */
@@ -188,6 +343,15 @@ export class AgendaService {
       list.push(s);
       byOcc.set(s.occurrenceId, list);
     }
+    const taskIds = [...tasks.keys()];
+    const historyByTask = new Map<string, HistoryEntry[]>();
+    if (taskIds.length) {
+      for (const h of await repos.history.list({ task_id: { in: taskIds } })) {
+        const list = historyByTask.get(h.taskId) ?? [];
+        list.push(h);
+        historyByTask.set(h.taskId, list);
+      }
+    }
     const out: Agenda[] = [];
     for (const occurrence of occs) {
       const task = tasks.get(occurrence.taskId);
@@ -199,6 +363,7 @@ export class AgendaService {
         rule: task.recurringRuleId ? (rules.get(task.recurringRuleId) ?? null) : null,
         category: task.categoryId ? (categories.get(task.categoryId) ?? null) : null,
         subtasks,
+        history: historyByTask.get(occurrence.taskId) ?? [],
       });
     }
     return out;

@@ -4,7 +4,7 @@ import { Pressable, StyleSheet, View } from 'react-native';
 
 import { formatDateKey, formatTime, todayKey } from '@/domain/dates';
 import type { Agenda } from '@/domain/models';
-import { displayTitle, isOverdue } from '@/domain/services/agendaService';
+import { displayTitle, formatOverdueLabels, isOverdue, overdueTimeline } from '@/domain/services/agendaService';
 import { useAppStore } from '@/state/appStore';
 
 import { useAction, useTheme } from '../hooks';
@@ -26,6 +26,8 @@ export function ItemBadges({ a, showDate }: { a: Agenda; showDate?: boolean }) {
   const now = services ? services.clock.now() : new Date();
   const o = a.occurrence;
   const overdue = isOverdue(a, today, now);
+  const timeline = overdue ? overdueTimeline(a, today, now) : null;
+  const overdueLabels = timeline ? formatOverdueLabels(timeline, today) : null;
   const deadlinePassed = !!a.task.deadlineAt && new Date(a.task.deadlineAt) < now && o.status === 'pending';
   return (
     <View style={styles.badges}>
@@ -37,7 +39,14 @@ export function ItemBadges({ a, showDate }: { a: Agenda; showDate?: boolean }) {
       {o.isCarriedForward && o.status === 'pending' ? (
         <Badge label={`Carried over${o.carryForwardCount > 1 ? ` ×${o.carryForwardCount}` : ''}`} color={p.warning} background={p.warningSoft} icon="return-down-forward" />
       ) : null}
-      {overdue ? <Badge label={deadlinePassed ? 'Past deadline' : 'Overdue'} color={p.danger} background={p.dangerSoft} icon="alert-circle" /> : null}
+      {overdueLabels ? (
+        <View testID={`overdue-timeline-${o.id}`} style={styles.badges}>
+          <Badge label={overdueLabels.started} color={p.textMuted} background={p.surfaceAlt} icon="play-outline" />
+          <Badge label={overdueLabels.overdue} color={p.danger} background={p.dangerSoft} icon="alert-circle" />
+        </View>
+      ) : overdue ? (
+        <Badge label={deadlinePassed ? 'Past deadline' : 'Overdue'} color={p.danger} background={p.dangerSoft} icon="alert-circle" />
+      ) : null}
       {a.rule ? <Badge label="Repeats" color={p.info} background={p.infoSoft} icon="repeat" /> : null}
       {a.task.deadlineAt && !deadlinePassed ? (
         <Badge label={`Due ${formatDeadline(a.task.deadlineAt)}`} color={p.textMuted} background={p.surfaceAlt} icon="hourglass-outline" />

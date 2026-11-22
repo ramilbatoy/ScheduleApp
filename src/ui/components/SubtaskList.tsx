@@ -156,6 +156,7 @@ export function SubtaskEditor({
                 testID={`${testID}-toggle-${n.id}`}
                 accessibilityRole="checkbox"
                 accessibilityState={{ checked: n.completed }}
+                accessibilityLabel={n.completed ? `Mark ${n.title} not done` : `Mark ${n.title} done`}
                 onPress={() => run((s) => s.subtasks.toggleComplete(n.id))}
                 style={styles.miniCheck}
                 disabled={readOnly}>

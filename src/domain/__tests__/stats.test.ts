@@ -69,6 +69,16 @@ describe.each(DRIVERS)('statistics (%s)', (_name, open) => {
     expect((await app.stats.report('day')).period.overdue).toBe(1);
   });
 
+  it('counts still-open tasks from earlier days in today when carry-forward is off', async () => {
+    await app.settings.set('autoCarryForward', false);
+    await app.tasks.create(item({ title: 'Old', date: '2026-03-08' }));
+    await app.runMaintenance();
+    const day = await app.stats.report('day');
+    expect(day.period).toMatchObject({ total: 1, pending: 1, overdue: 1, completed: 0, completionRate: 0 });
+    expect(day.trend.at(-1)).toEqual({ date: '2026-03-10', total: 1, completed: 0 });
+    expect(day.categories).toEqual([expect.objectContaining({ name: 'Uncategorized', total: 1, completed: 0 })]);
+  });
+
   it('tracks daily trend, streaks, best day and weekday productivity by completion time', async () => {
     for (const [day, n] of [['2026-03-08', 1], ['2026-03-09', 3], ['2026-03-10', 2]] as const) {
       clock.set(`${day}T09:00:00`);

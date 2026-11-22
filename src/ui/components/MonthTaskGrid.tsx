@@ -4,7 +4,7 @@ import { Pressable, StyleSheet, View } from 'react-native';
 import { fromDateKey } from '@/domain/dates';
 import type { Agenda, DateKey } from '@/domain/models';
 import { cellTaskPreview, monthPrefix } from '@/domain/monthTable';
-import { displayTitle, isOverdue } from '@/domain/services/agendaService';
+import { displayTitle, formatOverdueLabels, isOverdue, overdueTimeline } from '@/domain/services/agendaService';
 
 import { useTheme } from '../hooks';
 import { radius } from '../theme';
@@ -82,6 +82,8 @@ export function MonthTaskGrid({
                   {preview.shown.map((a) => {
                     const done = a.occurrence.status === 'completed';
                     const overdue = isOverdue(a, today, now);
+                    const timeline = overdue && !done ? overdueTimeline(a, today, now) : null;
+                    const overdueLabels = timeline ? formatOverdueLabels(timeline, today) : null;
                     const accent =
                       a.task.kind === 'event' ? (a.category?.color ?? p.primary) : overdue ? p.danger : p.priority[a.task.priority];
                     const title = displayTitle(a);
@@ -90,7 +92,9 @@ export function MonthTaskGrid({
                         key={a.occurrence.id}
                         testID={`month-cell-task-${a.occurrence.id}`}
                         accessibilityRole="button"
-                        accessibilityLabel={overdue ? `Edit overdue ${title}` : `Edit ${title}`}
+                        accessibilityLabel={
+                          overdueLabels ? `Edit ${title}, ${overdueLabels.started}, ${overdueLabels.overdue}` : overdue ? `Edit overdue ${title}` : `Edit ${title}`
+                        }
                         onPress={(e) => {
                           // Avoid also selecting the day when opening a chip (web).
                           (e as { stopPropagation?: () => void }).stopPropagation?.();
@@ -104,6 +108,13 @@ export function MonthTaskGrid({
                           style={done ? { textDecorationLine: 'line-through', fontSize: 10, lineHeight: 13 } : { fontSize: 10, lineHeight: 13 }}>
                           {overdue && !done ? `Overdue · ${title}` : title}
                         </AppText>
+                        {overdueLabels ? (
+                          <AppText variant="caption" numberOfLines={2} color={p.danger} testID={`month-cell-overdue-${a.occurrence.id}`} style={{ fontSize: 9, lineHeight: 11 }}>
+                            {overdueLabels.started}
+                            {'\n'}
+                            {overdueLabels.overdue}
+                          </AppText>
+                        ) : null}
                       </Pressable>
                     );
                   })}

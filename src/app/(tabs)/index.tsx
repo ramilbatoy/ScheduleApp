@@ -5,7 +5,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { formatDateKey, todayKey } from '@/domain/dates';
 import type { Agenda, DateKey } from '@/domain/models';
-import { filterAgendaItems } from '@/domain/services/agendaService';
+import { filterAgendaItems, matchesNearDueWindow } from '@/domain/services/agendaService';
 import { useAppStore, useServices, useSettings } from '@/state/appStore';
 import { AgendaRow, formatDeadline } from '@/ui/components/AgendaRow';
 import { AgendaFilterBar, AGENDA_SORT_OPTIONS, useAgendaFilterState } from '@/ui/components/AgendaFilterBar';
@@ -155,22 +155,7 @@ function NearDueTracker({ upcoming, today }: { upcoming: Agenda[]; today: DateKe
   }, [upcoming, scheduledSoon.data]);
 
   const scoped = useMemo(() => {
-    let items = pool;
-    if (dateMode === 'today') {
-      items = items.filter((a) => {
-        if (a.occurrence.date === today) return true;
-        if (!a.task.deadlineAt) return false;
-        return a.task.deadlineAt.slice(0, 10) === today;
-      });
-    }
-    if (dateMode === 'week') {
-      items = items.filter((a) => {
-        if (a.occurrence.date >= weekStart && a.occurrence.date <= weekEnd) return true;
-        if (!a.task.deadlineAt) return false;
-        const due = a.task.deadlineAt.slice(0, 10);
-        return due >= weekStart && due <= weekEnd;
-      });
-    }
+    const items = pool.filter((a) => matchesNearDueWindow(a, dateMode, today, weekStart, weekEnd));
     return filterAgendaItems(items, filterCtl.filter, today, now);
   }, [pool, dateMode, today, weekStart, weekEnd, filterCtl.state.text, filterCtl.state.status, filterCtl.state.priority, filterCtl.state.categoryId, filterCtl.state.sort, filterCtl.filter, now]);
 

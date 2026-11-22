@@ -3,14 +3,14 @@ import { router } from 'expo-router';
 import { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 
-import { addDaysKey, formatDateKey, fromDateKey, toDateKey } from '@/domain/dates';
+import { addDaysKey, formatDateKey, fromDateKey, todayKey, toDateKey } from '@/domain/dates';
 import type { Agenda, DateKey } from '@/domain/models';
-import { PRIORITY_RANK } from '@/domain/models';
 import { groupAgendaByDate, isSameMonth } from '@/domain/monthTable';
 import {
   filterAgendaItems,
   mergeAgendaUnique,
   projectOverdueOntoToday,
+  weeklyGoalItems,
   type ListFilter,
 } from '@/domain/services/agendaService';
 import type { EditScope } from '@/domain/services/taskService';
@@ -68,13 +68,12 @@ export function WeeklyGoalsSection({
   testID?: string;
 }) {
   const p = useTheme();
+  const services = useServices();
+  const today = todayKey(services.clock);
   const [start, end] = mondayWeekRange(anchor);
   const items = useQuery((s) => s.agenda.range(start, end), [start, end]);
-  const goals =
-    items.data
-      ?.filter((a) => a.task.kind === 'task' && a.occurrence.status === 'pending')
-      .slice()
-      .sort((a, b) => PRIORITY_RANK[b.task.priority] - PRIORITY_RANK[a.task.priority] || a.occurrence.date.localeCompare(b.occurrence.date)) ?? [];
+  const overdue = useQuery((s) => s.agenda.pendingOverdueBeforeToday(), []);
+  const goals = items.data ? weeklyGoalItems(items.data, overdue.data ?? [], start, end, today) : [];
 
   return (
     <View style={{ gap: spacing.sm }} testID={testID}>

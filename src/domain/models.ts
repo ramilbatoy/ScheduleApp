@@ -168,6 +168,12 @@ export interface Agenda {
   category: Category | null;
   /** Nested checklist for this occurrence (empty for events). */
   subtasks: SubtaskNode[];
+  /**
+   * Completion / carry / reschedule history for the parent task, when the
+   * agenda query loaded it. Detail screens always have this. Used to place
+   * "overdue since" on a real earlier lapse instead of only the current date.
+   */
+  history?: HistoryEntry[];
 }
 
 export class ValidationError extends Error {

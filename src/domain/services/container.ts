@@ -1,10 +1,12 @@
 import type { Database } from '../../db/types';
 import { nowIso, systemClock, todayKey, type Clock } from '../dates';
+import { createRepos } from '../repos/repositories';
 import { noopNotifications, type NotificationPort } from '../ports';
 import { AgendaService } from './agendaService';
 import { BackupService, safetyCopyName, type ValidatedBackup } from './backupService';
 import { CarryForwardService, type CarryResult } from './carryForwardService';
 import { CategoryService } from './categoryService';
+import { backfillMissingOriginalDates } from './occurrenceOps';
 import { RecurrenceService } from './recurrenceService';
 import { ReminderService } from './reminderService';
 import { SettingsService } from './settingsService';
@@ -74,6 +76,9 @@ export class AppServices {
    */
   async runMaintenance(): Promise<MaintenanceResult> {
     const generated = await this.recurrence.ensureWindow();
+    await this.db.transaction(async (tx) => {
+      await backfillMissingOriginalDates(createRepos(tx));
+    });
     const carry = await this.carryForward.runAuto();
     const reminderError = await this.resyncReminders();
     this.lastMaintenanceDate = todayKey(this.clock);

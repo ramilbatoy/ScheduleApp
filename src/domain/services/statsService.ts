@@ -145,6 +145,24 @@ export class StatsService {
       if (o.status === 'completed') p.completed++;
     }
 
+    // Day view is "as of today": unfinished tasks still sitting on earlier dates
+    // (overdue-on-today, carry-forward off) count toward today's outstanding work.
+    if (period === 'day') {
+      const pastOpen = (await repos.occurrences.listPendingBefore(today)).filter((o) => {
+        const task = taskById.get(o.taskId);
+        return !!task && !task.deletedAt && task.kind === 'task' && counts(o);
+      });
+      if (pastOpen.length) {
+        totals.total += pastOpen.length;
+        totals.pending += pastOpen.length;
+        totals.overdue += pastOpen.length;
+        totals.completionRate = totals.completed / totals.total;
+        const todayPoint = trendByDate.get(today);
+        if (todayPoint) todayPoint.total += pastOpen.length;
+        inPeriod.push(...pastOpen);
+      }
+    }
+
     const completedByDay = new Map<DateKey, number>();
     for (const o of allCompleted) {
       if (!o.completedAt || !isTask(o)) continue;

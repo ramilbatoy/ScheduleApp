@@ -5,7 +5,7 @@ import { ScrollView, View } from 'react-native';
 import { formatDateKey, formatTime, todayKey } from '@/domain/dates';
 import type { HistoryEntry } from '@/domain/models';
 import { describeRule } from '@/domain/recurrence';
-import { displayTitle } from '@/domain/services/agendaService';
+import { displayTitle, formatOverdueDetail, overdueTimeline } from '@/domain/services/agendaService';
 import { describeOffset } from '@/domain/services/reminderService';
 import type { EditScope } from '@/domain/services/taskService';
 import { useServices } from '@/state/appStore';
@@ -52,6 +52,7 @@ export default function ItemDetailScreen() {
   const detail = useQuery((s) => s.tasks.getDetail(id), [id]);
   const reminders = useQuery((s) => (detail.data ? s.reminders.forTask(detail.data.task.id) : Promise.resolve([])), [detail.data?.task.id]);
   const today = todayKey(services.clock);
+  const now = services.clock.now();
 
   if (detail.error) {
     return (
@@ -67,6 +68,10 @@ export default function ItemDetailScreen() {
   const recurring = !!d.rule;
   const pending = o.status === 'pending';
   const notes = o.notesOverride ?? d.task.notes;
+  const overdueDetail = (() => {
+    const timeline = overdueTimeline(d, today, now);
+    return timeline ? formatOverdueDetail(timeline) : null;
+  })();
 
   async function askScope(action: 'edit' | 'delete'): Promise<EditScope | null> {
     if (!recurring) return 'series';
@@ -126,6 +131,8 @@ export default function ItemDetailScreen() {
 
         <Card>
           <InfoRow icon="calendar-outline" label={d.task.kind === 'event' ? 'Date' : 'Assigned'} value={formatDateKey(o.date, 'EEEE, MMM d, yyyy')} />
+          {overdueDetail ? <InfoRow icon="play-outline" label="Started" value={overdueDetail.started} /> : null}
+          {overdueDetail ? <InfoRow icon="alert-circle-outline" label="Overdue" value={overdueDetail.overdue} /> : null}
           <InfoRow
             icon="time-outline"
             label="Time"

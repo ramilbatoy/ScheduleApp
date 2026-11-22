@@ -1,4 +1,4 @@
-import { addDaysKey, diffDays } from '../dates';
+import { addDaysKey, diffDays, isDateKey } from '../dates';
 import { newId } from '../ids';
 import type { DateKey, HistoryEventType, Occurrence, RecurringRule, Task } from '../models';
 import { expandRule } from '../recurrence';
@@ -6,6 +6,23 @@ import type { Repos } from '../repos/repositories';
 
 /** How far ahead recurring instances are materialized. */
 export const GENERATION_WINDOW_DAYS = 60;
+
+/**
+ * Rows created before `original_occurrence_date` was always written have a null
+ * start date. When the occurrence was never carried, the current assigned date
+ * is that start — persist it. Carried rows are left alone so we don't invent
+ * a start date the move already discarded.
+ */
+export async function backfillMissingOriginalDates(repos: Repos): Promise<number> {
+  const missing = await repos.occurrences.list({ original_occurrence_date: null });
+  let filled = 0;
+  for (const occ of missing) {
+    if (occ.isCarriedForward || occ.carryForwardCount > 0 || !isDateKey(occ.date)) continue;
+    await repos.occurrences.patch(occ.id, { originalDate: occ.date });
+    filled++;
+  }
+  return filled;
+}
 
 export async function recordHistory(
   repos: Repos,
