@@ -95,7 +95,7 @@ Update this section whenever a phase finishes, a PR merges, or acceptance status
 | Nested subtasks + Node ≥22.13 | Merged to main (2026-11-22) | https://github.com/ramilbatoy/ScheduleApp/pull/6 — schema v2 `task_subtasks`; 157 tests |
 | Dashboard Week/Month + safe back | Merged to main (2026-11-22) | https://github.com/ramilbatoy/ScheduleApp/pull/7 — Today\|Week\|Month; `goBackOrDashboard` |
 | Dashboard filters, goals, hierarchy | Open PR (2026-11-22) | https://github.com/ramilbatoy/ScheduleApp/pull/8 — Week/Month search·sort·filter; Today stats + near-due + weekly goals by urgency; main vs subtask visual hierarchy; 164 tests |
-| Month table + in-cell edit + go-to-date | Open PR (2026-11-22) | Stacked on #8 (`cursor/month-table-task-modal-3036`) — month grid shows main task titles in cells; tap opens ItemForm modal (save/cancel); Go to date above month; Calendar month parity; 168 tests |
+| Month table + in-cell edit + go-to-date | Open PR (2026-11-22) | https://github.com/ramilbatoy/ScheduleApp/pull/9 — stacked on #8; month grid shows main task titles in cells; tap opens ItemForm modal (save/cancel); Go to date above month; Calendar month parity; 168 tests |
 
 ### In progress / remaining
 
