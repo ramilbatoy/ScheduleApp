@@ -118,6 +118,28 @@ export const SQLITE_MIGRATIONS: SqlMigration[] = [
       `CREATE INDEX ix_history_task ON completion_history(task_id)`,
     ],
   },
+  {
+    version: 2,
+    name: '002_task_subtasks',
+    statements: [
+      `CREATE TABLE task_subtasks (
+        id TEXT PRIMARY KEY NOT NULL,
+        occurrence_id TEXT NOT NULL REFERENCES task_occurrences(id) ON DELETE CASCADE,
+        parent_subtask_id TEXT REFERENCES task_subtasks(id) ON DELETE CASCADE,
+        title TEXT NOT NULL,
+        notes TEXT NOT NULL DEFAULT '',
+        sort_order INTEGER NOT NULL DEFAULT 0,
+        completed INTEGER NOT NULL DEFAULT 0,
+        completed_at TEXT,
+        created_at TEXT NOT NULL,
+        updated_at TEXT NOT NULL,
+        deleted_at TEXT
+      )`,
+      `CREATE INDEX ix_subtasks_occ ON task_subtasks(occurrence_id)`,
+      `CREATE INDEX ix_subtasks_parent ON task_subtasks(parent_subtask_id)`,
+      `CREATE INDEX ix_subtasks_deleted ON task_subtasks(deleted_at)`,
+    ],
+  },
 ];
 
 export const LATEST_SCHEMA_VERSION = SQLITE_MIGRATIONS[SQLITE_MIGRATIONS.length - 1].version;

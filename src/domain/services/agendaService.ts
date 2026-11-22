@@ -9,10 +9,16 @@ import {
   type Occurrence,
   type Priority,
   type RecurringRule,
+  type SubtaskNode,
 } from '../models';
 import { createRepos, type Repos } from '../repos/repositories';
 import { GENERATION_WINDOW_DAYS } from './occurrenceOps';
 import type { RecurrenceService } from './recurrenceService';
+import { buildSubtaskTree, flattenSubtaskTree } from './subtaskService';
+
+function flattenSubtaskTitles(nodes: SubtaskNode[]): string[] {
+  return flattenSubtaskTree(nodes).flatMap((n) => [n.title, n.notes]);
+}
 
 /** Far-future calendar navigation is capped so generation stays bounded. */
 const MAX_LOOKAHEAD_DAYS = 3 * 366;
@@ -83,15 +89,24 @@ export class AgendaService {
       const r = await repos.rules.get(id);
       if (r) rules.set(id, r);
     }
+    const subtaskRows = await repos.subtasks.listActiveForOccurrences(occs.map((o) => o.id));
+    const byOcc = new Map<string, typeof subtaskRows>();
+    for (const s of subtaskRows) {
+      const list = byOcc.get(s.occurrenceId) ?? [];
+      list.push(s);
+      byOcc.set(s.occurrenceId, list);
+    }
     const out: Agenda[] = [];
     for (const occurrence of occs) {
       const task = tasks.get(occurrence.taskId);
       if (!task || (!includeDeleted && task.deletedAt)) continue;
+      const subtasks: SubtaskNode[] = task.kind === 'task' ? buildSubtaskTree(byOcc.get(occurrence.id) ?? []) : [];
       out.push({
         occurrence,
         task,
         rule: task.recurringRuleId ? (rules.get(task.recurringRuleId) ?? null) : null,
         category: task.categoryId ? (categories.get(task.categoryId) ?? null) : null,
+        subtasks,
       });
     }
     return out;
@@ -194,10 +209,15 @@ export class AgendaService {
     if (filter.categoryIds?.length) items = items.filter((a) => a.task.categoryId && filter.categoryIds!.includes(a.task.categoryId));
     const text = filter.text?.trim().toLowerCase();
     if (text) {
-      items = items.filter((a) =>
-        [displayTitle(a), a.occurrence.notesOverride ?? a.task.notes, a.category?.name ?? '']
-          .some((s) => s.toLowerCase().includes(text)),
-      );
+      items = items.filter((a) => {
+        const hay = [
+          displayTitle(a),
+          a.occurrence.notesOverride ?? a.task.notes,
+          a.category?.name ?? '',
+          ...flattenSubtaskTitles(a.subtasks),
+        ];
+        return hay.some((s) => s.toLowerCase().includes(text));
+      });
     }
     items = items.filter((a) => {
       const pending = a.occurrence.status === 'pending';

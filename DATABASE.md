@@ -1,6 +1,6 @@
 # Database — DayPlanner
 
-Single schema shared by Android (SQLite) and web (in-memory tables + IndexedDB persistence). Migrations are append-only; current version: **1** (`001_init`).
+Single schema shared by Android (SQLite) and web (in-memory tables + IndexedDB persistence). Migrations are append-only; current version: **2** (`002_task_subtasks`).
 
 ## Tables
 
@@ -75,6 +75,24 @@ Default seed: Personal, Work, Meetings, Health, Family, Finance, Projects, Other
 
 - `(task_id, occurrence_date)` where status ∈ pending|completed — one active row per day
 - `(task_id, recurrence_instance_key)` where key IS NOT NULL
+
+### `task_subtasks`
+
+Nested checklist under a **single occurrence** (not a separate agenda item). Tasks only.
+
+| Column | Type | Notes |
+| --- | --- | --- |
+| id | TEXT PK | |
+| occurrence_id | TEXT FK | parent day occurrence |
+| parent_subtask_id | TEXT NULL FK | nest under another subtask (self-ref) |
+| title / notes | TEXT | notes = info/details |
+| sort_order | INTEGER | siblings order |
+| completed | INTEGER | independent of parent occurrence |
+| completed_at | TEXT NULL | |
+| created_at / updated_at | TEXT | |
+| deleted_at | TEXT NULL | soft delete (cascades to descendants in app logic) |
+
+**Carry-forward / recurrence:** Subtasks are keyed by `occurrence_id`. Carry-forward patches the occurrence in place, so the checklist rides along. New recurring instances start with an empty checklist (no auto-copy). Subtasks never appear as their own agenda rows and do not auto-carry separately.
 
 ### `reminders`
 

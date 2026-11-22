@@ -129,6 +129,21 @@ export const SCHEMA: Record<string, TableDef> = {
       created_at: t(),
     },
   },
+  task_subtasks: {
+    columns: {
+      id: t(),
+      occurrence_id: t(),
+      parent_subtask_id: t(true),
+      title: t(),
+      notes: t(),
+      sort_order: i(),
+      completed: i(),
+      completed_at: t(true),
+      created_at: t(),
+      updated_at: t(),
+      deleted_at: t(true),
+    },
+  },
   app_settings: {
     columns: {
       id: t(),
@@ -147,6 +162,7 @@ export const TABLE_INSERT_ORDER = [
   'recurring_rules',
   'tasks',
   'task_occurrences',
+  'task_subtasks',
   'reminders',
   'completion_history',
 ];

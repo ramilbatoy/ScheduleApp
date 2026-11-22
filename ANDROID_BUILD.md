@@ -4,7 +4,7 @@ Primary production surface. Do **not** use Expo Go for acceptance (SQLite + loca
 
 ## Prerequisites
 
-- Node 20+ / npm
+- Node.js ≥ 22.13.0 / npm (Expo SDK 58; see `.nvmrc`)
 - JDK 17+ (JDK 21 works with the current Gradle/AGP)
 - Android SDK: `platform-tools`, `platforms;android-35`, `build-tools;35.0.0`, NDK as resolved by Expo prebuild
 - Env: `ANDROID_HOME` (or `ANDROID_SDK_ROOT`) pointing at the SDK root

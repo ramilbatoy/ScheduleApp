@@ -4,6 +4,8 @@ Expo Web is for **development and QA**, not the production product surface. Pers
 
 ## Run
 
+Requires **Node.js ≥ 22.13.0** (Expo SDK 58; see `.nvmrc`).
+
 ```bash
 npm install
 npm run web          # expo start --web
@@ -18,6 +20,7 @@ Open the Metro/Expo URL (typically `http://localhost:8081`). Prefer Chrome/Edge 
 | Area | Behavior |
 | --- | --- |
 | CRUD tasks/events | Full |
+| Nested subtasks | Full (IndexedDB-backed) |
 | Carry-forward | Full (runs on bootstrap / day change while the tab is open) |
 | Recurrence | Full |
 | Calendar month/week/day | Full |

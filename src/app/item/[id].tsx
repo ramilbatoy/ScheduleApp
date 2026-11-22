@@ -13,6 +13,7 @@ import { formatDeadline, ItemBadges, PRIORITY_LABEL } from '@/ui/components/Agen
 import { choose, confirm } from '@/ui/components/dialogs';
 import { DatePickerModal } from '@/ui/components/Pickers';
 import { AppText, Button, Card, Divider, EmptyState, Icon, LoadingState, type IconName } from '@/ui/components/primitives';
+import { SubtaskEditor } from '@/ui/components/SubtaskList';
 import { useAction, useQuery, useTheme } from '@/ui/hooks';
 import { spacing } from '@/ui/theme';
 
@@ -149,6 +150,8 @@ export default function ItemDetailScreen() {
             <AppText>{notes}</AppText>
           </Card>
         ) : null}
+
+        {d.task.kind === 'task' ? <SubtaskEditor occurrenceId={o.id} nodes={d.subtasks} testID="detail-subtasks" /> : null}
 
         {reminders.data && reminders.data.length > 0 ? (
           <Card>

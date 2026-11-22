@@ -5,6 +5,7 @@ import type {
   Occurrence,
   RecurringRule,
   Reminder,
+  Subtask,
   Task,
 } from '../models';
 
@@ -255,3 +256,44 @@ export const historyMapper = {
     created_at: h.createdAt,
   }),
 };
+
+export const subtaskMapper = {
+  from: (r: Row): Subtask => ({
+    id: String(r.id),
+    occurrenceId: String(r.occurrence_id),
+    parentSubtaskId: s(r.parent_subtask_id),
+    title: String(r.title),
+    notes: String(r.notes ?? ''),
+    sortOrder: Number(r.sort_order ?? 0),
+    completed: b(r.completed),
+    completedAt: s(r.completed_at),
+    createdAt: String(r.created_at),
+    updatedAt: String(r.updated_at),
+    deletedAt: s(r.deleted_at),
+  }),
+  to: (x: Subtask): Row => ({
+    id: x.id,
+    occurrence_id: x.occurrenceId,
+    parent_subtask_id: x.parentSubtaskId,
+    title: x.title,
+    notes: x.notes,
+    sort_order: x.sortOrder,
+    completed: bi(x.completed),
+    completed_at: x.completedAt,
+    created_at: x.createdAt,
+    updated_at: x.updatedAt,
+    deleted_at: x.deletedAt,
+  }),
+};
+
+export const subtaskPatch = makePatcher<Subtask>({
+  occurrenceId: ['occurrence_id'],
+  parentSubtaskId: ['parent_subtask_id'],
+  title: ['title'],
+  notes: ['notes'],
+  sortOrder: ['sort_order'],
+  completed: ['completed', bi],
+  completedAt: ['completed_at'],
+  updatedAt: ['updated_at'],
+  deletedAt: ['deleted_at'],
+});

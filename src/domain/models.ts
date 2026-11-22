@@ -116,6 +116,30 @@ export interface HistoryEntry {
   createdAt: string;
 }
 
+/**
+ * Nested checklist item under a single occurrence (not a separate agenda row).
+ * Completion is independent of the parent occurrence. Carry-forward moves the
+ * occurrence in place, so subtasks ride along without a separate rollover.
+ */
+export interface Subtask {
+  id: string;
+  occurrenceId: string;
+  parentSubtaskId: string | null;
+  title: string;
+  notes: string;
+  sortOrder: number;
+  completed: boolean;
+  completedAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+  deletedAt: string | null;
+}
+
+export interface SubtaskNode extends Subtask {
+  depth: number;
+  children: SubtaskNode[];
+}
+
 export interface AppSettings {
   autoCarryForward: boolean;
   theme: ThemePreference;
@@ -142,6 +166,8 @@ export interface Agenda {
   task: Task;
   rule: RecurringRule | null;
   category: Category | null;
+  /** Nested checklist for this occurrence (empty for events). */
+  subtasks: SubtaskNode[];
 }
 
 export class ValidationError extends Error {

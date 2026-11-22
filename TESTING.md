@@ -13,6 +13,7 @@ Critical suites (non-exhaustive):
 | Suite | Covers |
 | --- | --- |
 | `src/domain/__tests__/tasks.test.ts` | Task/event CRUD, complete/reopen, validation |
+| `src/domain/__tests__/subtasks.test.ts` | Nested create/tick/edit/notes, carry-forward ride-along, both drivers |
 | `src/domain/__tests__/carryForward.test.ts` | Idempotent rollover, tasks-only, history |
 | `src/domain/__tests__/recurrence.test.ts` / `series.test.ts` | Generation, dedupe, edit scopes |
 | `src/domain/__tests__/reminders.test.ts` | Offset timing, cancel on complete, permission gate, timed task+event |

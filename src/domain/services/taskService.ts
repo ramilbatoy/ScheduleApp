@@ -13,11 +13,13 @@ import {
   type Occurrence,
   type Priority,
   type RecurringRule,
+  type SubtaskNode,
   type Task,
   type TimeOfDay,
 } from '../models';
 import { createRepos, type Repos } from '../repos/repositories';
 import { carryOccurrence, GENERATION_WINDOW_DAYS, generateInstances, newOccurrence, recordHistory } from './occurrenceOps';
+import { buildSubtaskTree } from './subtaskService';
 
 export interface RecurrenceInput {
   frequency: Frequency;
@@ -180,7 +182,9 @@ export class TaskService {
     const { occ, task, rule } = await this.load(repos, occurrenceId);
     const category = task.categoryId ? await repos.categories.get(task.categoryId) : null;
     const history = await repos.history.listByTask(task.id);
-    return { occurrence: occ, task, rule, category, history };
+    const subtasks: SubtaskNode[] =
+      task.kind === 'task' ? buildSubtaskTree(await repos.subtasks.listActiveForOccurrence(occ.id)) : [];
+    return { occurrence: occ, task, rule, category, history, subtasks };
   }
 
   /** The values an edit form should start from for the given scope. */
