@@ -50,7 +50,7 @@
 - Statistics: today / week / month rates, totals, carry-forward, trends (plain RN charts)
 - Quick-add with optional NL date/time/`!priority`/`#category` parsing
 - JSON backup/restore with validation, safety copy, overwrite protection, undo last restore
-- Theme: system / light / dark persisted
+- Theme: system / light / dark appearance; 10 full presets (Ocean Blue … Dark Mode); custom HEX overrides; Theme Settings with live App* preview, Apply / Reset / Restore last used; contrast check; persisted in `app_settings` (preset + custom + last-used snapshot); React Native Paper MD3 via token bridge
 
 ## Navigation
 

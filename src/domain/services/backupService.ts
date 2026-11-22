@@ -20,6 +20,9 @@ const DEVICE_SETTING_KEYS = new Set(['last_backup_at', 'notifications_enabled'])
 const KNOWN_SETTING_KEYS = new Set([
   'auto_carry_forward_enabled',
   'theme',
+  'theme_preset',
+  'theme_custom_colors',
+  'theme_last_used',
   'default_reminder_offset_minutes',
   'last_carry_forward_run_date',
   'notifications_enabled',

@@ -80,11 +80,11 @@ export function ToastHost() {
     return () => clearTimeout(t);
   }, [message, key, tone, hide]);
   if (!message) return null;
-  const bg = tone === 'error' ? p.danger : tone === 'success' ? p.success : p.text;
+  const bg = tone === 'error' ? p.error : tone === 'success' ? p.success : p.text;
   return (
     <View pointerEvents="box-none" style={[styles.toastWrap, { bottom: insets.bottom + 76 }]}>
       <Pressable onPress={hide} style={[styles.toast, { backgroundColor: bg }]} accessibilityLiveRegion="polite" testID="toast">
-        <AppText color={p.scheme === 'dark' && tone === 'info' ? p.background : '#FFFFFF'}>{message}</AppText>
+        <AppText color={tone === 'info' ? p.textInverse : p.onPrimary}>{message}</AppText>
       </Pressable>
     </View>
   );

@@ -80,6 +80,18 @@ export default function SettingsScreen() {
             { value: 'dark', label: 'Dark' },
           ]}
         />
+        <AppText variant="caption" muted>
+          Preset: {settings.themePreset.replace(/-/g, ' ')}
+          {settings.themeCustomColors ? ' · customized' : ''}
+        </AppText>
+        <Divider />
+        <ListRow
+          testID="open-theme-settings"
+          icon="color-palette-outline"
+          label="Theme settings"
+          value="Presets & colors"
+          onPress={() => router.push('/theme-settings')}
+        />
       </Card>
 
       <AppText variant="label" muted>

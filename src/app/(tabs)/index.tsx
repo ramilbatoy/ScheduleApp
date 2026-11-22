@@ -43,7 +43,7 @@ function ProgressCard({ completed, total, carried }: { completed: number; total:
           {pct}%
         </AppText>
       </View>
-      <View style={[styles.track, { backgroundColor: p.surfaceAlt }]} accessibilityRole="progressbar" accessibilityValue={{ min: 0, max: 100, now: pct }}>
+      <View style={[styles.track, { backgroundColor: p.surfaceVariant }]} accessibilityRole="progressbar" accessibilityValue={{ min: 0, max: 100, now: pct }}>
         <View style={[styles.fill, { width: `${pct}%`, backgroundColor: p.success }]} />
       </View>
       <View style={{ flexDirection: 'row', gap: spacing.lg }}>

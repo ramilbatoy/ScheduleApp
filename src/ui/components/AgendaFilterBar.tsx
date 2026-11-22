@@ -109,7 +109,7 @@ export function AgendaFilterBar({
     <View style={{ gap: spacing.sm }} testID={testID}>
       <View style={styles.search}>
         <View style={styles.searchIcon}>
-          <Icon name="search" size={18} color={p.textMuted} />
+          <Icon name="search" size={18} color={p.textSecondary} />
         </View>
         <Input
           testID={`${testID}-search`}

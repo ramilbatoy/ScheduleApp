@@ -150,7 +150,7 @@ export function RecurrenceEditor({
         onClose={() => setEndPicker(false)}
       />
       {disabled ? (
-        <AppText variant="caption" color={p.textMuted}>
+        <AppText variant="caption" color={p.textSecondary}>
           Repeat settings apply to the whole series.
         </AppText>
       ) : null}

@@ -77,7 +77,7 @@ export function ProgressBar({ value, color, height = 8 }: { value: number; color
   const p = useTheme();
   const pct = Math.max(0, Math.min(1, value));
   return (
-    <View style={{ height, borderRadius: height / 2, backgroundColor: p.surfaceAlt, overflow: 'hidden' }}>
+    <View style={{ height, borderRadius: height / 2, backgroundColor: p.surfaceVariant, overflow: 'hidden' }}>
       <View style={{ width: `${pct * 100}%`, height, borderRadius: height / 2, backgroundColor: color ?? p.primary }} />
     </View>
   );
@@ -85,7 +85,7 @@ export function ProgressBar({ value, color, height = 8 }: { value: number; color
 
 export function StatTile({ label, value, hint, tone }: { label: string; value: string; hint?: string; tone?: 'danger' | 'warning' | 'success' }) {
   const p = useTheme();
-  const color = tone === 'danger' ? p.danger : tone === 'warning' ? p.warning : tone === 'success' ? p.success : p.text;
+  const color = tone === 'danger' ? p.error : tone === 'warning' ? p.warning : tone === 'success' ? p.success : p.text;
   return (
     <View style={[styles.tile, { backgroundColor: p.surface, borderColor: p.border }]} accessible accessibilityLabel={`${label}: ${value}${hint ? `, ${hint}` : ''}`}>
       <AppText variant="caption" muted numberOfLines={1}>

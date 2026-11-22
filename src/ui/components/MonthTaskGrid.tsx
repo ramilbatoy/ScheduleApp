@@ -66,7 +66,7 @@ export function MonthTaskGrid({
                 style={[
                   styles.cell,
                   {
-                    backgroundColor: isSel ? p.primarySoft : inMonth ? p.surface : p.surfaceAlt,
+                    backgroundColor: isSel ? p.primarySoft : inMonth ? p.surface : p.surfaceVariant,
                     borderColor: isToday ? p.primary : p.border,
                     borderWidth: isToday ? 1.5 : StyleSheet.hairlineWidth,
                     opacity: inMonth ? 1 : 0.55,
@@ -74,7 +74,7 @@ export function MonthTaskGrid({
                 ]}>
                 <AppText
                   variant="label"
-                  color={isSel ? p.primary : inMonth ? p.text : p.textMuted}
+                  color={isSel ? p.primary : inMonth ? p.text : p.textSecondary}
                   style={styles.dayNum}>
                   {Number(d.slice(8))}
                 </AppText>
@@ -85,7 +85,7 @@ export function MonthTaskGrid({
                     const timeline = overdue && !done ? overdueTimeline(a, today, now) : null;
                     const overdueLabels = timeline ? formatOverdueLabels(timeline, today) : null;
                     const accent =
-                      a.task.kind === 'event' ? (a.category?.color ?? p.primary) : overdue ? p.danger : p.priority[a.task.priority];
+                      a.task.kind === 'event' ? (a.category?.color ?? p.primary) : overdue ? p.overdue : p.priority[a.task.priority];
                     const title = displayTitle(a);
                     return (
                       <Pressable
@@ -104,12 +104,12 @@ export function MonthTaskGrid({
                         <AppText
                           variant="caption"
                           numberOfLines={1}
-                          color={done ? p.textMuted : overdue ? p.danger : p.text}
+                          color={done ? p.textSecondary : overdue ? p.overdue : p.text}
                           style={done ? { textDecorationLine: 'line-through', fontSize: 10, lineHeight: 13 } : { fontSize: 10, lineHeight: 13 }}>
                           {overdue && !done ? `Overdue · ${title}` : title}
                         </AppText>
                         {overdueLabels ? (
-                          <AppText variant="caption" numberOfLines={2} color={p.danger} testID={`month-cell-overdue-${a.occurrence.id}`} style={{ fontSize: 9, lineHeight: 11 }}>
+                          <AppText variant="caption" numberOfLines={2} color={p.error} testID={`month-cell-overdue-${a.occurrence.id}`} style={{ fontSize: 9, lineHeight: 11 }}>
                             {overdueLabels.started}
                             {'\n'}
                             {overdueLabels.overdue}

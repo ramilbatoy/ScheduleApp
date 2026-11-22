@@ -54,7 +54,7 @@ export default function TasksScreen() {
       </AppText>
       <View style={styles.search}>
         <View style={styles.searchIcon}>
-          <Icon name="search" size={18} color={p.textMuted} />
+          <Icon name="search" size={18} color={p.textSecondary} />
         </View>
         <Input testID="search-input" value={text} onChangeText={setText} placeholder="Search titles, notes, categories" style={{ paddingLeft: 40 }} clearButtonMode="while-editing" />
       </View>

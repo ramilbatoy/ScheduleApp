@@ -53,8 +53,18 @@ describe.each(DRIVERS)('categories (%s)', (_name, open) => {
     expect((await app.settings.get()).autoCarryForward).toBe(true);
     await app.settings.set('autoCarryForward', false);
     await app.settings.set('theme', 'dark');
+    await app.settings.set('themePreset', 'ocean-blue');
+    await app.settings.set('themeCustomColors', { primary: '#0284C7' });
+    await app.settings.set('themeLastUsed', {
+      theme: 'system',
+      themePreset: 'classic-light',
+      themeCustomColors: null,
+    });
     const s = await app.settings.get();
     expect(s.autoCarryForward).toBe(false);
     expect(s.theme).toBe('dark');
+    expect(s.themePreset).toBe('ocean-blue');
+    expect(s.themeCustomColors).toEqual({ primary: '#0284C7' });
+    expect(s.themeLastUsed).toMatchObject({ theme: 'system', themePreset: 'classic-light' });
   });
 });

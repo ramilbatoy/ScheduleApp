@@ -114,7 +114,7 @@ Audit trail for create / complete / reopen / carry / delete / date changes.
 
 ### `app_settings`
 
-Key/value rows mapped to `AppSettings` (theme, auto carry-forward, notifications, default reminder offset, last carry/backup dates, categories seeded flag).
+Key/value rows mapped to `AppSettings` (appearance `theme`, `theme_preset`, `theme_custom_colors`, `theme_last_used`, auto carry-forward, notifications, default reminder offset, last carry/backup dates, categories seeded flag).
 
 ## Indexes
 

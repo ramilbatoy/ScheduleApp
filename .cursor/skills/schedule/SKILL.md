@@ -46,8 +46,10 @@ Use this skill for **any** work on `ramilbatoy/ScheduleApp` (DayPlanner): featur
 | Web DB | MemoryDatabase + IndexedDB persistence (`idb`/atomic commit) behind same interface |
 | Dates | date-fns |
 | Notifications | expo-notifications (Android local; web best-effort while tab open) |
-| Calendar UI | react-native-calendars (month) + custom week/day |
-| Charts | Plain RN `View` charts (no gifted-charts/Victory) |
+| Calendar UI | Custom month/week/day grids (themed); no `react-native-calendars` in tree |
+| Charts | Plain RN `View` charts (no gifted-charts/Victory); themed |
+| UI kit | react-native-paper MD3 via token bridge; App* wrappers; Ionicons (`AppIcon`) |
+| Theme | `src/theme/` presets + custom HEX; appearance system/light/dark; `app_settings` |
 | Backup | JSON export/import; Android folder picker/share; web download/upload |
 
 ## Layout (key paths)
@@ -55,7 +57,8 @@ Use this skill for **any** work on `ramilbatoy/ScheduleApp` (DayPlanner): featur
 - `src/db/` — drivers, migrations, types
 - `src/domain/` — models, repos, services (Task, CarryForward, Recurrence, Reminder, Stats, Backup, Settings, Category, agenda)
 - `src/app/` — Expo Router screens (tabs, item edit, quick-add, categories)
-- `src/ui/` — theme tokens, primitives, screens/components
+- `src/theme/` — semantic tokens, presets, ThemeProvider, Paper bridge
+- `src/ui/` — App* wrappers, primitives, screens/components
 - `src/platform/` — notifications, backup file I/O adapters
 
 ## Data model (summary)
@@ -73,7 +76,7 @@ Use this skill for **any** work on `ramilbatoy/ScheduleApp` (DayPlanner): featur
 - Deadlines independent of assigned date
 - Quick-add NL: dates, times, `!priority`, `#category`
 - Backup: validate → safety copy → single-transaction restore → rebuild notifications; undo last restore
-- Theme: system / light / dark persisted
+- Theme: system / light / dark + 10 presets + custom HEX + last-used snapshot in `app_settings`
 - Timed items apply Settings default reminder offset; OS alarms use `alarmClock` when exact-alarm granted else `bestEffort`
 - Android button/chip/segment labels: `includeFontPadding: false` + vertical padding; EmptyState labels use `flexShrink: 0` + `textBreakStrategy: simple` (Phase 5 clipping fix)
 
@@ -97,8 +100,9 @@ Update this section whenever a phase finishes, a PR merges, or acceptance status
 | Dashboard filters, goals, hierarchy | Merged to main (2026-11-22) | https://github.com/ramilbatoy/ScheduleApp/pull/8 — Week/Month search·sort·filter; Today stats + near-due + weekly goals by urgency; main vs subtask visual hierarchy |
 | Month table + in-cell edit + go-to-date | Merged to main (2026-11-22) | https://github.com/ramilbatoy/ScheduleApp/pull/9 — month grid task titles; ItemForm modal; Go to date; Calendar month parity |
 | Nested button + overdue on today | Merged to main (2026-11-22) | https://github.com/ramilbatoy/ScheduleApp/pull/10 — month cell no nested `<button>`; unfinished overdue project onto Today / current-date month cell with Overdue badge (no duplicate rows); 179 tests |
-| Overdue start and overdue-since | Open PR (2026-11-22) | https://github.com/ramilbatoy/ScheduleApp/pull/11 — “Started Mar 1” / “Overdue since Mar 2” from `original_occurrence_date`, assigned day, deadline, and carry/reschedule history; today stats include still-open earlier tasks; near-due uses the local deadline date; weekly goals include pre-week overdue; 199 tests |
-| Week view opens on current week | Open PR (2026-11-22) | https://github.com/ramilbatoy/ScheduleApp/pull/12 — Today→Week and Calendar Week reset to the week containing today (Mon vs Sun start); prev/next preserved for the session; `weekStartKey` / `currentWeekAnchor` helpers + tests; 201 tests |
+| Overdue start and overdue-since | Merged to main (2026-11-22) | https://github.com/ramilbatoy/ScheduleApp/pull/11 — “Started Mar 1” / “Overdue since Mar 2”; 199 tests |
+| Week view opens on current week | Merged to main (2026-11-22) | https://github.com/ramilbatoy/ScheduleApp/pull/12 — Today→Week and Calendar Week reset to the week containing today; 201 tests |
+| Centralized theme + Paper UI | Open PR (2026-11-22) | Branch `cursor/theme-paper-ui-39f4` — Paper MD3, 10 presets, Theme Settings (HEX/preview/apply/reset/restore), semantic tokens app-wide; audit `/cursor/stores/self/docs/theme-ui-audit.md`; **207** tests |
 
 ### In progress / remaining
 
@@ -106,8 +110,7 @@ Update this section whenever a phase finishes, a PR merges, or acceptance status
 | --- | --- | --- |
 | Device re-verify | Optional | Emulator/device smoke of clipping + scheduled alarms on a physical phone |
 | Production signing | Optional | Replace debug-keystore release with Play/EAS credentials when publishing |
-| Merge overdue timeline PR | Pending review | Branch `cursor/overdue-timeline-cb78` → `main` |
-| Merge week-view current-week PR | Pending review | Branch `cursor/week-view-current-week-e0e9` → `main` |
+| Merge theme + Paper UI PR | Pending review | Branch `cursor/theme-paper-ui-39f4` → `main` |
 
 ### Known issues / limitations (live)
 
@@ -121,7 +124,7 @@ Update this section whenever a phase finishes, a PR merges, or acceptance status
 
 ## How to work
 
-1. Branch from updated `main` (#10 merged; #11/#12 tip work while open).
+1. Branch from updated `main` (#11/#12 merged; theme Paper PR may be tip).
 2. Keep domain services pure of UI; add tests on **both** SQLite and IndexedDB drivers for storage-touching logic.
 3. Run `npm test` and `npm run typecheck` before declaring a slice done.
 4. After each completed phase or merged PR: **update Accomplishments above** and `project-context.md`.

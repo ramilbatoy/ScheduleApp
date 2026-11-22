@@ -44,7 +44,7 @@ See **[WEB_TESTING.md](./WEB_TESTING.md)**. Web is for QA of domain logic and pe
 | [ACCEPTANCE_AUDIT.md](./ACCEPTANCE_AUDIT.md) | Pass/fail matrix vs requirements |
 | `.cursor/skills/schedule/SKILL.md` | Agent playbook (Project store copy is authoritative) |
 
-Project-store audit mirror: `/cursor/stores/self/docs/acceptance-audit.md`
+Project-store docs: `/cursor/stores/self/docs/acceptance-audit.md`, `theme-ui-spec.md`, `theme-ui-audit.md`
 
 ## Layout
 
@@ -54,7 +54,8 @@ Project-store audit mirror: `/cursor/stores/self/docs/acceptance-audit.md`
 | `src/domain/` | Models, repositories, services |
 | `src/db/` | Storage abstraction: SQLite + memory/IndexedDB |
 | `src/state/` | Zustand (UI/session only) |
-| `src/ui/` | Design tokens, theme, shared components |
+| `src/theme/` | Semantic tokens, 10 presets, ThemeProvider, Paper MD3 bridge |
+| `src/ui/` | App* wrappers, screens/components (tokens via `@/theme`) |
 | `src/platform/` | Notifications + backup file adapters |
 
 ## Known limitations

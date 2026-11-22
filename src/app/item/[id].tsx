@@ -33,7 +33,7 @@ function InfoRow({ icon, label, value }: { icon: IconName; label: string; value:
   const p = useTheme();
   return (
     <View style={{ flexDirection: 'row', gap: spacing.md, alignItems: 'flex-start', paddingVertical: 6 }}>
-      <Icon name={icon} size={18} color={p.textMuted} />
+      <Icon name={icon} size={18} color={p.textSecondary} />
       <AppText muted style={{ width: 96 }}>
         {label}
       </AppText>

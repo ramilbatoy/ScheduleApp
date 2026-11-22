@@ -137,7 +137,7 @@ export default function QuickAddScreen() {
             ))}
           </View>
         ) : null}
-        {error ? <AppText color={p.danger}>{error}</AppText> : null}
+        {error ? <AppText color={p.error}>{error}</AppText> : null}
         <View style={{ flexDirection: 'row', gap: spacing.md }}>
           <Button label="More options" tone="secondary" icon="options-outline" onPress={moreOptions} style={{ flex: 1 }} />
           <Button testID="quick-save" label="Add" icon="add" onPress={add} loading={saving} disabled={!title} style={{ flex: 1 }} />

@@ -77,13 +77,13 @@ export function MonthGrid({
                     isSel && { backgroundColor: p.primary },
                     !isSel && isToday && { borderWidth: 1.5, borderColor: p.primary },
                   ]}>
-                  <AppText variant="label" color={isSel ? p.onPrimary : inMonth ? p.text : p.textMuted} style={!inMonth && { opacity: 0.5 }}>
+                  <AppText variant="label" color={isSel ? p.onPrimary : inMonth ? p.text : p.textSecondary} style={!inMonth && { opacity: 0.5 }}>
                     {Number(d.slice(8))}
                   </AppText>
                 </View>
                 {s && !compact ? (
                   <View style={styles.indicators}>
-                    {s.overdue > 0 ? <View style={[styles.dot, { backgroundColor: p.danger }]} /> : null}
+                    {s.overdue > 0 ? <View style={[styles.dot, { backgroundColor: p.error }]} /> : null}
                     {s.pending > 0 ? <View style={[styles.dot, { backgroundColor: p.primary }]} /> : null}
                     {s.completed > 0 ? <View style={[styles.dot, { backgroundColor: p.success }]} /> : null}
                     <AppText variant="caption" muted style={{ fontSize: 10, lineHeight: 12 }}>

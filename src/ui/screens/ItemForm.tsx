@@ -284,8 +284,8 @@ function Form({
         </View>
 
         {error ? (
-          <Card style={{ backgroundColor: p.dangerSoft, borderColor: p.dangerSoft }}>
-            <AppText color={p.danger} testID="form-error">
+          <Card style={{ backgroundColor: p.errorSoft, borderColor: p.errorSoft }}>
+            <AppText color={p.error} testID="form-error">
               {error}
             </AppText>
           </Card>

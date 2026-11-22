@@ -200,6 +200,9 @@ export class SubtaskRepo {
 const SETTING_KEYS: Record<keyof AppSettings, string> = {
   autoCarryForward: 'auto_carry_forward_enabled',
   theme: 'theme',
+  themePreset: 'theme_preset',
+  themeCustomColors: 'theme_custom_colors',
+  themeLastUsed: 'theme_last_used',
   defaultReminderOffsetMinutes: 'default_reminder_offset_minutes',
   lastCarryForwardRunDate: 'last_carry_forward_run_date',
   notificationsEnabled: 'notifications_enabled',
@@ -223,7 +226,28 @@ export class SettingsRepo {
         // keep default for a corrupted value
       }
     }
-    return out as unknown as AppSettings;
+    const settings = out as unknown as AppSettings;
+    // Coerce unknown / legacy preset ids so ThemeProvider always resolves.
+    const known = new Set([
+      'ocean-blue',
+      'midnight-navy',
+      'emerald-green',
+      'forest-green',
+      'purple',
+      'sunset-orange',
+      'rose-pink',
+      'minimal-gray',
+      'classic-light',
+      'dark-mode',
+    ]);
+    if (!known.has(settings.themePreset)) settings.themePreset = DEFAULT_SETTINGS.themePreset;
+    if (settings.theme !== 'system' && settings.theme !== 'light' && settings.theme !== 'dark') {
+      settings.theme = DEFAULT_SETTINGS.theme;
+    }
+    if (settings.themeCustomColors && typeof settings.themeCustomColors !== 'object') {
+      settings.themeCustomColors = null;
+    }
+    return settings;
   }
 
   async set<K extends keyof AppSettings>(field: K, value: AppSettings[K], nowIso: string): Promise<void> {

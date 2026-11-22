@@ -59,7 +59,7 @@ export default function CategoriesScreen() {
                         {`${n} item${n === 1 ? '' : 's'}${c.isDefault ? ' · default' : ''}`}
                       </AppText>
                     </View>
-                    <Icon name="create-outline" size={18} color={p.textMuted} />
+                    <Icon name="create-outline" size={18} color={p.textSecondary} />
                   </Pressable>
                 </View>
               );
@@ -143,14 +143,14 @@ function CategoryEditor({ category, usage, onClose }: { category: Category | nul
               accessibilityState={{ checked: c === color }}
               accessibilityLabel={`Color ${c}`}
               style={[styles.colorDot, { backgroundColor: c, borderColor: c === color ? p.text : 'transparent' }]}>
-              {c === color ? <Icon name="checkmark" size={18} color="#FFFFFF" /> : null}
+              {c === color ? <Icon name="checkmark" size={18} color={p.onPrimary} /> : null}
             </Pressable>
           ))}
         </View>
       </Field>
       {confirmingDelete && category ? (
-        <View style={[styles.confirm, { backgroundColor: p.dangerSoft }]} testID="category-delete-confirm">
-          <AppText color={p.danger}>
+        <View style={[styles.confirm, { backgroundColor: p.errorSoft }]} testID="category-delete-confirm">
+          <AppText color={p.error}>
             {usage
               ? `Delete "${category.name}"? ${usage} item${usage === 1 ? '' : 's'} will become uncategorized. They will not be deleted.`
               : `Delete "${category.name}"? No items use it.`}

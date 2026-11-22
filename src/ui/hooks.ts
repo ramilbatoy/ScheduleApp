@@ -1,17 +1,11 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { useColorScheme } from 'react-native';
 import { create } from 'zustand';
 
 import type { AppServices } from '../domain/services/container';
 import { useAppStore } from '../state/appStore';
-import { darkPalette, lightPalette, type Palette } from './theme';
+import { useTheme } from '../theme';
 
-export function useTheme(): Palette {
-  const system = useColorScheme();
-  const pref = useAppStore((s) => s.settings?.theme ?? 'system');
-  const scheme = pref === 'system' ? (system === 'dark' ? 'dark' : 'light') : pref;
-  return scheme === 'dark' ? darkPalette : lightPalette;
-}
+export { useTheme };
 
 export interface QueryState<T> {
   data: T | undefined;

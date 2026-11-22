@@ -31,7 +31,7 @@ export function ItemBadges({ a, showDate }: { a: Agenda; showDate?: boolean }) {
   const deadlinePassed = !!a.task.deadlineAt && new Date(a.task.deadlineAt) < now && o.status === 'pending';
   return (
     <View style={styles.badges}>
-      {showDate ? <Badge label={formatDateKey(o.date, 'MMM d')} color={p.textMuted} background={p.surfaceAlt} icon="calendar-outline" /> : null}
+      {showDate ? <Badge label={formatDateKey(o.date, 'MMM d')} color={p.textSecondary} background={p.surfaceVariant} icon="calendar-outline" /> : null}
       {a.task.kind === 'task' && a.task.priority !== 'medium' ? (
         <Badge label={PRIORITY_LABEL[a.task.priority]} color={p.priority[a.task.priority]} background={`${p.priority[a.task.priority]}22`} icon="flag" />
       ) : null}
@@ -41,15 +41,15 @@ export function ItemBadges({ a, showDate }: { a: Agenda; showDate?: boolean }) {
       ) : null}
       {overdueLabels ? (
         <View testID={`overdue-timeline-${o.id}`} style={styles.badges}>
-          <Badge label={overdueLabels.started} color={p.textMuted} background={p.surfaceAlt} icon="play-outline" />
-          <Badge label={overdueLabels.overdue} color={p.danger} background={p.dangerSoft} icon="alert-circle" />
+          <Badge label={overdueLabels.started} color={p.textSecondary} background={p.surfaceVariant} icon="play-outline" />
+          <Badge label={overdueLabels.overdue} color={p.overdue} background={p.errorSoft} icon="alert-circle" />
         </View>
       ) : overdue ? (
-        <Badge label={deadlinePassed ? 'Past deadline' : 'Overdue'} color={p.danger} background={p.dangerSoft} icon="alert-circle" />
+        <Badge label={deadlinePassed ? 'Past deadline' : 'Overdue'} color={p.overdue} background={p.errorSoft} icon="alert-circle" />
       ) : null}
       {a.rule ? <Badge label="Repeats" color={p.info} background={p.infoSoft} icon="repeat" /> : null}
       {a.task.deadlineAt && !deadlinePassed ? (
-        <Badge label={`Due ${formatDeadline(a.task.deadlineAt)}`} color={p.textMuted} background={p.surfaceAlt} icon="hourglass-outline" />
+        <Badge label={`Due ${formatDeadline(a.task.deadlineAt)}`} color={p.textSecondary} background={p.surfaceVariant} icon="hourglass-outline" />
       ) : null}
     </View>
   );
@@ -93,7 +93,7 @@ export function AgendaRow({ a, showDate, testID }: { a: Agenda; showDate?: boole
             <Ionicons
               name={done ? 'checkmark-circle' : a.task.kind === 'event' ? 'ellipse-outline' : 'radio-button-off'}
               size={26}
-              color={done ? p.success : p.textMuted}
+              color={done ? p.success : p.textSecondary}
             />
           </Pressable>
           <Pressable
@@ -103,12 +103,12 @@ export function AgendaRow({ a, showDate, testID }: { a: Agenda; showDate?: boole
             accessibilityLabel={`${title}${done ? ', completed' : ''}`}
             style={({ pressed }) => [{ flex: 1, gap: 4, paddingVertical: spacing.md, paddingRight: spacing.md }, pressed && { opacity: 0.7 }]}>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm }}>
-              {a.task.kind === 'event' ? <Ionicons name="calendar" size={14} color={p.textMuted} /> : null}
+              {a.task.kind === 'event' ? <Ionicons name="calendar" size={14} color={p.textSecondary} /> : null}
               <AppText
                 variant="heading"
                 numberOfLines={2}
                 style={[{ flex: 1 }, done && { textDecorationLine: 'line-through' }]}
-                color={done ? p.textMuted : p.text}>
+                color={done ? p.textSecondary : p.text}>
                 {title}
               </AppText>
             </View>
@@ -122,7 +122,7 @@ export function AgendaRow({ a, showDate, testID }: { a: Agenda; showDate?: boole
           </Pressable>
         </View>
         {hasSubtasks ? (
-          <View style={[styles.subtaskRail, { borderLeftColor: accent, backgroundColor: p.surfaceAlt }]}>
+          <View style={[styles.subtaskRail, { borderLeftColor: accent, backgroundColor: p.surfaceVariant }]}>
             <AgendaSubtasks nodes={a.subtasks} testID={testID ? `${testID}-subs` : undefined} />
           </View>
         ) : null}

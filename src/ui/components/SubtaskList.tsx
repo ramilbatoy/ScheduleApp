@@ -15,7 +15,7 @@ export function SubtaskProgressBadge({ nodes }: { nodes: SubtaskNode[] }) {
   const { total, completed } = countSubtasks(nodes);
   if (!total) return null;
   return (
-    <AppText variant="caption" color={completed === total ? p.success : p.textMuted}>
+    <AppText variant="caption" color={completed === total ? p.success : p.textSecondary}>
       {completed}/{total} subtasks
     </AppText>
   );
@@ -47,13 +47,13 @@ export function AgendaSubtasks({ nodes, testID }: { nodes: SubtaskNode[]; testID
             hitSlop={6}
             onPress={() => run((s) => s.subtasks.toggleComplete(n.id))}
             style={styles.miniCheck}>
-            <Icon name={n.completed ? 'checkmark-circle' : 'ellipse-outline'} size={20} color={n.completed ? p.success : p.textMuted} />
+            <Icon name={n.completed ? 'checkmark-circle' : 'ellipse-outline'} size={20} color={n.completed ? p.success : p.textSecondary} />
           </Pressable>
           <AppText
             variant="caption"
             numberOfLines={2}
             style={[{ flex: 1 }, n.completed && { textDecorationLine: 'line-through' }]}
-            color={n.completed ? p.textMuted : p.text}>
+            color={n.completed ? p.textSecondary : p.text}>
             {n.title}
           </AppText>
         </View>
@@ -138,7 +138,7 @@ export function SubtaskEditor({
               paddingLeft: spacing.md + n.depth * INDENT,
               borderLeftColor: n.depth === 0 ? p.primary : p.border,
               borderLeftWidth: 2,
-              backgroundColor: n.depth === 0 ? p.surfaceAlt : undefined,
+              backgroundColor: n.depth === 0 ? p.surfaceVariant : undefined,
             },
           ]}>
           {editingId === n.id ? (
@@ -160,10 +160,10 @@ export function SubtaskEditor({
                 onPress={() => run((s) => s.subtasks.toggleComplete(n.id))}
                 style={styles.miniCheck}
                 disabled={readOnly}>
-                <Icon name={n.completed ? 'checkmark-circle' : 'ellipse-outline'} size={22} color={n.completed ? p.success : p.textMuted} />
+                <Icon name={n.completed ? 'checkmark-circle' : 'ellipse-outline'} size={22} color={n.completed ? p.success : p.textSecondary} />
               </Pressable>
               <View style={{ flex: 1, paddingVertical: spacing.sm, gap: 2 }}>
-                <AppText style={n.completed ? { textDecorationLine: 'line-through' } : undefined} color={n.completed ? p.textMuted : p.text}>
+                <AppText style={n.completed ? { textDecorationLine: 'line-through' } : undefined} color={n.completed ? p.textSecondary : p.text}>
                   {n.title}
                 </AppText>
                 {n.notes ? (
@@ -196,7 +196,7 @@ export function SubtaskEditor({
                       setParentId(null);
                     }}
                     style={styles.iconHit}>
-                    <Icon name="create-outline" size={18} color={p.textMuted} />
+                    <Icon name="create-outline" size={18} color={p.textSecondary} />
                   </Pressable>
                   <Pressable
                     testID={`${testID}-delete-${n.id}`}
@@ -204,7 +204,7 @@ export function SubtaskEditor({
                     hitSlop={8}
                     onPress={() => remove(n.id, n.title)}
                     style={styles.iconHit}>
-                    <Icon name="trash-outline" size={18} color={p.danger} />
+                    <Icon name="trash-outline" size={18} color={p.error} />
                   </Pressable>
                 </View>
               ) : null}

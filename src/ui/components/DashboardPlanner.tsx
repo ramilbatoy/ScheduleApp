@@ -99,7 +99,7 @@ export function WeeklyGoalsSection({
         </View>
       ) : null}
       {goals.length && !goals.some((a) => a.task.priority === 'urgent' || a.task.priority === 'high') ? (
-        <AppText variant="caption" color={p.textMuted}>
+        <AppText variant="caption" color={p.textSecondary}>
           Nothing marked urgent or high yet.
         </AppText>
       ) : null}

@@ -48,7 +48,7 @@ export function AppText({
       numberOfLines={numberOfLines}
       // Android can mis-measure bold label width and clip content-sized buttons (e.g. "Add a task" → "Add a").
       {...(Platform.OS === 'android' ? { textBreakStrategy: 'simple' as const, android_hyphenationFrequency: 'none' as const } : {})}
-      style={[type[variant], { color: color ?? (muted ? p.textMuted : p.text) }, style]}>
+      style={[type[variant], { color: color ?? (muted ? p.textSecondary : p.text) }, style]}>
       {children}
     </Text>
   );
@@ -158,8 +158,8 @@ export function Button({
   compact?: boolean;
 }) {
   const p = useTheme();
-  const bg = { primary: p.primary, secondary: p.surfaceAlt, danger: p.danger, ghost: 'transparent' }[tone];
-  const fg = { primary: p.onPrimary, secondary: p.text, danger: '#FFFFFF', ghost: p.primary }[tone];
+  const bg = { primary: p.primary, secondary: p.surfaceVariant, danger: p.error, ghost: 'transparent' }[tone];
+  const fg = { primary: p.onPrimary, secondary: p.text, danger: p.onPrimary, ghost: p.primary }[tone];
   return (
     <Pressable
       testID={testID}
@@ -207,7 +207,7 @@ export function IconButton({
       accessibilityLabel={label}
       onPress={onPress}
       hitSlop={6}
-      style={({ pressed }) => [styles.iconButton, pressed && { backgroundColor: p.surfaceAlt }, style]}>
+      style={({ pressed }) => [styles.iconButton, pressed && { backgroundColor: p.surfaceVariant }, style]}>
       <Ionicons name={icon} size={size} color={color ?? p.text} />
     </Pressable>
   );
@@ -244,7 +244,7 @@ export function Chip({
           backgroundColor: selected ? `${accent}22` : p.surface,
         },
       ]}>
-      {icon ? <Ionicons name={icon} size={14} color={selected ? accent : p.textMuted} /> : null}
+      {icon ? <Ionicons name={icon} size={14} color={selected ? accent : p.textSecondary} /> : null}
       {color && !icon ? <View style={[styles.dot, { backgroundColor: color }]} /> : null}
       <AppText variant="label" color={selected ? accent : p.text} numberOfLines={1} style={styles.chipLabel}>
         {label}
@@ -266,7 +266,7 @@ export function EmptyState({ icon, title, message, action }: { icon: IconName; t
   const p = useTheme();
   return (
     <View style={styles.empty}>
-      <Ionicons name={icon} size={36} color={p.textMuted} />
+      <Ionicons name={icon} size={36} color={p.textSecondary} />
       <AppText variant="heading" style={{ textAlign: 'center' }}>
         {title}
       </AppText>
@@ -294,7 +294,7 @@ export function ErrorState({ message, onRetry }: { message: string; onRetry?: ()
   const p = useTheme();
   return (
     <View style={styles.empty}>
-      <Ionicons name="alert-circle-outline" size={36} color={p.danger} />
+      <Ionicons name="alert-circle-outline" size={36} color={p.error} />
       <AppText variant="heading">Something went wrong</AppText>
       <AppText muted style={{ textAlign: 'center' }}>
         {message}
@@ -313,7 +313,7 @@ export function Field({ label, children, hint, error }: { label: string; childre
       </AppText>
       {children}
       {error ? (
-        <AppText variant="caption" color={p.danger}>
+        <AppText variant="caption" color={p.error}>
           {error}
         </AppText>
       ) : hint ? (
@@ -330,11 +330,11 @@ export function Input(props: TextInputProps & { invalid?: boolean }) {
   const { invalid, style, ...rest } = props;
   return (
     <TextInput
-      placeholderTextColor={p.textMuted}
+      placeholderTextColor={p.textSecondary}
       {...rest}
       style={[
         styles.input,
-        { color: p.text, backgroundColor: p.surface, borderColor: invalid ? p.danger : p.border },
+        { color: p.text, backgroundColor: p.surface, borderColor: invalid ? p.error : p.border },
         rest.multiline && { minHeight: 88, textAlignVertical: 'top', paddingTop: spacing.md },
         style,
       ]}
@@ -352,12 +352,12 @@ export function SelectButton({ value, placeholder, icon, onPress, onClear, testI
         accessibilityLabel={value ?? placeholder}
         onPress={onPress}
         style={[styles.select, { flex: 1, alignSelf: 'stretch', paddingLeft: spacing.md }]}>
-        <Ionicons name={icon} size={18} color={p.textMuted} />
-        <AppText style={{ flex: 1 }} color={value ? p.text : p.textMuted} numberOfLines={1}>
+        <Ionicons name={icon} size={18} color={p.textSecondary} />
+        <AppText style={{ flex: 1 }} color={value ? p.text : p.textSecondary} numberOfLines={1}>
           {value ?? placeholder}
         </AppText>
       </Pressable>
-      {value && onClear ? <IconButton icon="close-circle" label={`Clear ${placeholder}`} size={18} color={p.textMuted} onPress={onClear} /> : null}
+      {value && onClear ? <IconButton icon="close-circle" label={`Clear ${placeholder}`} size={18} color={p.textSecondary} onPress={onClear} /> : null}
     </View>
   );
 }
@@ -378,8 +378,8 @@ export function SwitchRow({ label, description, value, onChange, testID }: { lab
         value={value}
         onValueChange={onChange}
         trackColor={{ true: p.primary, false: p.border }}
-        thumbColor="#FFFFFF"
-        {...({ activeThumbColor: '#FFFFFF' } as object)}
+        thumbColor={p.onPrimary}
+        {...({ activeThumbColor: p.onPrimary } as object)}
       />
     </Pressable>
   );
@@ -389,12 +389,12 @@ export function ListRow({ icon, label, value, onPress, danger, testID }: { icon?
   const p = useTheme();
   return (
     <Pressable testID={testID} style={({ pressed }) => [styles.row, pressed && onPress && { opacity: 0.7 }]} onPress={onPress} disabled={!onPress} accessibilityRole={onPress ? 'button' : undefined}>
-      {icon ? <Ionicons name={icon} size={20} color={danger ? p.danger : p.textMuted} /> : null}
-      <AppText style={{ flex: 1 }} color={danger ? p.danger : undefined}>
+      {icon ? <Ionicons name={icon} size={20} color={danger ? p.error : p.textSecondary} /> : null}
+      <AppText style={{ flex: 1 }} color={danger ? p.error : undefined}>
         {label}
       </AppText>
       {value ? <AppText muted>{value}</AppText> : null}
-      {onPress ? <Ionicons name="chevron-forward" size={18} color={p.textMuted} /> : null}
+      {onPress ? <Ionicons name="chevron-forward" size={18} color={p.textSecondary} /> : null}
     </Pressable>
   );
 }
@@ -402,7 +402,7 @@ export function ListRow({ icon, label, value, onPress, danger, testID }: { icon?
 export function Segmented<T extends string>({ options, value, onChange, testID }: { options: { value: T; label: string }[]; value: T; onChange: (v: T) => void; testID?: string }) {
   const p = useTheme();
   return (
-    <View style={[styles.segmented, { backgroundColor: p.surfaceAlt }]} testID={testID}>
+    <View style={[styles.segmented, { backgroundColor: p.surfaceVariant }]} testID={testID}>
       {options.map((o) => {
         const active = o.value === value;
         return (
@@ -413,7 +413,7 @@ export function Segmented<T extends string>({ options, value, onChange, testID }
             accessibilityState={{ selected: active }}
             onPress={() => onChange(o.value)}
             style={[styles.segment, active && { backgroundColor: p.surface, borderColor: p.border }]}>
-            <AppText variant="label" color={active ? p.primary : p.textMuted} numberOfLines={1} style={styles.segmentLabel}>
+            <AppText variant="label" color={active ? p.primary : p.textSecondary} numberOfLines={1} style={styles.segmentLabel}>
               {o.label}
             </AppText>
           </Pressable>

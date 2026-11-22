@@ -5,6 +5,50 @@ export type OccurrenceStatus = 'pending' | 'completed' | 'cancelled' | 'missed';
 export type OccurrenceSource = 'manual' | 'recurrence' | 'carry_forward';
 export type Frequency = 'daily' | 'weekly' | 'monthly' | 'yearly';
 export type ThemePreference = 'system' | 'light' | 'dark';
+
+/** Persisted palette id — keep in sync with `src/theme/themeTypes.ThemePresetId`. */
+export type ThemePresetId =
+  | 'ocean-blue'
+  | 'midnight-navy'
+  | 'emerald-green'
+  | 'forest-green'
+  | 'purple'
+  | 'sunset-orange'
+  | 'rose-pink'
+  | 'minimal-gray'
+  | 'classic-light'
+  | 'dark-mode';
+
+/** Partial semantic color overrides stored as hex strings. */
+export type ThemeCustomColors = Partial<
+  Record<
+    | 'primary'
+    | 'secondary'
+    | 'accent'
+    | 'background'
+    | 'surface'
+    | 'surfaceVariant'
+    | 'text'
+    | 'textSecondary'
+    | 'border'
+    | 'outline'
+    | 'success'
+    | 'warning'
+    | 'error'
+    | 'info'
+    | 'completed'
+    | 'pending'
+    | 'overdue'
+    | 'disabled',
+    string
+  >
+>;
+
+export interface ThemeLastUsed {
+  theme: ThemePreference;
+  themePreset: ThemePresetId;
+  themeCustomColors: ThemeCustomColors | null;
+}
 export type ReminderKind = 'deadline' | 'start' | 'custom';
 export type HistoryEventType =
   | 'created'
@@ -142,7 +186,14 @@ export interface SubtaskNode extends Subtask {
 
 export interface AppSettings {
   autoCarryForward: boolean;
+  /** Appearance mode: system / light / dark. */
   theme: ThemePreference;
+  /** Named palette preset. */
+  themePreset: ThemePresetId;
+  /** User color overrides (HEX). Null when using the preset as-is. */
+  themeCustomColors: ThemeCustomColors | null;
+  /** Snapshot for Theme Settings → Restore Last Used. */
+  themeLastUsed: ThemeLastUsed | null;
   defaultReminderOffsetMinutes: number | null;
   lastCarryForwardRunDate: DateKey | null;
   notificationsEnabled: boolean;
@@ -153,6 +204,9 @@ export interface AppSettings {
 export const DEFAULT_SETTINGS: AppSettings = {
   autoCarryForward: true,
   theme: 'system',
+  themePreset: 'classic-light',
+  themeCustomColors: null,
+  themeLastUsed: null,
   defaultReminderOffsetMinutes: 15,
   lastCarryForwardRunDate: null,
   notificationsEnabled: true,

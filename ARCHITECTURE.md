@@ -7,7 +7,7 @@ Full design notes: Project store `docs/architecture-plan.md`. Authoritative play
 ## Layers
 
 ```
-UI (Expo Router + components)
+UI (Expo Router + Paper App* + theme tokens)
         │
 Domain services (Task, Occurrence ops, CarryForward, Recurrence,
                  Reminder, Stats, Backup, Settings, Category, Agenda)
@@ -31,11 +31,12 @@ Repositories (SQL-shaped API over Database)
 
 | Path | Role |
 | --- | --- |
-| `src/app/` | Screens: tabs, item detail/edit, quick-add, categories |
+| `src/app/` | Screens: tabs, item detail/edit, quick-add, categories, theme-settings |
 | `src/domain/` | Models, repos, services, pure date/recurrence helpers |
 | `src/db/` | Schema, migrations, SQLite + memory/IndexedDB drivers |
 | `src/state/` | Zustand store |
-| `src/ui/` | Theme tokens, primitives, shared components |
+| `src/theme/` | Semantic tokens, presets, ThemeProvider, Paper MD3 bridge |
+| `src/ui/` | App* wrappers, primitives, shared components |
 | `src/platform/` | `notifications(.web)`, `backupFiles(.web)` |
 
 ## Nested subtasks
