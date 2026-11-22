@@ -2,11 +2,13 @@ import { router } from 'expo-router';
 import { useState } from 'react';
 import { View } from 'react-native';
 
+import { APP_HEADER_NAME } from '@/domain/branding';
 import { DEFAULT_NAVIGATION, NAV_ITEM_IDS, type NavItemId } from '@/domain/navigationPrefs';
 import type { AppSettings, ThemePreference } from '@/domain/models';
 import type { PermissionState } from '@/domain/ports';
+import { pickBrandingLogo } from '@/platform/brandingFiles';
 import { useAppStore, useServices, useSettings } from '@/state/appStore';
-import { MenuButton } from '@/ui/components/MenuButton';
+import { HeaderBrand } from '@/ui/components/AppHeader';
 import { AppText, Button, Card, Divider, ErrorState, ListRow, Screen, Segmented, SwitchRow } from '@/ui/components/primitives';
 import { exportBackupFlow, latestSafetyCopyDate, restoreBackupFlow, undoRestoreFlow, type FlowResult } from '@/ui/backupActions';
 import { errorMessage, useAction, useQuery, useToast } from '@/ui/hooks';
@@ -16,13 +18,13 @@ const NAV_LABEL: Record<NavItemId, string> = {
   today: 'Today',
   calendar: 'Calendar',
   tasks: 'Tasks',
-  projects: 'Projects',
+  projects: 'Folders',
   statistics: 'Statistics',
   categories: 'Categories',
   theme: 'Theme',
   backup: 'Backup & Restore',
   settings: 'Settings',
-  about: 'About',
+  about: 'About NeoOrganizer',
 };
 
 const PERMISSION_LABEL: Record<PermissionState, string> = {
@@ -83,6 +85,16 @@ export default function SettingsScreen() {
     }
   }
 
+  async function chooseLogo() {
+    try {
+      const logo = await pickBrandingLogo();
+      if (!logo) return;
+      await update('branding', { mode: 'logo', logo });
+    } catch (e) {
+      toast(errorMessage(e), 'error');
+    }
+  }
+
   async function requestPermission() {
     const state = await run((s) => s.reminders.requestPermission());
     if (state === 'denied') toast('Notifications are blocked. Enable them in system settings.', 'error');
@@ -90,7 +102,7 @@ export default function SettingsScreen() {
   }
 
   return (
-    <Screen title="Settings" leading={<MenuButton />}>
+    <Screen title="Settings">
       <AppText variant="label" muted>
         APPEARANCE
       </AppText>
@@ -118,6 +130,63 @@ export default function SettingsScreen() {
           value="Presets & colors"
           onPress={() => router.push('/theme-settings')}
         />
+      </Card>
+
+      <AppText variant="label" muted>
+        APP BRANDING
+      </AppText>
+      <Card>
+        <AppText>Header</AppText>
+        <AppText variant="caption" muted>
+          Shows either {APP_HEADER_NAME} or a logo you choose. The Android launcher icon is unchanged.
+        </AppText>
+        <View style={{ height: 56, justifyContent: 'center' }}>
+          <HeaderBrand testID="branding-preview" />
+        </View>
+        <ListRow
+          testID="branding-name"
+          icon={settings.branding.mode === 'name' ? 'checkmark-circle' : 'ellipse-outline'}
+          label="Use Default App Name"
+          onPress={() => update('branding', { mode: 'name', logo: settings.branding.logo })}
+        />
+        <Divider />
+        <ListRow
+          testID="branding-logo"
+          icon={settings.branding.mode === 'logo' ? 'checkmark-circle' : 'ellipse-outline'}
+          label="Use Custom Logo"
+          onPress={() => update('branding', { mode: 'logo', logo: settings.branding.logo })}
+        />
+        {settings.branding.mode === 'logo' ? (
+          <>
+            <Divider />
+            <AppText variant="caption" muted>
+              PNG, JPG, JPEG, or WebP. The image is saved on this device and stays available offline.
+            </AppText>
+            <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm }}>
+              <Button
+                testID="branding-pick"
+                label={settings.branding.logo ? 'Replace' : 'Choose image'}
+                icon="image-outline"
+                compact
+                onPress={() => chooseLogo()}
+              />
+              <Button
+                testID="branding-remove"
+                label="Remove"
+                icon="trash-outline"
+                tone="ghost"
+                compact
+                disabled={!settings.branding.logo}
+                onPress={() => update('branding', { mode: 'name', logo: null })}
+              />
+            </View>
+            {!settings.branding.logo ? (
+              <AppText variant="caption" muted>
+                No logo yet. The header shows {APP_HEADER_NAME} until you pick one.
+              </AppText>
+            ) : null}
+          </>
+        ) : null}
       </Card>
 
       <AppText variant="label" muted>
@@ -157,7 +226,7 @@ export default function SettingsScreen() {
         <Divider />
         <ListRow testID="nav-reset" icon="refresh" label="Reset menu" onPress={() => update('navigation', { ...DEFAULT_NAVIGATION, order: [...DEFAULT_NAVIGATION.order] })} />
         <AppText variant="caption" muted>
-          Hiding a shortcut does not remove the screen. Tabs stay. Projects, Categories, Theme, Backup, and About also stay available from this page.
+          Hiding a shortcut does not remove the screen. Tabs stay. Folders, Categories, Theme, Backup, and About also stay available from this page.
         </AppText>
       </Card>
 
@@ -166,6 +235,14 @@ export default function SettingsScreen() {
       </AppText>
       <Card>
         <SwitchRow
+          testID="toggle-empty-folders"
+          label="Show empty folders on Tasks"
+          description="Folders with no tasks stay on the Folders page. Turn this on to list them on Tasks as well."
+          value={settings.showEmptyFoldersOnTasks}
+          onChange={(v) => update('showEmptyFoldersOnTasks', v)}
+        />
+        <Divider />
+        <SwitchRow
           testID="toggle-carry-forward"
           label="Automatic carry-forward"
           description="Unfinished tasks move to the next day until completed or deleted. Events never carry over."
@@ -173,7 +250,7 @@ export default function SettingsScreen() {
           onChange={(v) => update('autoCarryForward', v)}
         />
         <Divider />
-        <ListRow testID="open-projects" icon="folder-outline" label="Projects" value="Folders" onPress={() => router.push('/projects')} />
+        <ListRow testID="open-projects" icon="folder-outline" label="Folders" onPress={() => router.push('/projects')} />
         <Divider />
         <ListRow
           testID="carry-now"
@@ -281,7 +358,7 @@ export default function SettingsScreen() {
           All data stays on this device. No account, no cloud.
         </AppText>
         <Divider />
-        <ListRow testID="open-about" icon="information-circle-outline" label="About DayPlanner" onPress={() => router.push('/about')} />
+        <ListRow testID="open-about" icon="information-circle-outline" label="About NeoOrganizer" onPress={() => router.push('/about')} />
       </Card>
     </Screen>
   );

@@ -1,14 +1,12 @@
 import { router } from 'expo-router';
 import { useEffect, useMemo, useState } from 'react';
 import { RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { formatDateKey, todayKey } from '@/domain/dates';
 import type { Agenda, DateKey } from '@/domain/models';
 import { filterAgendaItems, matchesNearDueWindow } from '@/domain/services/agendaService';
 import { useAppStore, useServices, useSettings } from '@/state/appStore';
 import { AgendaRow, formatDeadline } from '@/ui/components/AgendaRow';
-import { MenuButton } from '@/ui/components/MenuButton';
 import { AgendaFilterBar, AGENDA_SORT_OPTIONS, useAgendaFilterState } from '@/ui/components/AgendaFilterBar';
 import {
   DashboardMonthView,
@@ -228,12 +226,7 @@ function TodayDashboard() {
         <AppText variant="label" muted>
           {d ? formatDateKey(d.today, 'EEEE').toUpperCase() : ''}
         </AppText>
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm }}>
-          <MenuButton />
-          <AppText variant="display" style={{ flex: 1 }}>
-            {d ? formatDateKey(d.today, 'MMMM d, yyyy') : 'Today'}
-          </AppText>
-        </View>
+        <AppText variant="display">{d ? formatDateKey(d.today, 'MMMM d, yyyy') : 'Today'}</AppText>
       </View>
 
       {dash.error ? <ErrorState message={dash.error} onRetry={dash.reload} /> : null}
@@ -322,7 +315,6 @@ export default function TodayScreen() {
 
 function TodayScreenReady() {
   const p = useTheme();
-  const insets = useSafeAreaInsets();
   const services = useServices();
   const invalidate = useAppStore((s) => s.invalidate);
   const today = todayKey(services.clock);
@@ -352,7 +344,7 @@ function TodayScreenReady() {
   const quickAddDate = mode === 'month' ? monthAnchor : mode === 'week' ? weekAnchor : today;
 
   return (
-    <View style={{ flex: 1, backgroundColor: p.background, paddingTop: insets.top }}>
+    <View style={{ flex: 1, backgroundColor: p.background }}>
       <ScrollView
         contentContainerStyle={{ padding: spacing.lg, paddingBottom: 120, gap: spacing.md }}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={refresh} />}>

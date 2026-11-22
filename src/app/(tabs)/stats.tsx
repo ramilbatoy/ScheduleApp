@@ -5,7 +5,6 @@ import { Pressable, StyleSheet, View } from 'react-native';
 import { formatDateKey } from '@/domain/dates';
 import type { StatsPeriod, StatsReport } from '@/domain/services/statsService';
 import { BarChart, Legend, ProgressBar, StatTile } from '@/ui/components/Charts';
-import { MenuButton } from '@/ui/components/MenuButton';
 import { AppText, Button, Card, EmptyState, ErrorState, Icon, LoadingState, Screen, Segmented } from '@/ui/components/primitives';
 import { useQuery, useTheme } from '@/ui/hooks';
 import { spacing } from '@/ui/theme';
@@ -21,7 +20,7 @@ export default function StatisticsScreen() {
   const report = useQuery((s) => s.stats.report(period), [period]);
 
   return (
-    <Screen title="Statistics" leading={<MenuButton />}>
+    <Screen title="Statistics">
       <Segmented<StatsPeriod>
         testID="stats-period"
         value={period}

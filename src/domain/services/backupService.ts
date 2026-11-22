@@ -29,6 +29,8 @@ const KNOWN_SETTING_KEYS = new Set([
   'last_backup_at',
   'categories_seeded',
   'navigation',
+  'branding',
+  'show_empty_folders_on_tasks',
 ]);
 
 export interface BackupFile {

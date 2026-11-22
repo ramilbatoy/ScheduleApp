@@ -1,4 +1,5 @@
 import type { DbOps, Where } from '../../db/types';
+import { sanitizeBranding } from '../branding';
 import { sanitizeNavigation } from '../navigationPrefs';
 import {
   DEFAULT_SETTINGS,
@@ -237,6 +238,8 @@ const SETTING_KEYS: Record<keyof AppSettings, string> = {
   lastBackupAt: 'last_backup_at',
   categoriesSeeded: 'categories_seeded',
   navigation: 'navigation',
+  branding: 'branding',
+  showEmptyFoldersOnTasks: 'show_empty_folders_on_tasks',
 };
 
 export class SettingsRepo {
@@ -277,6 +280,8 @@ export class SettingsRepo {
       settings.themeCustomColors = null;
     }
     settings.navigation = sanitizeNavigation(settings.navigation);
+    settings.branding = sanitizeBranding(settings.branding);
+    settings.showEmptyFoldersOnTasks = settings.showEmptyFoldersOnTasks === true;
     return settings;
   }
 

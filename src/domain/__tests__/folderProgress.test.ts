@@ -1,6 +1,6 @@
 import { computeFolderProgress, effectivePriority, folderIsOverdue, folderTargetStatus, presentFolders, resolvePriority, type FolderCard } from '../folderProgress';
 import type { Folder } from '../models';
-import { sanitizeNavigation } from '../navigationPrefs';
+import { activeDrawerItem, sanitizeNavigation } from '../navigationPrefs';
 
 const today = '2026-03-10';
 
@@ -93,7 +93,18 @@ describe('navigation prefs', () => {
     const prefs = sanitizeNavigation({ drawerEnabled: false, order: ['tasks', 'nope', 'tasks', 'projects'] });
     expect(prefs).toEqual({ drawerEnabled: false, order: ['tasks', 'projects'] });
     expect(sanitizeNavigation(null).drawerEnabled).toBe(true);
-    expect(sanitizeNavigation(null).order).toContain('today');
+    expect(sanitizeNavigation(null).order).toEqual(['today', 'calendar', 'tasks', 'projects', 'statistics', 'settings', 'about']);
     expect(sanitizeNavigation({ drawerEnabled: true, order: [] }).order).toEqual([]);
+  });
+
+  it('highlights the screen that is open, including a folder inside Folders', () => {
+    expect(activeDrawerItem('/')).toBe('today');
+    expect(activeDrawerItem('/tasks')).toBe('tasks');
+    expect(activeDrawerItem('/projects')).toBe('projects');
+    expect(activeDrawerItem('/folder/abc')).toBe('projects');
+    expect(activeDrawerItem('/stats')).toBe('statistics');
+    expect(activeDrawerItem('/settings')).toBe('settings');
+    expect(activeDrawerItem('/about')).toBe('about');
+    expect(activeDrawerItem('/item/abc')).toBeNull();
   });
 });

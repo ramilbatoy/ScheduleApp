@@ -2,6 +2,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { Tabs } from 'expo-router/js-tabs';
 import type { ComponentProps } from 'react';
 
+import { AppHeader } from '@/ui/components/AppHeader';
 import { useTheme } from '@/ui/hooks';
 
 type IconName = ComponentProps<typeof Ionicons>['name'];
@@ -19,7 +20,8 @@ export default function TabLayout() {
   return (
     <Tabs
       screenOptions={{
-        headerShown: false,
+        headerShown: true,
+        header: () => <AppHeader />,
         tabBarActiveTintColor: p.primary,
         tabBarInactiveTintColor: p.textSecondary,
         tabBarStyle: { backgroundColor: p.surface, borderTopColor: p.border, minHeight: 64, paddingTop: 6 },

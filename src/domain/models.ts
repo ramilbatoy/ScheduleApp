@@ -1,3 +1,4 @@
+import { DEFAULT_BRANDING, type AppBranding } from './branding';
 import { DEFAULT_NAVIGATION, type NavigationPrefs } from './navigationPrefs';
 
 export type ItemKind = 'task' | 'event';
@@ -229,6 +230,10 @@ export interface AppSettings {
   categoriesSeeded: boolean;
   /** Hamburger drawer: on/off, visible shortcuts, and their order. */
   navigation: NavigationPrefs;
+  /** Header wordmark or a logo stored as bytes in app_settings. */
+  branding: AppBranding;
+  /** Tasks list only. Empty folders always remain on the Folders page. */
+  showEmptyFoldersOnTasks: boolean;
 }
 
 export const DEFAULT_SETTINGS: AppSettings = {
@@ -243,6 +248,8 @@ export const DEFAULT_SETTINGS: AppSettings = {
   lastBackupAt: null,
   categoriesSeeded: false,
   navigation: DEFAULT_NAVIGATION,
+  branding: DEFAULT_BRANDING,
+  showEmptyFoldersOnTasks: false,
 };
 
 /** An occurrence joined with its parent definition — what most screens render. */

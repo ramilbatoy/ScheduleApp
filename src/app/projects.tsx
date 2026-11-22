@@ -6,7 +6,6 @@ import type { FolderCard, FolderListFilter, FolderSortKey } from '@/domain/folde
 import { useServices } from '@/state/appStore';
 import { PRIORITY_LABEL } from '@/ui/components/AgendaRow';
 import { FolderForm } from '@/ui/components/FolderForm';
-import { MenuButton } from '@/ui/components/MenuButton';
 import { AppText, Button, Card, Chip, EmptyState, ErrorState, Icon, Input, LoadingState, type IconName } from '@/ui/components/primitives';
 import { useQuery, useTheme } from '@/ui/hooks';
 import { useSafeAndroidBack } from '@/ui/navigation';
@@ -72,8 +71,9 @@ export default function ProjectsScreen() {
 
   return (
     <>
-      <Stack.Screen options={{ title: 'Projects', headerRight: () => <MenuButton /> }} />
+      <Stack.Screen options={{ title: 'Folders' }} />
       <ScrollView style={{ backgroundColor: p.background }} contentContainerStyle={{ padding: spacing.lg, gap: spacing.md, paddingBottom: 48 }}>
+        <AppText variant="display">Folders</AppText>
         <AppText variant="caption" muted testID="projects-overview">
           {counts.active} active · {counts.overdue} overdue · {counts.completed} completed
         </AppText>

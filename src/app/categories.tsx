@@ -28,6 +28,7 @@ export default function CategoriesScreen() {
         }}
       />
       <ScrollView contentContainerStyle={styles.content} style={{ backgroundColor: p.background }}>
+        <AppText variant="display">Categories</AppText>
         {list.error ? (
           <ErrorState message={list.error} onRetry={list.reload} />
         ) : !list.data ? (

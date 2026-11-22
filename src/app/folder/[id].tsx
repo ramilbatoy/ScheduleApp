@@ -1,5 +1,5 @@
 import { router, Stack, useLocalSearchParams } from 'expo-router';
-import { useState } from 'react';
+import { useRef, useState, type ComponentRef } from 'react';
 import { ScrollView, View } from 'react-native';
 
 import { todayKey } from '@/domain/dates';
@@ -9,14 +9,16 @@ import { AgendaFilterBar, useAgendaFilterState } from '@/ui/components/AgendaFil
 import { AgendaRow, PRIORITY_LABEL } from '@/ui/components/AgendaRow';
 import { choose, confirm } from '@/ui/components/dialogs';
 import { FolderForm } from '@/ui/components/FolderForm';
-import { MenuButton } from '@/ui/components/MenuButton';
 import { AppText, Button, Card, EmptyState, ErrorState, Icon, Input, LoadingState, type IconName } from '@/ui/components/primitives';
 import { useAction, useQuery, useTheme, useToast } from '@/ui/hooks';
 import { goBackOrDashboard, useSafeAndroidBack } from '@/ui/navigation';
 import { radius, spacing } from '@/ui/theme';
 
 export default function FolderDetailScreen() {
-  const { id } = useLocalSearchParams<{ id: string }>();
+  const { id, focus } = useLocalSearchParams<{ id: string; focus?: string }>();
+  const focusId = typeof focus === 'string' ? focus : undefined;
+  const scrollRef = useRef<ComponentRef<typeof ScrollView>>(null);
+  const listTop = useRef(0);
   const p = useTheme();
   const services = useServices();
   const invalidate = useAppStore((s) => s.invalidate);
@@ -131,8 +133,8 @@ export default function FolderDetailScreen() {
 
   return (
     <>
-      <Stack.Screen options={{ title: folder.name, headerRight: () => <MenuButton /> }} />
-      <ScrollView style={{ backgroundColor: p.background }} contentContainerStyle={{ padding: spacing.lg, gap: spacing.lg, paddingBottom: 80 }}>
+      <Stack.Screen options={{ title: folder.name }} />
+      <ScrollView ref={scrollRef} style={{ backgroundColor: p.background }} contentContainerStyle={{ padding: spacing.lg, gap: spacing.lg, paddingBottom: 80 }}>
         <Card>
           <View style={{ flexDirection: 'row', gap: spacing.md, alignItems: 'center' }}>
             <View style={{ width: 44, height: 44, borderRadius: radius.md, backgroundColor: `${folder.color}22`, alignItems: 'center', justifyContent: 'center' }}>
@@ -198,10 +200,25 @@ export default function FolderDetailScreen() {
         {tasks.error ? <ErrorState message={tasks.error} onRetry={tasks.reload} /> : null}
         {!tasks.data && !tasks.error ? <LoadingState /> : null}
         {tasks.data && tasks.data.length === 0 ? <AppText muted>No tasks in this folder for these filters.</AppText> : null}
-        <View style={{ gap: spacing.sm }}>
-          {tasks.data?.map((a, i) => (
-            <AgendaRow key={a.occurrence.id} a={a} showDate testID={`folder-task-${i}`} />
-          ))}
+        <View
+          style={{ gap: spacing.sm }}
+          onLayout={(e) => {
+            listTop.current = e.nativeEvent.layout.y;
+          }}>
+          {tasks.data?.map((a, i) => {
+            const highlighted = focusId === a.occurrence.id;
+            return (
+              <View
+                key={a.occurrence.id}
+                onLayout={(e) => {
+                  if (!highlighted) return;
+                  scrollRef.current?.scrollTo({ y: Math.max(0, listTop.current + e.nativeEvent.layout.y - spacing.md), animated: false });
+                }}
+                style={highlighted ? { borderWidth: 2, borderColor: p.primary, borderRadius: radius.md } : undefined}>
+                <AgendaRow a={a} showDate testID={`folder-task-${i}`} />
+              </View>
+            );
+          })}
         </View>
         <Button label="Open full editor" tone="ghost" icon="options-outline" onPress={() => router.push({ pathname: '/item/edit', params: { kind: 'task', folderId: folder.id, date: today } })} />
       </ScrollView>

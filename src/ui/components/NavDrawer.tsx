@@ -1,12 +1,13 @@
-import { router } from 'expo-router';
+import { router, usePathname } from 'expo-router';
 import { useEffect, useMemo, useState } from 'react';
 import { Animated, BackHandler, Modal, PanResponder, Platform, Pressable, StyleSheet, useWindowDimensions, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import type { NavItemId } from '@/domain/navigationPrefs';
+import { activeDrawerItem, type NavItemId } from '@/domain/navigationPrefs';
 import { useAppStore } from '@/state/appStore';
 import { useQuery, useTheme } from '@/ui/hooks';
 
+import { HeaderBrand } from './AppHeader';
 import { AppText, Icon, type IconName } from './primitives';
 import { radius, spacing } from '../theme';
 
@@ -14,13 +15,13 @@ const LINKS: { id: NavItemId; label: string; icon: IconName; href: '/' | '/calen
   { id: 'today', label: 'Today', icon: 'sunny-outline', href: '/' },
   { id: 'calendar', label: 'Calendar', icon: 'calendar-outline', href: '/calendar' },
   { id: 'tasks', label: 'Tasks', icon: 'checkbox-outline', href: '/tasks' },
-  { id: 'projects', label: 'Projects', icon: 'folder-outline', href: '/projects' },
+  { id: 'projects', label: 'Folders', icon: 'folder-outline', href: '/projects' },
   { id: 'statistics', label: 'Statistics', icon: 'stats-chart-outline', href: '/stats' },
   { id: 'categories', label: 'Categories', icon: 'pricetags-outline', href: '/categories' },
   { id: 'theme', label: 'Theme', icon: 'color-palette-outline', href: '/theme-settings' },
   { id: 'backup', label: 'Backup & Restore', icon: 'download-outline', href: '/settings' },
   { id: 'settings', label: 'Settings', icon: 'settings-outline', href: '/settings' },
-  { id: 'about', label: 'About', icon: 'information-circle-outline', href: '/about' },
+  { id: 'about', label: 'About NeoOrganizer', icon: 'information-circle-outline', href: '/about' },
 ];
 
 /** Left drawer. Tabs stay; this is an extra way to reach the same screens. */
@@ -31,6 +32,7 @@ export function NavDrawer() {
   const panelWidth = Math.min(320, Math.round(width * 0.86));
   const open = useAppStore((s) => s.drawerOpen);
   const close = useAppStore((s) => s.closeDrawer);
+  const active = activeDrawerItem(usePathname());
   const settings = useAppStore((s) => s.settings);
   const progress = useQuery((s) => (open ? s.agenda.dashboard() : Promise.resolve(null)), [open]);
   const [translate] = useState(() => new Animated.Value(-panelWidth));
@@ -105,7 +107,7 @@ export function NavDrawer() {
           ]}>
           <View style={styles.headerRow}>
             <View style={{ flex: 1, gap: 2 }}>
-              <AppText variant="title">DayPlanner</AppText>
+              <HeaderBrand testID="drawer-brand" />
               <AppText variant="caption" muted>
                 Offline-first. Stays on this device.
               </AppText>
@@ -120,18 +122,30 @@ export function NavDrawer() {
             </AppText>
           ) : null}
           <View style={{ gap: spacing.xs }}>
-            {items.map((item) => (
-              <Pressable
-                key={item.id}
-                testID={`drawer-${item.id}`}
-                accessibilityRole="menuitem"
-                accessibilityLabel={item.label}
-                onPress={() => go(item.href)}
-                style={({ pressed }) => [styles.item, { backgroundColor: pressed ? p.surfaceVariant : 'transparent', borderRadius: radius.md }]}>
-                <Icon name={item.icon} color={p.primary} />
-                <AppText>{item.label}</AppText>
-              </Pressable>
-            ))}
+            {items.map((item) => {
+              const selected = item.id === active;
+              return (
+                <Pressable
+                  key={item.id}
+                  testID={`drawer-${item.id}`}
+                  accessibilityRole="menuitem"
+                  accessibilityState={{ selected }}
+                  accessibilityLabel={item.label}
+                  onPress={() => go(item.href)}
+                  style={({ pressed }) => [
+                    styles.item,
+                    {
+                      backgroundColor: selected ? p.primarySoft : pressed ? p.surfaceVariant : 'transparent',
+                      borderRadius: radius.md,
+                    },
+                  ]}>
+                  <Icon name={item.icon} color={selected ? p.primary : p.textSecondary} />
+                  <AppText color={selected ? p.primary : undefined} style={selected ? { fontWeight: '700' } : undefined}>
+                    {item.label}
+                  </AppText>
+                </Pressable>
+              );
+            })}
           </View>
         </Animated.View>
         <Pressable style={[styles.backdrop, { backgroundColor: p.overlay }]} onPress={close} accessibilityLabel="Close menu" accessibilityRole="button" />

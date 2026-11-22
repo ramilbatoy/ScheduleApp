@@ -1,23 +1,17 @@
 import { DarkTheme, DefaultTheme, Stack, ThemeProvider as NavThemeProvider } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
-import { useEffect, useMemo } from 'react';
+import { useEffect, useMemo, type ReactNode } from 'react';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import { ThemeProvider } from '@/theme';
 import { AppProvider } from '@/ui/AppProvider';
+import { AppHeader } from '@/ui/components/AppHeader';
 import { DialogHost, ToastHost } from '@/ui/components/dialogs';
 import { NavDrawer } from '@/ui/components/NavDrawer';
-import { IconButton } from '@/ui/components/primitives';
 import { useTheme } from '@/ui/hooks';
-import { goBackOrDashboard } from '@/ui/navigation';
 
 SplashScreen.preventAutoHideAsync().catch(() => undefined);
-
-function HeaderBack() {
-  const p = useTheme();
-  return <IconButton icon="chevron-back" label="Back" color={p.text} onPress={goBackOrDashboard} testID="header-back" />;
-}
 
 function Navigation() {
   const p = useTheme();
@@ -41,7 +35,17 @@ function Navigation() {
           headerStyle: { backgroundColor: p.surface },
           headerTintColor: p.text,
           contentStyle: { backgroundColor: p.background },
-          headerLeft: () => <HeaderBack />,
+          header: ({ back, options }) => {
+            const renderRight = options.headerRight as
+              | ((props: { tintColor?: string; canGoBack?: boolean }) => ReactNode)
+              | undefined;
+            return (
+              <AppHeader
+                showBack={!!back}
+                right={renderRight ? renderRight({ tintColor: p.text, canGoBack: !!back }) : null}
+              />
+            );
+          },
         }}>
         <Stack.Screen name="(tabs)" options={{ headerShown: false, headerLeft: () => null }} />
         <Stack.Screen name="about" options={{ title: 'About' }} />

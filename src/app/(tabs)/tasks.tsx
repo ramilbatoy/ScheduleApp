@@ -1,11 +1,13 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { FlatList, ScrollView, StyleSheet, View } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { todayKey } from '@/domain/dates';
 import { PRIORITIES, type ItemKind, type Priority } from '@/domain/models';
 import type { FolderAssignmentFilter, FolderTargetFilter, SortKey, StatusFilter } from '@/domain/services/agendaService';
+import { groupFolderTasks, selectEmptyFoldersForTasks } from '@/domain/taskListFolders';
+import { useAppStore } from '@/state/appStore';
 import { AgendaRow, PRIORITY_LABEL } from '@/ui/components/AgendaRow';
-import { MenuButton } from '@/ui/components/MenuButton';
+import { FolderTaskCard } from '@/ui/components/FolderTaskCard';
 import { OptionsModal } from '@/ui/components/Pickers';
 import { AppText, Chip, EmptyState, ErrorState, Icon, Input, LoadingState } from '@/ui/components/primitives';
 import { QuickAddButton } from '@/ui/components/QuickAddButton';
@@ -32,7 +34,9 @@ type KindFilter = 'task' | 'event' | 'all';
 
 export default function TasksScreen() {
   const p = useTheme();
-  const insets = useSafeAreaInsets();
+  const services = useAppStore((s) => s.services);
+  const showEmpty = useAppStore((s) => s.settings?.showEmptyFoldersOnTasks ?? false);
+  const today = services ? todayKey(services.clock) : '';
   const [text, setText] = useState('');
   const [status, setStatus] = useState<StatusFilter>('pending');
   const [kind, setKind] = useState<KindFilter>('task');
@@ -44,7 +48,7 @@ export default function TasksScreen() {
   const [sort, setSort] = useState<SortKey>('date');
   const [picker, setPicker] = useState<null | 'sort' | 'category' | 'priority' | 'folder' | 'folderTarget'>(null);
   const categories = useQuery((s) => s.categories.list(), []);
-  const folders = useQuery((s) => s.folders.list(), []);
+  const folders = useQuery((s) => s.folders.cards(), []);
   const kinds: ItemKind[] | undefined = kind === 'all' ? undefined : [kind];
   const list = useQuery(
     (s) =>
@@ -62,11 +66,28 @@ export default function TasksScreen() {
     [text, status, kind, priority, categoryId, folderId, folderAssignment, folderTarget, sort],
   );
   const category = categories.data?.find((c) => c.id === categoryId);
+  const rows = useMemo(() => {
+    if (!list.data) return [];
+    const empty = selectEmptyFoldersForTasks(folders.data ?? [], {
+      enabled: showEmpty,
+      search: text,
+      status,
+      hasPriority: !!priority,
+      hasCategory: !!categoryId,
+      folderTarget,
+      folderId,
+      folderAssignment: folderId ? 'any' : folderAssignment,
+      includeOnThisKind: kind !== 'event',
+      today,
+    });
+    return groupFolderTasks(list.data, { search: text, emptyFolders: empty });
+  }, [list.data, folders.data, showEmpty, text, status, priority, categoryId, folderTarget, folderId, folderAssignment, kind, today]);
+  const folderRows = rows.filter((row) => row.kind === 'folder').length;
+  const itemRows = rows.length - folderRows;
 
   const header = (
     <View style={{ gap: spacing.md, paddingBottom: spacing.sm }}>
       <View style={{ flexDirection: 'row', alignItems: 'center', paddingTop: spacing.md, gap: spacing.sm }}>
-        <MenuButton />
         <AppText variant="display" style={{ flex: 1 }}>
           {kind === 'event' ? 'Events' : kind === 'all' ? 'Everything' : 'Tasks'}
         </AppText>
@@ -106,21 +127,29 @@ export default function TasksScreen() {
       </ScrollView>
       {list.data ? (
         <AppText variant="caption" muted>
-          {list.data.length} item{list.data.length === 1 ? '' : 's'}
+          {folderRows
+            ? `${itemRows} individual · ${folderRows} folder${folderRows === 1 ? '' : 's'}`
+            : `${itemRows} item${itemRows === 1 ? '' : 's'}`}
         </AppText>
       ) : null}
     </View>
   );
 
   return (
-    <View style={{ flex: 1, backgroundColor: p.background, paddingTop: insets.top }}>
+    <View style={{ flex: 1, backgroundColor: p.background }}>
       <FlatList
-        data={list.data ?? []}
-        keyExtractor={(a) => a.occurrence.id}
+        data={rows}
+        keyExtractor={(row) => (row.kind === 'folder' ? `folder-${row.group.folder.id}` : row.agenda.occurrence.id)}
         ListHeaderComponent={header}
         contentContainerStyle={{ paddingHorizontal: spacing.lg, paddingBottom: 120, gap: spacing.sm }}
         keyboardShouldPersistTaps="handled"
-        renderItem={({ item, index }) => <AgendaRow a={item} showDate testID={`list-${index}`} />}
+        renderItem={({ item, index }) =>
+          item.kind === 'folder' ? (
+            <FolderTaskCard group={item.group} today={today} testID={`list-folder-${index}`} />
+          ) : (
+            <AgendaRow a={item.agenda} showDate testID={`list-${index}`} />
+          )
+        }
         ListEmptyComponent={
           list.error ? (
             <ErrorState message={list.error} onRetry={list.reload} />

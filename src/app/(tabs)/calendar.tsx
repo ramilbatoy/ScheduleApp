@@ -2,7 +2,6 @@ import { addDays, addMonths, endOfMonth, endOfWeek, format, startOfMonth, startO
 import { router } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { addDaysKey, formatDateKey, formatTime, fromDateKey, toDateKey, todayKey } from '@/domain/dates';
 import type { Agenda, DateKey } from '@/domain/models';
@@ -11,7 +10,6 @@ import { mergeAgendaUnique, projectOverdueOntoToday } from '@/domain/services/ag
 import type { EditScope } from '@/domain/services/taskService';
 import { useServices } from '@/state/appStore';
 import { AgendaRow } from '@/ui/components/AgendaRow';
-import { MenuButton } from '@/ui/components/MenuButton';
 import { currentWeekAnchor, shiftWeekAnchor, weekStartKey } from '@/ui/components/DashboardPlanner';
 import { choose } from '@/ui/components/dialogs';
 import { WEEK_STARTS_ON } from '@/ui/components/MonthGrid';
@@ -200,7 +198,6 @@ function DayView({ anchor }: { anchor: DateKey }) {
 
 export default function CalendarScreen() {
   const p = useTheme();
-  const insets = useSafeAreaInsets();
   const services = useServices();
   const today = todayKey(services.clock);
   const [mode, setMode] = useState<Mode>('month');
@@ -237,7 +234,7 @@ export default function CalendarScreen() {
     mode === 'week' ? weekStartKey(weekAnchor, WEEK_STARTS_ON) !== thisWeekStart : anchor !== today;
 
   return (
-    <View style={{ flex: 1, backgroundColor: p.background, paddingTop: insets.top }}>
+    <View style={{ flex: 1, backgroundColor: p.background }}>
       <ScrollView contentContainerStyle={{ padding: spacing.lg, paddingBottom: 120, gap: spacing.md }}>
         <Segmented<Mode>
           testID="calendar-mode"
@@ -250,7 +247,6 @@ export default function CalendarScreen() {
           ]}
         />
         <View style={styles.nav}>
-          <MenuButton />
           <IconButton icon="chevron-back" label="Previous" onPress={() => shift(-1)} testID="cal-prev" />
           <AppText variant="title" style={{ flex: 1, textAlign: 'center' }} testID="cal-title">
             {title}

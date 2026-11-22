@@ -14,10 +14,11 @@ export default function AboutScreen() {
   const version = Constants.expoConfig?.version ?? '1.0.0';
   return (
     <>
-      <Stack.Screen options={{ title: 'About' }} />
+      <Stack.Screen options={{ title: 'About NeoOrganizer' }} />
       <ScrollView style={{ backgroundColor: p.background }} contentContainerStyle={{ padding: spacing.lg, gap: spacing.md }}>
+        <AppText variant="display">About</AppText>
         <Card>
-          <AppText variant="title">DayPlanner</AppText>
+          <AppText variant="title">NeoOrganizer</AppText>
           <AppText muted>Version {version}</AppText>
           <AppText>
             An offline-first schedule. Tasks, events, folders, and reminders stay on this device. There is no account and no cloud sync.

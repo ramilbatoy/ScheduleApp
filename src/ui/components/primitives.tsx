@@ -15,8 +15,6 @@ import {
   type TextStyle,
   type ViewStyle,
 } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
-
 import { useTheme } from '../hooks';
 import { radius, spacing, TOUCH, type } from '../theme';
 
@@ -59,7 +57,7 @@ export function Icon({ name, size = 20, color }: { name: IconName; size?: number
   return <Ionicons name={name} size={size} color={color ?? p.text} />;
 }
 
-/** Screen container with safe-area top padding and an optional large title row. */
+/** Screen body under the shared app header, with an optional large title row. */
 export function Screen({
   title,
   subtitle,
@@ -78,7 +76,6 @@ export function Screen({
   contentStyle?: StyleProp<ViewStyle>;
 }) {
   const p = useTheme();
-  const insets = useSafeAreaInsets();
   const header = title ? (
     <View style={styles.screenHeader}>
       {leading}
@@ -96,7 +93,7 @@ export function Screen({
     </View>
   ) : null;
   return (
-    <View style={{ flex: 1, backgroundColor: p.background, paddingTop: insets.top }}>
+    <View style={{ flex: 1, backgroundColor: p.background }}>
       {scroll ? (
         <ScrollView
           contentContainerStyle={[styles.screenContent, contentStyle]}
