@@ -102,7 +102,7 @@ Update this section whenever a phase finishes, a PR merges, or acceptance status
 | Nested button + overdue on today | Merged to main (2026-11-22) | https://github.com/ramilbatoy/ScheduleApp/pull/10 — month cell no nested `<button>`; unfinished overdue project onto Today / current-date month cell with Overdue badge (no duplicate rows); 179 tests |
 | Overdue start and overdue-since | Merged to main (2026-11-22) | https://github.com/ramilbatoy/ScheduleApp/pull/11 — “Started Mar 1” / “Overdue since Mar 2”; 199 tests |
 | Week view opens on current week | Merged to main (2026-11-22) | https://github.com/ramilbatoy/ScheduleApp/pull/12 — Today→Week and Calendar Week reset to the week containing today; 201 tests |
-| Centralized theme + Paper UI | Open PR (2026-11-22) | Branch `cursor/theme-paper-ui-39f4` — Paper MD3, 10 presets, Theme Settings (HEX/preview/apply/reset/restore), semantic tokens app-wide; audit `/cursor/stores/self/docs/theme-ui-audit.md`; **207** tests |
+| Centralized theme + Paper UI | Open PR (2026-11-22) | https://github.com/ramilbatoy/ScheduleApp/pull/13 — Paper MD3, 10 presets, Theme Settings (HEX/preview/apply/reset/restore), semantic tokens app-wide; audit `/cursor/stores/self/docs/theme-ui-audit.md`; **207** tests |
 
 ### In progress / remaining
 
