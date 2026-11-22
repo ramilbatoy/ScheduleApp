@@ -117,7 +117,7 @@ Update this section whenever a phase finishes, a PR merges, or acceptance status
 
 ## How to work
 
-1. Prefer tip of the open dashboard stack (`cursor/dashboard-filters-goals-253a` / #8) while it is unmerged; otherwise branch from updated `main`.
+1. Branch from updated `main` (dashboard stack #8/#9 merged). Tip work: `cursor/nested-button-overdue-today-a2d7` / #10 while open.
 2. Keep domain services pure of UI; add tests on **both** SQLite and IndexedDB drivers for storage-touching logic.
 3. Run `npm test` and `npm run typecheck` before declaring a slice done.
 4. After each completed phase or merged PR: **update Accomplishments above** and `project-context.md`.
