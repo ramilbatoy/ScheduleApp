@@ -74,7 +74,7 @@ Use this skill for **any** work on `ramilbatoy/ScheduleApp` (DayPlanner): featur
 - Backup: validate → safety copy → single-transaction restore → rebuild notifications; undo last restore
 - Theme: system / light / dark persisted
 - Timed items apply Settings default reminder offset; OS alarms use `alarmClock` when exact-alarm granted else `bestEffort`
-- Android button/chip/segment labels: `includeFontPadding: false` + vertical padding (Phase 5 clipping fix)
+- Android button/chip/segment labels: `includeFontPadding: false` + vertical padding; EmptyState labels use `flexShrink: 0` + `textBreakStrategy: simple` (Phase 5 clipping fix)
 
 ## Accomplishments (keep current)
 
