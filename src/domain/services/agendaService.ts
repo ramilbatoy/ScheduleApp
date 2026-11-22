@@ -64,6 +64,38 @@ export function isOverdue(a: Agenda, today: DateKey, now: Date): boolean {
   return !!a.task.deadlineAt && new Date(a.task.deadlineAt) < now;
 }
 
+/** Dedupe by occurrence id, then sort. First list wins when ids collide. */
+export function mergeAgendaUnique(...lists: Agenda[][]): Agenda[] {
+  const seen = new Set<string>();
+  const out: Agenda[] = [];
+  for (const list of lists) {
+    for (const a of list) {
+      if (seen.has(a.occurrence.id)) continue;
+      seen.add(a.occurrence.id);
+      out.push(a);
+    }
+  }
+  return out.sort(compareAgenda);
+}
+
+/**
+ * Display-only: unfinished overdue tasks (occurrence.date &lt; today) also appear in
+ * today's bucket without mutating dates or creating rows. Completed items stay off this surface.
+ */
+export function projectOverdueOntoToday(
+  byDate: Record<DateKey, Agenda[]>,
+  overduePending: Agenda[],
+  today: DateKey,
+): Record<DateKey, Agenda[]> {
+  const extra = overduePending.filter(
+    (a) => a.task.kind === 'task' && a.occurrence.status === 'pending' && a.occurrence.date < today,
+  );
+  if (!extra.length) return byDate;
+  const out: Record<DateKey, Agenda[]> = { ...byDate };
+  out[today] = mergeAgendaUnique(extra, out[today] ?? []);
+  return out;
+}
+
 /** All-day first, then by start time, then by priority. */
 export function compareAgenda(a: Agenda, b: Agenda): number {
   if (a.occurrence.date !== b.occurrence.date) return a.occurrence.date < b.occurrence.date ? -1 : 1;
@@ -187,8 +219,26 @@ export class AgendaService {
     return (await this.join(repos, occs)).sort(compareAgenda);
   }
 
-  day(date: DateKey): Promise<Agenda[]> {
-    return this.range(date, date);
+  /**
+   * Pending task occurrences dated before today (still unfinished).
+   * Used to surface overdue work on Today / current-date month cell without carry-forward.
+   */
+  async pendingOverdueBeforeToday(): Promise<Agenda[]> {
+    const today = todayKey(this.clock);
+    const repos = createRepos(this.db);
+    const past = await this.join(repos, await repos.occurrences.listPendingBefore(today));
+    return past.filter((a) => a.task.kind === 'task').sort(compareAgenda);
+  }
+
+  /**
+   * Items for one civil day. When `date` is today, also includes unfinished overdue
+   * tasks from earlier days (display merge — occurrence.date unchanged).
+   */
+  async day(date: DateKey): Promise<Agenda[]> {
+    const today = todayKey(this.clock);
+    const items = await this.range(date, date);
+    if (date !== today) return items;
+    return mergeAgendaUnique(await this.pendingOverdueBeforeToday(), items);
   }
 
   async summaries(start: DateKey, end: DateKey): Promise<Record<DateKey, DaySummary>> {
@@ -211,14 +261,18 @@ export class AgendaService {
     const today = todayKey(this.clock);
     const now = this.clock.now();
     const repos = createRepos(this.db);
+    // day(today) already projects past overdue onto today for the main agenda lists.
     const todays = await this.day(today);
-    const pastPending = await this.join(
-      repos,
-      (await repos.occurrences.listPendingBefore(today)),
-    );
+    const pastPending = await this.pendingOverdueBeforeToday();
     const overdue = [
-      ...pastPending.filter((a) => a.task.kind === 'task'),
-      ...todays.filter((a) => a.task.deadlineAt && new Date(a.task.deadlineAt) < now && a.occurrence.status === 'pending'),
+      ...pastPending,
+      ...todays.filter(
+        (a) =>
+          a.occurrence.date === today &&
+          a.task.deadlineAt &&
+          new Date(a.task.deadlineAt) < now &&
+          a.occurrence.status === 'pending',
+      ),
     ].sort(compareAgenda);
 
     const horizon = addDaysKey(today, 7);

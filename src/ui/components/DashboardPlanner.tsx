@@ -7,7 +7,12 @@ import { addDaysKey, formatDateKey, fromDateKey, toDateKey } from '@/domain/date
 import type { Agenda, DateKey } from '@/domain/models';
 import { PRIORITY_RANK } from '@/domain/models';
 import { groupAgendaByDate, isSameMonth } from '@/domain/monthTable';
-import { filterAgendaItems, type ListFilter } from '@/domain/services/agendaService';
+import {
+  filterAgendaItems,
+  mergeAgendaUnique,
+  projectOverdueOntoToday,
+  type ListFilter,
+} from '@/domain/services/agendaService';
 import type { EditScope } from '@/domain/services/taskService';
 import { AgendaRow } from '@/ui/components/AgendaRow';
 import { AgendaFilterBar, useAgendaFilterState } from '@/ui/components/AgendaFilterBar';
@@ -112,9 +117,12 @@ export function DashboardWeekView({
   const [start, end] = mondayWeekRange(anchor);
   const thisWeekStart = mondayWeekRange(today)[0];
   const items = useQuery((s) => s.agenda.range(start, end), [start, end]);
+  const overdue = useQuery((s) => s.agenda.pendingOverdueBeforeToday(), []);
   const filterCtl = useAgendaFilterState({ sort: 'date', status: 'all' });
   const now = services.clock.now();
+  const overdueRaw = overdue.data ?? [];
   const filtered = items.data ? applyPlannerFilter(items.data, filterCtl.filter, today, now) : [];
+  const overdueFiltered = applyPlannerFilter(overdueRaw, filterCtl.filter, today, now);
   const title = `${formatDateKey(start, 'MMM d')} – ${formatDateKey(end, start.slice(5, 7) === end.slice(5, 7) ? 'd' : 'MMM d')}`;
 
   return (
@@ -144,8 +152,10 @@ export function DashboardWeekView({
       {!items.data && !items.error ? <LoadingState /> : null}
       {items.data
         ? Array.from({ length: 7 }, (_, i) => addDaysKey(start, i)).map((d) => {
-            const list = filtered.filter((a) => a.occurrence.date === d);
-            const dayAll = items.data!.filter((a) => a.occurrence.date === d);
+            const onDate = filtered.filter((a) => a.occurrence.date === d);
+            const list = d === today ? mergeAgendaUnique(overdueFiltered, onDate) : onDate;
+            const dayAllBase = items.data!.filter((a) => a.occurrence.date === d);
+            const dayAll = d === today ? mergeAgendaUnique(overdueRaw, dayAllBase) : dayAllBase;
             const done = dayAll.filter((a) => a.occurrence.status === 'completed').length;
             return (
               <View key={d} style={{ gap: spacing.sm }} testID={`dash-week-${d}`}>
@@ -203,11 +213,13 @@ export function DashboardMonthView({
   const gridFirst = toDateKey(startOfWeek(fromDateKey(monthStart), { weekStartsOn: 0 }));
   const gridLast = toDateKey(endOfWeek(fromDateKey(monthEnd), { weekStartsOn: 0 }));
   const range = useQuery((s) => s.agenda.range(gridFirst, gridLast), [gridFirst, gridLast]);
+  const overdue = useQuery((s) => s.agenda.pendingOverdueBeforeToday(), []);
   const day = useQuery((s) => s.agenda.day(anchor), [anchor]);
   const filterCtl = useAgendaFilterState({ sort: 'date', status: 'all' });
   const now = services.clock.now();
   const filteredRange = range.data ? applyPlannerFilter(range.data, filterCtl.filter, today, now) : [];
-  const itemsByDate = groupAgendaByDate(filteredRange);
+  const overdueFiltered = applyPlannerFilter(overdue.data ?? [], filterCtl.filter, today, now);
+  const itemsByDate = projectOverdueOntoToday(groupAgendaByDate(filteredRange), overdueFiltered, today);
   const filteredDay = day.data ? applyPlannerFilter(day.data, filterCtl.filter, today, now) : [];
 
   async function openTask(a: Agenda) {

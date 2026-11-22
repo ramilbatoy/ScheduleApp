@@ -85,6 +85,9 @@ describe.each(DRIVERS)('carry-forward (%s)', (_name, open) => {
     expect(r.carry.ran).toBe(false);
     const dash = await app.agenda.dashboard();
     expect(dash.overdue.map((a) => a.occurrence.id)).toEqual([occ.id]);
+    // Still visible on today's agenda (display projection) while date stays in the past.
+    expect((await app.agenda.day('2026-03-12')).map((a) => a.occurrence.id)).toEqual([occ.id]);
+    expect((await app.tasks.getDetail(occ.id)).occurrence.date).toBe('2026-03-10');
     expect(await app.tasks.moveToToday([occ.id])).toBe(1);
     expect((await app.tasks.getDetail(occ.id)).occurrence).toMatchObject({ date: '2026-03-12', carryForwardCount: 2 });
   });

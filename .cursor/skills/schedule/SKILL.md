@@ -94,8 +94,9 @@ Update this section whenever a phase finishes, a PR merges, or acceptance status
 | PR stack merge | Done | `#1` → `#2` → `#4` → `#5` merged into `main` (async stack merge) |
 | Nested subtasks + Node ≥22.13 | Merged to main (2026-11-22) | https://github.com/ramilbatoy/ScheduleApp/pull/6 — schema v2 `task_subtasks`; 157 tests |
 | Dashboard Week/Month + safe back | Merged to main (2026-11-22) | https://github.com/ramilbatoy/ScheduleApp/pull/7 — Today\|Week\|Month; `goBackOrDashboard` |
-| Dashboard filters, goals, hierarchy | Open PR (2026-11-22) | https://github.com/ramilbatoy/ScheduleApp/pull/8 — Week/Month search·sort·filter; Today stats + near-due + weekly goals by urgency; main vs subtask visual hierarchy; 164 tests |
-| Month table + in-cell edit + go-to-date | Open PR (2026-11-22) | https://github.com/ramilbatoy/ScheduleApp/pull/9 — stacked on #8; month grid shows main task titles in cells; tap opens ItemForm modal (save/cancel); Go to date above month; Calendar month parity; 168 tests |
+| Dashboard filters, goals, hierarchy | Merged to main (2026-11-22) | https://github.com/ramilbatoy/ScheduleApp/pull/8 — Week/Month search·sort·filter; Today stats + near-due + weekly goals by urgency; main vs subtask visual hierarchy |
+| Month table + in-cell edit + go-to-date | Merged to main (2026-11-22) | https://github.com/ramilbatoy/ScheduleApp/pull/9 — month grid task titles; ItemForm modal; Go to date; Calendar month parity |
+| Nested button + overdue on today | Open PR (2026-11-22) | https://github.com/ramilbatoy/ScheduleApp/pull/10 — month cell no nested `<button>`; unfinished overdue project onto Today / current-date month cell with Overdue badge (no duplicate rows); 179 tests |
 
 ### In progress / remaining
 
@@ -103,7 +104,7 @@ Update this section whenever a phase finishes, a PR merges, or acceptance status
 | --- | --- | --- |
 | Device re-verify | Optional | Emulator/device smoke of clipping + scheduled alarms on a physical phone |
 | Production signing | Optional | Replace debug-keystore release with Play/EAS credentials when publishing |
-| Merge stack #8 → month-table PR | Pending review | Keep filters/goals by merging/stacking onto #8 tip before main |
+| Merge nested-button / overdue-on-today PR | Pending review | Branch `cursor/nested-button-overdue-today-a2d7` → `main` |
 
 ### Known issues / limitations (live)
 

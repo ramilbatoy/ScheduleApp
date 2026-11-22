@@ -7,6 +7,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { addDaysKey, formatDateKey, formatTime, fromDateKey, toDateKey, todayKey } from '@/domain/dates';
 import type { Agenda, DateKey } from '@/domain/models';
 import { groupAgendaByDate } from '@/domain/monthTable';
+import { mergeAgendaUnique, projectOverdueOntoToday } from '@/domain/services/agendaService';
 import type { EditScope } from '@/domain/services/taskService';
 import { useServices } from '@/state/appStore';
 import { AgendaRow } from '@/ui/components/AgendaRow';
@@ -45,9 +46,10 @@ function MonthView({ anchor, today, onSelect }: { anchor: DateKey; today: DateKe
   const first = toDateKey(startOfWeek(startOfMonth(fromDateKey(anchor)), { weekStartsOn: WEEK_STARTS_ON }));
   const last = toDateKey(endOfWeek(endOfMonth(fromDateKey(anchor)), { weekStartsOn: WEEK_STARTS_ON }));
   const range = useQuery((s) => s.agenda.range(first, last), [first, last]);
+  const overdue = useQuery((s) => s.agenda.pendingOverdueBeforeToday(), []);
   const day = useQuery((s) => s.agenda.day(anchor), [anchor]);
   const now = services.clock.now();
-  const itemsByDate = groupAgendaByDate(range.data ?? []);
+  const itemsByDate = projectOverdueOntoToday(groupAgendaByDate(range.data ?? []), overdue.data ?? [], today);
 
   async function openTask(a: Agenda) {
     onSelect(a.occurrence.date);
@@ -104,13 +106,16 @@ function WeekView({ anchor, today, onOpenDay }: { anchor: DateKey; today: DateKe
   const p = useTheme();
   const [start, end] = weekRange(anchor);
   const items = useQuery((s) => s.agenda.range(start, end), [start, end]);
+  const overdue = useQuery((s) => s.agenda.pendingOverdueBeforeToday(), []);
   if (items.error) return <ErrorState message={items.error} onRetry={items.reload} />;
   if (!items.data) return <LoadingState />;
   const days = Array.from({ length: 7 }, (_, i) => addDaysKey(start, i));
+  const overdueList = overdue.data ?? [];
   return (
     <View style={{ gap: spacing.md }}>
       {days.map((d) => {
-        const list = items.data!.filter((a) => a.occurrence.date === d);
+        const onDate = items.data!.filter((a) => a.occurrence.date === d);
+        const list = d === today ? mergeAgendaUnique(overdueList, onDate) : onDate;
         const done = list.filter((a) => a.occurrence.status === 'completed').length;
         return (
           <View key={d} style={{ gap: spacing.sm }} testID={`week-${d}`}>

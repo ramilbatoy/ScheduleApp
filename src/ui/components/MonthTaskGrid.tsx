@@ -55,10 +55,11 @@ export function MonthTaskGrid({
             const dayItems = itemsByDate[d] ?? [];
             const preview = cellTaskPreview(dayItems, CELL_LIMIT);
             return (
+              // Outer Pressable has no button role so RN-web renders a <div>; task chips
+              // keep accessibilityRole="button" → real <button>s without nesting.
               <Pressable
                 key={d}
                 testID={`month-cell-${d}`}
-                accessibilityRole="button"
                 accessibilityLabel={`${format(fromDateKey(d), 'EEEE, MMMM d')}${dayItems.length ? `, ${dayItems.length} items` : ''}`}
                 accessibilityState={{ selected: isSel }}
                 onPress={() => onSelectDay(d)}
@@ -89,15 +90,19 @@ export function MonthTaskGrid({
                         key={a.occurrence.id}
                         testID={`month-cell-task-${a.occurrence.id}`}
                         accessibilityRole="button"
-                        accessibilityLabel={`Edit ${title}`}
-                        onPress={() => onSelectTask(a)}
+                        accessibilityLabel={overdue ? `Edit overdue ${title}` : `Edit ${title}`}
+                        onPress={(e) => {
+                          // Avoid also selecting the day when opening a chip (web).
+                          (e as { stopPropagation?: () => void }).stopPropagation?.();
+                          onSelectTask(a);
+                        }}
                         style={[styles.taskChip, { backgroundColor: `${accent}22`, borderLeftColor: accent }]}>
                         <AppText
                           variant="caption"
                           numberOfLines={1}
-                          color={done ? p.textMuted : p.text}
+                          color={done ? p.textMuted : overdue ? p.danger : p.text}
                           style={done ? { textDecorationLine: 'line-through', fontSize: 10, lineHeight: 13 } : { fontSize: 10, lineHeight: 13 }}>
-                          {title}
+                          {overdue && !done ? `Overdue · ${title}` : title}
                         </AppText>
                       </Pressable>
                     );

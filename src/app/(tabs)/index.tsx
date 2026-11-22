@@ -253,11 +253,11 @@ function TodayDashboard() {
           <TodayStatsSummary />
 
           {pastOverdue.length > 0 ? (
-            <>
-              <SectionHeader
-                title="Overdue"
-                count={pastOverdue.length}
-                right={
+            <SectionHeader
+              title="Overdue on today"
+              count={pastOverdue.length}
+              right={
+                !settings.autoCarryForward ? (
                   <Button
                     testID="move-all-today"
                     label="Move all to today"
@@ -265,15 +265,14 @@ function TodayDashboard() {
                     tone="secondary"
                     onPress={() => run((s) => s.tasks.moveToToday(pastOverdue.map((a) => a.occurrence.id)), 'Moved to today')}
                   />
-                }
-              />
-              {!settings.autoCarryForward ? (
-                <AppText variant="caption" muted>
-                  Automatic carry-forward is off. Move items manually or turn it on in Settings.
-                </AppText>
-              ) : null}
-              <List items={pastOverdue} testPrefix="overdue" />
-            </>
+                ) : undefined
+              }
+            />
+          ) : null}
+          {pastOverdue.length > 0 && !settings.autoCarryForward ? (
+            <AppText variant="caption" muted>
+              Unfinished tasks from earlier days stay visible here until done. Turn on automatic carry-forward in Settings, or move them.
+            </AppText>
           ) : null}
 
           <SectionHeader title="Schedule" count={d.events.length} />
@@ -285,7 +284,16 @@ function TodayDashboard() {
 
           <SectionHeader title="To-do" count={pendingTasks.length} />
           {pendingTasks.length ? (
-            <List items={pendingTasks} testPrefix="todo" />
+            <View style={{ gap: spacing.sm }}>
+              {pendingTasks.map((a, i) => (
+                <AgendaRow
+                  key={a.occurrence.id}
+                  a={a}
+                  showDate={a.occurrence.date < d.today}
+                  testID={`todo-${i}`}
+                />
+              ))}
+            </View>
           ) : d.tasks.length ? (
             <AppText muted>All of today&apos;s tasks are done.</AppText>
           ) : (
