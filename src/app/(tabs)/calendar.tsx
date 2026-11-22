@@ -1,6 +1,6 @@
 import { addDays, addMonths, endOfMonth, endOfWeek, format, startOfMonth, startOfWeek } from 'date-fns';
 import { router } from 'expo-router';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -11,6 +11,7 @@ import { mergeAgendaUnique, projectOverdueOntoToday } from '@/domain/services/ag
 import type { EditScope } from '@/domain/services/taskService';
 import { useServices } from '@/state/appStore';
 import { AgendaRow } from '@/ui/components/AgendaRow';
+import { currentWeekAnchor, shiftWeekAnchor, weekStartKey } from '@/ui/components/DashboardPlanner';
 import { choose } from '@/ui/components/dialogs';
 import { WEEK_STARTS_ON } from '@/ui/components/MonthGrid';
 import { MonthTaskGrid } from '@/ui/components/MonthTaskGrid';
@@ -24,8 +25,8 @@ import { radius, spacing } from '@/ui/theme';
 type Mode = 'month' | 'week' | 'day';
 
 function weekRange(anchor: DateKey): [DateKey, DateKey] {
-  const d = fromDateKey(anchor);
-  return [toDateKey(startOfWeek(d, { weekStartsOn: WEEK_STARTS_ON })), toDateKey(endOfWeek(d, { weekStartsOn: WEEK_STARTS_ON }))];
+  const start = weekStartKey(anchor, WEEK_STARTS_ON);
+  return [start, toDateKey(endOfWeek(fromDateKey(anchor), { weekStartsOn: WEEK_STARTS_ON }))];
 }
 
 function DayList({ items, emptyText }: { items: Agenda[]; emptyText: string }) {
@@ -203,20 +204,36 @@ export default function CalendarScreen() {
   const today = todayKey(services.clock);
   const [mode, setMode] = useState<Mode>('month');
   const [anchor, setAnchor] = useState<DateKey>(today);
+  const [weekAnchor, setWeekAnchor] = useState<DateKey>(() => currentWeekAnchor(today, WEEK_STARTS_ON));
+  const [weekNavigated, setWeekNavigated] = useState(false);
+
+  // Open Week on the current week unless the user already used prev/next this session.
+  useEffect(() => {
+    if (mode === 'week' && !weekNavigated) {
+      setWeekAnchor(currentWeekAnchor(today, WEEK_STARTS_ON));
+    }
+  }, [mode, today, weekNavigated]);
 
   function shift(dir: 1 | -1) {
-    const d = fromDateKey(anchor);
-    if (mode === 'month') setAnchor(toDateKey(addMonths(d, dir)));
-    else setAnchor(toDateKey(addDays(d, mode === 'week' ? 7 * dir : dir)));
+    if (mode === 'month') setAnchor(toDateKey(addMonths(fromDateKey(anchor), dir)));
+    else if (mode === 'week') {
+      setWeekNavigated(true);
+      setWeekAnchor((a) => shiftWeekAnchor(a, dir));
+    } else setAnchor(toDateKey(addDays(fromDateKey(anchor), dir)));
   }
 
-  const [ws, we] = weekRange(anchor);
+  const active = mode === 'week' ? weekAnchor : anchor;
+  const [ws, we] = weekRange(weekAnchor);
+  const thisWeekStart = currentWeekAnchor(today, WEEK_STARTS_ON);
   const title =
     mode === 'month'
       ? format(fromDateKey(anchor), 'MMMM yyyy')
       : mode === 'week'
         ? `${formatDateKey(ws, 'MMM d')} – ${formatDateKey(we, ws.slice(5, 7) === we.slice(5, 7) ? 'd' : 'MMM d')}`
         : formatDateKey(anchor, 'EEE, MMM d');
+
+  const showJump =
+    mode === 'week' ? weekStartKey(weekAnchor, WEEK_STARTS_ON) !== thisWeekStart : anchor !== today;
 
   return (
     <View style={{ flex: 1, backgroundColor: p.background, paddingTop: insets.top }}>
@@ -238,11 +255,23 @@ export default function CalendarScreen() {
           </AppText>
           <IconButton icon="chevron-forward" label="Next" onPress={() => shift(1)} testID="cal-next" />
         </View>
-        {anchor !== today ? <Button label="Jump to today" compact tone="ghost" icon="locate-outline" onPress={() => setAnchor(today)} /> : null}
+        {showJump ? (
+          <Button
+            label="Jump to today"
+            compact
+            tone="ghost"
+            icon="locate-outline"
+            onPress={() => {
+              setAnchor(today);
+              setWeekNavigated(false);
+              setWeekAnchor(currentWeekAnchor(today, WEEK_STARTS_ON));
+            }}
+          />
+        ) : null}
         {mode === 'month' ? <MonthView anchor={anchor} today={today} onSelect={setAnchor} /> : null}
         {mode === 'week' ? (
           <WeekView
-            anchor={anchor}
+            anchor={weekAnchor}
             today={today}
             onOpenDay={(d) => {
               setAnchor(d);
@@ -252,7 +281,7 @@ export default function CalendarScreen() {
         ) : null}
         {mode === 'day' ? <DayView anchor={anchor} /> : null}
       </ScrollView>
-      <QuickAddButton date={anchor} />
+      <QuickAddButton date={active} />
     </View>
   );
 }

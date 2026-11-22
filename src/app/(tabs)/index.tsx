@@ -1,5 +1,5 @@
 import { router } from 'expo-router';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -13,6 +13,7 @@ import {
   DashboardMonthView,
   DashboardWeekView,
   WeeklyGoalsSection,
+  currentWeekAnchor,
   mondayWeekRange,
   shiftMonthAnchor,
   shiftWeekAnchor,
@@ -312,9 +313,17 @@ export default function TodayScreen() {
   const invalidate = useAppStore((s) => s.invalidate);
   const today = todayKey(services.clock);
   const [mode, setMode] = useState<DashMode>('today');
-  const [weekAnchor, setWeekAnchor] = useState<DateKey>(today);
+  const [weekAnchor, setWeekAnchor] = useState<DateKey>(() => currentWeekAnchor(today));
+  const [weekNavigated, setWeekNavigated] = useState(false);
   const [monthAnchor, setMonthAnchor] = useState<DateKey>(today);
   const [refreshing, setRefreshing] = useState(false);
+
+  // Open Week on the current week unless the user already used prev/next this session.
+  useEffect(() => {
+    if (mode === 'week' && !weekNavigated) {
+      setWeekAnchor(currentWeekAnchor(today));
+    }
+  }, [mode, today, weekNavigated]);
 
   async function refresh() {
     setRefreshing(true);
@@ -349,8 +358,14 @@ export default function TodayScreen() {
           <DashboardWeekView
             anchor={weekAnchor}
             today={today}
-            onShiftWeek={(dir) => setWeekAnchor((a) => shiftWeekAnchor(a, dir))}
-            onJumpThisWeek={() => setWeekAnchor(today)}
+            onShiftWeek={(dir) => {
+              setWeekNavigated(true);
+              setWeekAnchor((a) => shiftWeekAnchor(a, dir));
+            }}
+            onJumpThisWeek={() => {
+              setWeekNavigated(false);
+              setWeekAnchor(currentWeekAnchor(today));
+            }}
           />
         ) : null}
         {mode === 'month' ? (

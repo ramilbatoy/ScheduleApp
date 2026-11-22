@@ -28,12 +28,19 @@ import { radius, spacing } from '@/ui/theme';
 /** Notion weekly planner: Monday–Sunday. */
 export const DASHBOARD_WEEK_STARTS_ON = 1 as const;
 
+/** Civil-date week start for `day` (0 = Sunday, 1 = Monday). */
+export function weekStartKey(day: DateKey, weekStartsOn: 0 | 1 = DASHBOARD_WEEK_STARTS_ON): DateKey {
+  return toDateKey(startOfWeek(fromDateKey(day), { weekStartsOn }));
+}
+
 export function mondayWeekRange(anchor: DateKey): [DateKey, DateKey] {
-  const d = fromDateKey(anchor);
-  return [
-    toDateKey(startOfWeek(d, { weekStartsOn: DASHBOARD_WEEK_STARTS_ON })),
-    toDateKey(endOfWeek(d, { weekStartsOn: DASHBOARD_WEEK_STARTS_ON })),
-  ];
+  const start = weekStartKey(anchor, DASHBOARD_WEEK_STARTS_ON);
+  return [start, toDateKey(endOfWeek(fromDateKey(anchor), { weekStartsOn: DASHBOARD_WEEK_STARTS_ON }))];
+}
+
+/** Current-week anchor for first mount / switching into Week (before user prev/next). */
+export function currentWeekAnchor(today: DateKey, weekStartsOn: 0 | 1 = DASHBOARD_WEEK_STARTS_ON): DateKey {
+  return weekStartKey(today, weekStartsOn);
 }
 
 export function shiftWeekAnchor(anchor: DateKey, dir: 1 | -1): DateKey {
