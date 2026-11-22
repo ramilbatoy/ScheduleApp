@@ -64,7 +64,8 @@ Use this skill for **any** work on `ramilbatoy/ScheduleApp` (DayPlanner): featur
 ## Data model (summary)
 
 - Unified `tasks` + `task_occurrences` with `item_kind` = `task` | `event`
-- Also: `recurring_rules`, `categories`, `reminders`, `app_settings`, `completion_history`, `task_subtasks` (nested checklist per occurrence)
+- Also: `recurring_rules`, `categories`, `folders`, `reminders`, `app_settings`, `completion_history`, `task_subtasks` (nested checklist per occurrence)
+- Schema **v3**: optional `tasks.folder_id`; `tasks.priority_explicit` (existing rows stay explicit). A task has one folder or none. Categories stay separate.
 - Unique: one active occurrence per task per day; unique recurrence instance key
 - Soft-delete definitions (`deleted_at`); keep history
 - Nested subtasks: keyed by `occurrence_id` (+ `parent_subtask_id`); ride with carry-forward; new recurrence instances start empty
@@ -77,6 +78,8 @@ Use this skill for **any** work on `ramilbatoy/ScheduleApp` (DayPlanner): featur
 - Quick-add NL: dates, times, `!priority`, `#category`
 - Backup: validate → safety copy → single-transaction restore → rebuild notifications; undo last restore
 - Theme: system / light / dark + 10 presets + custom HEX + last-used snapshot in `app_settings`
+- Folders: explicit task priority always wins; otherwise inherit folder priority. Folder target date is a project deadline and never rewrites occurrence dates. Progress is computed. Backup format 2 includes folders and `navigation` prefs; device notification prefs are not overwritten
+- Drawer: header menu, bottom tabs stay. Settings → Navigation can hide or reorder shortcuts without making screens unreachable
 - Timed items apply Settings default reminder offset; OS alarms use `alarmClock` when exact-alarm granted else `bestEffort`
 - Android button/chip/segment labels: `includeFontPadding: false` + vertical padding; EmptyState labels use `flexShrink: 0` + `textBreakStrategy: simple` (Phase 5 clipping fix)
 
@@ -103,6 +106,7 @@ Update this section whenever a phase finishes, a PR merges, or acceptance status
 | Overdue start and overdue-since | Merged to main (2026-11-22) | https://github.com/ramilbatoy/ScheduleApp/pull/11 — “Started Mar 1” / “Overdue since Mar 2”; 199 tests |
 | Week view opens on current week | Merged to main (2026-11-22) | https://github.com/ramilbatoy/ScheduleApp/pull/12 — Today→Week and Calendar Week reset to the week containing today; 201 tests |
 | Centralized theme + Paper UI | Open PR (2026-11-22) | https://github.com/ramilbatoy/ScheduleApp/pull/13 — Paper MD3, 10 presets, Theme Settings (HEX/preview/apply/reset/restore), semantic tokens app-wide; audit `/cursor/stores/self/docs/theme-ui-audit.md`; **207** tests |
+| Folders / projects + navigation drawer | Open PR (2026-11-23) | https://github.com/ramilbatoy/ScheduleApp/pull/15 — schema v3, backup format 2, Projects + folder detail, customizable drawer; **230** tests |
 
 ### In progress / remaining
 
@@ -111,6 +115,7 @@ Update this section whenever a phase finishes, a PR merges, or acceptance status
 | Device re-verify | Optional | Emulator/device smoke of clipping + scheduled alarms on a physical phone |
 | Production signing | Optional | Replace debug-keystore release with Play/EAS credentials when publishing |
 | Merge theme + Paper UI PR | Pending review | Branch `cursor/theme-paper-ui-39f4` → `main` |
+| Merge folders + drawer PR | Pending review | Branch `cursor/smart-folders-drawer-fe88` → `main` |
 
 ### Known issues / limitations (live)
 
@@ -121,6 +126,8 @@ Update this section whenever a phase finishes, a PR merges, or acceptance status
 - Package/display name remain placeholders (`com.dayplanner.app` / DayPlanner)
 - Nested subtasks are per-occurrence (not series template); new recurring instances start with an empty checklist
 - “Overdue since” is derived from stored dates (original occurrence date, assigned day, deadline local date, carry-forward and late reschedule history). There is no separate overdue timestamp. A task entered today with an earlier assigned date is overdue from the day after that assigned date.
+- Folder progress counts occurrences on or before today. Future recurring instances are excluded so a daily habit does not dilute the percent. Events are excluded from the percent.
+- `npm run lint` has no committed ESLint config. The first `expo lint` run installs ESLint and then fails on pre-existing files.
 
 ## How to work
 
