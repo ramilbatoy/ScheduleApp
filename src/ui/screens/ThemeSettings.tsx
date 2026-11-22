@@ -296,8 +296,8 @@ export function ThemeSettingsScreen() {
           <AppSwitch value={demoSwitch} onChange={setDemoSwitch} />
         </View>
         <AppInput placeholder="Sample input" editable={false} />
-        <AppEmptyState icon="color-palette-outline" title="Empty state" message="Uses theme tokens." />
-        <AppLoading label="Loading sample…" />
+        <AppEmptyState icon="color-palette-outline" title="Nothing here" />
+        <AppLoading label="Loading…" />
       </AppCard>
 
       <View style={styles.actions}>
