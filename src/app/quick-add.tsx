@@ -11,6 +11,7 @@ import { PRIORITY_LABEL } from '@/ui/components/AgendaRow';
 import { DatePickerModal, TimePickerModal } from '@/ui/components/Pickers';
 import { AppText, Badge, Button, Chip, Input, Segmented } from '@/ui/components/primitives';
 import { errorMessage, useQuery, useTheme, useToast } from '@/ui/hooks';
+import { goBackOrDashboard, useSafeAndroidBack } from '@/ui/navigation';
 import { radius, spacing } from '@/ui/theme';
 
 export default function QuickAddScreen() {
@@ -21,6 +22,7 @@ export default function QuickAddScreen() {
   const settings = useSettings();
   const invalidate = useAppStore((s) => s.invalidate);
   const toast = useToast((s) => s.show);
+  useSafeAndroidBack();
   const today = todayKey(services.clock);
   const categories = useQuery((s) => s.categories.list(), []);
 
@@ -73,7 +75,7 @@ export default function QuickAddScreen() {
       });
       invalidate();
       toast(`${kind === 'event' ? 'Event' : 'Task'} added for ${effectiveDate === today ? 'today' : formatDateKey(effectiveDate, 'EEE, MMM d')}`, 'success');
-      router.back();
+      goBackOrDashboard();
     } catch (e) {
       setError(errorMessage(e));
     } finally {
@@ -87,7 +89,7 @@ export default function QuickAddScreen() {
 
   return (
     <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
-      <Pressable style={[styles.backdrop, { backgroundColor: p.overlay }]} onPress={() => router.back()} accessibilityLabel="Close quick add" />
+      <Pressable style={[styles.backdrop, { backgroundColor: p.overlay }]} onPress={goBackOrDashboard} accessibilityLabel="Close quick add" />
       <View style={[styles.sheet, { backgroundColor: p.surface, paddingBottom: insets.bottom + spacing.lg }]}>
         <View style={[styles.grabber, { backgroundColor: p.border }]} />
         <Segmented<ItemKind>
