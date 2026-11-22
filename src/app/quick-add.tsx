@@ -47,6 +47,14 @@ export default function QuickAddScreen() {
     setSaving(true);
     setError(null);
     try {
+      const reminderOffsetMinutes = effectiveTime ? settings.defaultReminderOffsetMinutes : null;
+      if (reminderOffsetMinutes !== null && settings.notificationsEnabled) {
+        const perm = await services.reminders.permission();
+        if (perm !== 'granted' && perm !== 'unsupported') {
+          const next = await services.reminders.requestPermission();
+          if (next === 'denied') toast('Item saved, but notification permission is blocked.', 'error');
+        }
+      }
       await services.tasks.create({
         kind,
         title,
@@ -58,7 +66,8 @@ export default function QuickAddScreen() {
         startTime: effectiveTime,
         endTime: null,
         deadlineAt: null,
-        reminderOffsetMinutes: effectiveTime && kind === 'event' ? settings.defaultReminderOffsetMinutes : null,
+        // Timed items (task or event) get the Settings default reminder offset so alarms schedule immediately.
+        reminderOffsetMinutes,
         deadlineReminderOffsetMinutes: null,
         recurrence: null,
       });

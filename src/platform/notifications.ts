@@ -45,7 +45,7 @@ export function subscribeToNotificationTaps(cb: (occurrenceId: string) => void):
   return () => sub.remove();
 }
 
-/** Android local notifications via AlarmManager; delivery timing is best-effort per OS rules. */
+/** Android local notifications via AlarmManager; delivery timing depends on exact-alarm permission. */
 export function createNotificationPort(): NotificationPort {
   return {
     platform: Platform.OS === 'ios' ? 'ios' : 'android',
@@ -74,9 +74,23 @@ export function createNotificationPort(): NotificationPort {
     },
     async schedule(n) {
       await ensureChannel();
+      let delivery: Notifications.NotificationDelivery = 'bestEffort';
+      if (Platform.OS === 'android') {
+        try {
+          const exact = await Notifications.getExactAlarmPermissionsAsync();
+          if (exact.granted) delivery = 'alarmClock';
+        } catch {
+          delivery = 'bestEffort';
+        }
+      }
       return Notifications.scheduleNotificationAsync({
-        content: { title: n.title, body: n.body, data: n.data },
-        trigger: { type: Notifications.SchedulableTriggerInputTypes.DATE, date: n.at, channelId: CHANNEL_ID },
+        content: { title: n.title, body: n.body, data: n.data, sound: true },
+        trigger: {
+          type: Notifications.SchedulableTriggerInputTypes.DATE,
+          date: n.at,
+          channelId: CHANNEL_ID,
+          delivery,
+        },
       });
     },
     async cancel(id) {

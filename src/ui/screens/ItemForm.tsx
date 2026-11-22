@@ -51,10 +51,9 @@ export function ItemForm({ params }: { params: ItemFormParams }) {
           startTime: null,
           endTime: null,
           deadlineAt: null,
-          reminderOffsetMinutes: null,
+          reminderOffsetMinutes: params.kind === 'event' ? settings.defaultReminderOffsetMinutes : null,
           deadlineReminderOffsetMinutes: null,
           recurrence: null,
-          ...(params.kind === 'event' ? { reminderOffsetMinutes: settings.defaultReminderOffsetMinutes } : {}),
         },
       };
     },
@@ -98,9 +97,19 @@ function Form({ initial, recurring, editing, scope, occurrenceId }: { initial: I
     return isEvent ? 'Edit event' : 'Edit task';
   }, [editing, isEvent, occurrenceOnly, recurring, scope]);
 
+  async function ensureReminderPermission() {
+    if (v.reminderOffsetMinutes === null && v.deadlineReminderOffsetMinutes === null) return;
+    if (!(await services.settings.get()).notificationsEnabled) return;
+    const state = await services.reminders.permission();
+    if (state === 'granted' || state === 'unsupported') return;
+    const next = await services.reminders.requestPermission();
+    if (next === 'denied') toast('Reminders were saved, but notification permission is blocked.', 'error');
+  }
+
   async function save() {
     setSaving(true);
     try {
+      await ensureReminderPermission();
       if (editing && occurrenceId) {
         const updated = await services.tasks.update(occurrenceId, v, scope);
         invalidate();
@@ -230,7 +239,22 @@ function Form({ initial, recurring, editing, scope, occurrenceId }: { initial: I
       </ScrollView>
 
       <DatePickerModal visible={picker === 'date'} value={v.date} today={today} onChange={(date) => set({ date })} onClose={() => setPicker(null)} />
-      <TimePickerModal visible={picker === 'start'} value={v.startTime} title="Start time" onChange={(startTime) => set({ startTime, ...(v.endTime && v.endTime <= startTime ? { endTime: null } : {}) })} onClose={() => setPicker(null)} />
+      <TimePickerModal
+        visible={picker === 'start'}
+        value={v.startTime}
+        title="Start time"
+        onChange={(startTime) =>
+          set({
+            startTime,
+            ...(v.endTime && v.endTime <= startTime ? { endTime: null } : {}),
+            // First time a start clock is chosen, apply the Settings default reminder so an OS alarm is scheduled.
+            ...(v.reminderOffsetMinutes === null && settings.defaultReminderOffsetMinutes !== null
+              ? { reminderOffsetMinutes: settings.defaultReminderOffsetMinutes }
+              : {}),
+          })
+        }
+        onClose={() => setPicker(null)}
+      />
       <TimePickerModal visible={picker === 'end'} value={v.endTime ?? v.startTime} title="End time" onChange={(endTime) => set({ endTime, ...(v.startTime ? {} : { startTime: endTime }) })} onClose={() => setPicker(null)} />
       <DatePickerModal
         visible={picker === 'deadlineDate'}

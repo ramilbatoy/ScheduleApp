@@ -17,6 +17,15 @@ describe.each(DRIVERS)('reminders (%s)', (_name, open) => {
     expect(triggers()).toEqual([new Date('2026-03-10T13:45:00').getTime(), new Date('2026-03-12T16:00:00').getTime()]);
   });
 
+  it('schedules timed task and event reminders from their offsets', async () => {
+    await app.tasks.create(item({ kind: 'task', title: 'Call', startTime: '16:00', reminderOffsetMinutes: 10 }));
+    await app.tasks.create(item({ kind: 'event', title: 'Standup', startTime: '10:00', reminderOffsetMinutes: 5 }));
+    expect(triggers()).toEqual([new Date('2026-03-10T09:55:00').getTime(), new Date('2026-03-10T15:50:00').getTime()]);
+    const upcoming = await app.reminders.upcoming();
+    expect(upcoming).toHaveLength(2);
+    expect(upcoming.every((r) => r.notificationId)).toBe(true);
+  });
+
   it('cancels reminders when the item is completed or deleted', async () => {
     const occ = await app.tasks.create(item({ startTime: '14:00', reminderOffsetMinutes: 0 }));
     expect(notifications.scheduled.size).toBe(1);

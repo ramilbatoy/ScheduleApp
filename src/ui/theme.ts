@@ -1,4 +1,9 @@
+import { Platform, type TextStyle } from 'react-native';
+
 import type { Priority } from '../domain/models';
+
+/** Android includes extra font padding that clips label text inside tight buttons/chips. */
+const androidText: TextStyle = Platform.OS === 'android' ? { includeFontPadding: false } : {};
 
 export interface Palette {
   scheme: 'light' | 'dark';
@@ -76,12 +81,12 @@ export const spacing = { xs: 4, sm: 8, md: 12, lg: 16, xl: 24, xxl: 32 } as cons
 export const radius = { sm: 6, md: 10, lg: 14, xl: 20, pill: 999 } as const;
 
 export const type = {
-  display: { fontSize: 28, fontWeight: '700' as const, lineHeight: 34 },
-  title: { fontSize: 20, fontWeight: '700' as const, lineHeight: 26 },
-  heading: { fontSize: 16, fontWeight: '600' as const, lineHeight: 22 },
-  body: { fontSize: 15, fontWeight: '400' as const, lineHeight: 21 },
-  label: { fontSize: 13, fontWeight: '600' as const, lineHeight: 18 },
-  caption: { fontSize: 12, fontWeight: '400' as const, lineHeight: 16 },
+  display: { fontSize: 28, fontWeight: '700' as const, lineHeight: 34, ...androidText },
+  title: { fontSize: 20, fontWeight: '700' as const, lineHeight: 26, ...androidText },
+  heading: { fontSize: 16, fontWeight: '600' as const, lineHeight: 22, ...androidText },
+  body: { fontSize: 15, fontWeight: '400' as const, lineHeight: 21, ...androidText },
+  label: { fontSize: 13, fontWeight: '600' as const, lineHeight: 18, ...androidText },
+  caption: { fontSize: 12, fontWeight: '400' as const, lineHeight: 16, ...androidText },
 };
 
 /** Minimum touch target per Android accessibility guidance. */

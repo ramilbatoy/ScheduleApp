@@ -172,7 +172,7 @@ export function Button({
         style,
       ]}>
       {loading ? <ActivityIndicator color={fg} /> : icon ? <Ionicons name={icon} size={18} color={fg} /> : null}
-      <AppText variant="label" color={fg}>
+      <AppText variant="label" color={fg} numberOfLines={1} style={styles.buttonLabel}>
         {label}
       </AppText>
     </Pressable>
@@ -243,7 +243,7 @@ export function Chip({
       ]}>
       {icon ? <Ionicons name={icon} size={14} color={selected ? accent : p.textMuted} /> : null}
       {color && !icon ? <View style={[styles.dot, { backgroundColor: color }]} /> : null}
-      <AppText variant="label" color={selected ? accent : p.text}>
+      <AppText variant="label" color={selected ? accent : p.text} numberOfLines={1} style={styles.chipLabel}>
         {label}
       </AppText>
     </Pressable>
@@ -410,7 +410,7 @@ export function Segmented<T extends string>({ options, value, onChange, testID }
             accessibilityState={{ selected: active }}
             onPress={() => onChange(o.value)}
             style={[styles.segment, active && { backgroundColor: p.surface, borderColor: p.border }]}>
-            <AppText variant="label" color={active ? p.primary : p.textMuted}>
+            <AppText variant="label" color={active ? p.primary : p.textMuted} numberOfLines={1} style={styles.segmentLabel}>
               {o.label}
             </AppText>
           </Pressable>
@@ -430,10 +430,32 @@ const styles = StyleSheet.create({
   screenContent: { paddingHorizontal: spacing.lg, paddingBottom: 120, gap: spacing.md },
   card: { borderWidth: StyleSheet.hairlineWidth, borderRadius: radius.lg, padding: spacing.lg, gap: spacing.sm },
   sectionHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: spacing.sm },
-  button: { minHeight: TOUCH, paddingHorizontal: spacing.lg, borderRadius: radius.md, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: spacing.sm },
-  buttonCompact: { minHeight: 36, paddingHorizontal: spacing.md },
+  button: {
+    minHeight: TOUCH,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.sm,
+    borderRadius: radius.md,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: spacing.sm,
+    overflow: 'visible',
+  },
+  buttonCompact: { minHeight: 40, paddingHorizontal: spacing.md, paddingVertical: spacing.xs },
+  buttonLabel: { flexShrink: 1, textAlign: 'center' },
   iconButton: { minWidth: 40, minHeight: 40, borderRadius: radius.pill, alignItems: 'center', justifyContent: 'center' },
-  chip: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: spacing.md, minHeight: 36, borderRadius: radius.pill, borderWidth: 1 },
+  chip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.xs + 2,
+    minHeight: 40,
+    borderRadius: radius.pill,
+    borderWidth: 1,
+    overflow: 'visible',
+  },
+  chipLabel: { flexShrink: 1 },
   dot: { width: 8, height: 8, borderRadius: 4 },
   badge: { flexDirection: 'row', alignItems: 'center', gap: 3, paddingHorizontal: 6, paddingVertical: 2, borderRadius: radius.sm },
   empty: { alignItems: 'center', justifyContent: 'center', padding: spacing.xl, gap: spacing.sm },
@@ -441,5 +463,17 @@ const styles = StyleSheet.create({
   select: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
   row: { minHeight: TOUCH + 4, flexDirection: 'row', alignItems: 'center', gap: spacing.md, paddingVertical: spacing.sm },
   segmented: { flexDirection: 'row', borderRadius: radius.md, padding: 3 },
-  segment: { flex: 1, minHeight: 36, alignItems: 'center', justifyContent: 'center', borderRadius: radius.sm, borderWidth: 1, borderColor: 'transparent' },
+  segment: {
+    flex: 1,
+    minHeight: 40,
+    paddingHorizontal: spacing.xs,
+    paddingVertical: spacing.xs,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: radius.sm,
+    borderWidth: 1,
+    borderColor: 'transparent',
+    overflow: 'visible',
+  },
+  segmentLabel: { flexShrink: 1, textAlign: 'center' },
 });
