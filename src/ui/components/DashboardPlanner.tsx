@@ -1,14 +1,20 @@
 import { addDays, addMonths, endOfWeek, format, startOfWeek } from 'date-fns';
 import { router } from 'expo-router';
+import { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 
 import { addDaysKey, formatDateKey, fromDateKey, toDateKey } from '@/domain/dates';
 import type { Agenda, DateKey } from '@/domain/models';
 import { PRIORITY_RANK } from '@/domain/models';
+import { groupAgendaByDate, isSameMonth } from '@/domain/monthTable';
 import { filterAgendaItems, type ListFilter } from '@/domain/services/agendaService';
+import type { EditScope } from '@/domain/services/taskService';
 import { AgendaRow } from '@/ui/components/AgendaRow';
 import { AgendaFilterBar, useAgendaFilterState } from '@/ui/components/AgendaFilterBar';
-import { MonthGrid } from '@/ui/components/MonthGrid';
+import { choose } from '@/ui/components/dialogs';
+import { DatePickerModal } from '@/ui/components/Pickers';
+import { MonthTaskGrid } from '@/ui/components/MonthTaskGrid';
+import { TaskEditModal } from '@/ui/components/TaskEditModal';
 import { AppText, Button, Card, ErrorState, IconButton, LoadingState, SectionHeader } from '@/ui/components/primitives';
 import { useQuery, useTheme } from '@/ui/hooks';
 import { useServices } from '@/state/appStore';
@@ -189,17 +195,35 @@ export function DashboardMonthView({
   onShiftMonth: (dir: 1 | -1) => void;
   onJumpThisMonth: () => void;
 }) {
-  const p = useTheme();
   const services = useServices();
+  const [goToOpen, setGoToOpen] = useState(false);
+  const [edit, setEdit] = useState<{ id: string; scope: EditScope } | null>(null);
   const monthStart = `${anchor.slice(0, 7)}-01` as DateKey;
   const monthEnd = toDateKey(addDays(addMonths(fromDateKey(monthStart), 1), -1));
   const gridFirst = toDateKey(startOfWeek(fromDateKey(monthStart), { weekStartsOn: 0 }));
   const gridLast = toDateKey(endOfWeek(fromDateKey(monthEnd), { weekStartsOn: 0 }));
-  const summaries = useQuery((s) => s.agenda.summaries(gridFirst, gridLast), [gridFirst, gridLast]);
+  const range = useQuery((s) => s.agenda.range(gridFirst, gridLast), [gridFirst, gridLast]);
   const day = useQuery((s) => s.agenda.day(anchor), [anchor]);
   const filterCtl = useAgendaFilterState({ sort: 'date', status: 'all' });
   const now = services.clock.now();
-  const filtered = day.data ? applyPlannerFilter(day.data, filterCtl.filter, today, now) : [];
+  const filteredRange = range.data ? applyPlannerFilter(range.data, filterCtl.filter, today, now) : [];
+  const itemsByDate = groupAgendaByDate(filteredRange);
+  const filteredDay = day.data ? applyPlannerFilter(day.data, filterCtl.filter, today, now) : [];
+
+  async function openTask(a: Agenda) {
+    onSelectDay(a.occurrence.date);
+    let scope: EditScope = 'series';
+    if (a.rule) {
+      const picked = await choose<EditScope>('Edit recurring item', 'Which occurrences do you want to change?', [
+        { label: 'This occurrence only', value: 'occurrence', tone: 'secondary' },
+        { label: 'This and following', value: 'future', tone: 'secondary' },
+        { label: 'Entire series', value: 'series', tone: 'primary' },
+      ]);
+      if (!picked) return;
+      scope = picked;
+    }
+    setEdit({ id: a.occurrence.id, scope });
+  }
 
   return (
     <View style={{ gap: spacing.md }} testID="dashboard-month">
@@ -210,27 +234,19 @@ export function DashboardMonthView({
         </AppText>
         <IconButton icon="chevron-forward" label="Next month" onPress={() => onShiftMonth(1)} testID="dash-month-next" />
       </View>
-      {anchor.slice(0, 7) !== today.slice(0, 7) ? (
-        <Button label="This month" compact tone="ghost" icon="locate-outline" onPress={onJumpThisMonth} />
-      ) : null}
-      <Card style={{ paddingHorizontal: spacing.xs }}>
-        <MonthGrid month={anchor} selected={anchor} today={today} onSelect={onSelectDay} summaries={summaries.data} />
-        <View style={styles.legend}>
-          {[
-            [p.danger, 'Overdue'],
-            [p.primary, 'Pending'],
-            [p.success, 'Done'],
-          ].map(([c, l]) => (
-            <View key={l} style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
-              <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: c }} />
-              <AppText variant="caption" muted>
-                {l}
-              </AppText>
-            </View>
-          ))}
-        </View>
-      </Card>
-      <AppText variant="heading">{formatDateKey(anchor, 'EEEE, MMMM d')}</AppText>
+      <View style={styles.goToRow}>
+        <Button
+          label="Go to date"
+          compact
+          tone="secondary"
+          icon="calendar-outline"
+          onPress={() => setGoToOpen(true)}
+          testID="dash-month-goto"
+        />
+        {!isSameMonth(anchor, today) ? (
+          <Button label="This month" compact tone="ghost" icon="locate-outline" onPress={onJumpThisMonth} testID="dash-month-this" />
+        ) : null}
+      </View>
       <AgendaFilterBar
         testID="dash-month-filter"
         state={filterCtl.state}
@@ -239,18 +255,55 @@ export function DashboardMonthView({
         onPriority={filterCtl.setPriority}
         onCategoryId={filterCtl.setCategoryId}
         onSort={filterCtl.setSort}
-        matchCount={day.data ? filtered.length : undefined}
+        matchCount={range.data ? filteredRange.length : undefined}
       />
+      {range.error ? <ErrorState message={range.error} onRetry={range.reload} /> : null}
+      {!range.data && !range.error ? <LoadingState /> : null}
+      {range.data ? (
+        <Card style={{ padding: spacing.sm }}>
+          <MonthTaskGrid
+            month={anchor}
+            selected={anchor}
+            today={today}
+            itemsByDate={itemsByDate}
+            now={now}
+            onSelectDay={onSelectDay}
+            onSelectTask={openTask}
+          />
+          <AppText variant="caption" muted style={{ marginTop: spacing.sm, textAlign: 'center' }}>
+            Main tasks appear in each day. Tap a task to edit; nested subtasks stay in the editor.
+          </AppText>
+        </Card>
+      ) : null}
+      <AppText variant="heading">{formatDateKey(anchor, 'EEEE, MMMM d')}</AppText>
       {day.error ? <ErrorState message={day.error} onRetry={day.reload} /> : null}
       {!day.data && !day.error ? <LoadingState /> : null}
       {day.data ? (
         <AgendaList
-          items={filtered}
+          items={filteredDay}
           testPrefix="dash-month-item"
           emptyText={day.data.length ? 'No matches for this day.' : 'Nothing scheduled. Tap + to add.'}
         />
       ) : null}
       <Button label="Add to this day" icon="add" tone="secondary" onPress={() => router.push({ pathname: '/quick-add', params: { date: anchor } })} />
+      <DatePickerModal
+        visible={goToOpen}
+        value={anchor}
+        today={today}
+        title="Go to date"
+        onChange={onSelectDay}
+        onClose={() => setGoToOpen(false)}
+      />
+      <TaskEditModal
+        visible={!!edit}
+        occurrenceId={edit?.id ?? null}
+        scope={edit?.scope ?? 'series'}
+        onClose={() => {
+          setEdit(null);
+          range.reload();
+          day.reload();
+        }}
+      />
     </View>
   );
 }
@@ -258,5 +311,5 @@ export function DashboardMonthView({
 const styles = StyleSheet.create({
   nav: { flexDirection: 'row', alignItems: 'center' },
   weekHeader: { flexDirection: 'row', alignItems: 'center', borderRadius: radius.md },
-  legend: { flexDirection: 'row', justifyContent: 'center', gap: spacing.lg, paddingTop: spacing.sm },
+  goToRow: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm, alignItems: 'center' },
 });

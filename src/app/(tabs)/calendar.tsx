@@ -6,9 +6,15 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { addDaysKey, formatDateKey, formatTime, fromDateKey, toDateKey, todayKey } from '@/domain/dates';
 import type { Agenda, DateKey } from '@/domain/models';
+import { groupAgendaByDate } from '@/domain/monthTable';
+import type { EditScope } from '@/domain/services/taskService';
 import { useServices } from '@/state/appStore';
 import { AgendaRow } from '@/ui/components/AgendaRow';
-import { MonthGrid, WEEK_STARTS_ON } from '@/ui/components/MonthGrid';
+import { choose } from '@/ui/components/dialogs';
+import { WEEK_STARTS_ON } from '@/ui/components/MonthGrid';
+import { MonthTaskGrid } from '@/ui/components/MonthTaskGrid';
+import { DatePickerModal } from '@/ui/components/Pickers';
+import { TaskEditModal } from '@/ui/components/TaskEditModal';
 import { AppText, Button, Card, ErrorState, IconButton, LoadingState, Segmented } from '@/ui/components/primitives';
 import { QuickAddButton } from '@/ui/components/QuickAddButton';
 import { useQuery, useTheme } from '@/ui/hooks';
@@ -33,32 +39,63 @@ function DayList({ items, emptyText }: { items: Agenda[]; emptyText: string }) {
 }
 
 function MonthView({ anchor, today, onSelect }: { anchor: DateKey; today: DateKey; onSelect: (d: DateKey) => void }) {
+  const services = useServices();
+  const [goToOpen, setGoToOpen] = useState(false);
+  const [edit, setEdit] = useState<{ id: string; scope: EditScope } | null>(null);
   const first = toDateKey(startOfWeek(startOfMonth(fromDateKey(anchor)), { weekStartsOn: WEEK_STARTS_ON }));
   const last = toDateKey(endOfWeek(endOfMonth(fromDateKey(anchor)), { weekStartsOn: WEEK_STARTS_ON }));
-  const summaries = useQuery((s) => s.agenda.summaries(first, last), [first, last]);
+  const range = useQuery((s) => s.agenda.range(first, last), [first, last]);
   const day = useQuery((s) => s.agenda.day(anchor), [anchor]);
-  const p = useTheme();
+  const now = services.clock.now();
+  const itemsByDate = groupAgendaByDate(range.data ?? []);
+
+  async function openTask(a: Agenda) {
+    onSelect(a.occurrence.date);
+    let scope: EditScope = 'series';
+    if (a.rule) {
+      const picked = await choose<EditScope>('Edit recurring item', 'Which occurrences do you want to change?', [
+        { label: 'This occurrence only', value: 'occurrence', tone: 'secondary' },
+        { label: 'This and following', value: 'future', tone: 'secondary' },
+        { label: 'Entire series', value: 'series', tone: 'primary' },
+      ]);
+      if (!picked) return;
+      scope = picked;
+    }
+    setEdit({ id: a.occurrence.id, scope });
+  }
+
   return (
     <View style={{ gap: spacing.md }}>
-      <Card style={{ paddingHorizontal: spacing.xs }}>
-        <MonthGrid month={anchor} selected={anchor} today={today} onSelect={onSelect} summaries={summaries.data} />
-        <View style={styles.legend}>
-          {[
-            [p.danger, 'Overdue'],
-            [p.primary, 'Pending'],
-            [p.success, 'Done'],
-          ].map(([c, l]) => (
-            <View key={l} style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
-              <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: c }} />
-              <AppText variant="caption" muted>
-                {l}
-              </AppText>
-            </View>
-          ))}
-        </View>
-      </Card>
+      <Button label="Go to date" compact tone="secondary" icon="calendar-outline" onPress={() => setGoToOpen(true)} testID="cal-month-goto" />
+      {range.error ? <ErrorState message={range.error} onRetry={range.reload} /> : null}
+      {!range.data && !range.error ? <LoadingState /> : null}
+      {range.data ? (
+        <Card style={{ padding: spacing.sm }}>
+          <MonthTaskGrid
+            month={anchor}
+            selected={anchor}
+            today={today}
+            itemsByDate={itemsByDate}
+            now={now}
+            onSelectDay={onSelect}
+            onSelectTask={openTask}
+            testID="cal-month-task-grid"
+          />
+        </Card>
+      ) : null}
       <AppText variant="heading">{formatDateKey(anchor, 'EEEE, MMMM d')}</AppText>
       {day.error ? <ErrorState message={day.error} onRetry={day.reload} /> : day.data ? <DayList items={day.data} emptyText="Nothing scheduled. Tap + to add." /> : <LoadingState />}
+      <DatePickerModal visible={goToOpen} value={anchor} today={today} title="Go to date" onChange={onSelect} onClose={() => setGoToOpen(false)} />
+      <TaskEditModal
+        visible={!!edit}
+        occurrenceId={edit?.id ?? null}
+        scope={edit?.scope ?? 'series'}
+        onClose={() => {
+          setEdit(null);
+          range.reload();
+          day.reload();
+        }}
+      />
     </View>
   );
 }
@@ -217,7 +254,6 @@ export default function CalendarScreen() {
 
 const styles = StyleSheet.create({
   nav: { flexDirection: 'row', alignItems: 'center' },
-  legend: { flexDirection: 'row', justifyContent: 'center', gap: spacing.lg, paddingTop: spacing.sm },
   weekHeader: { flexDirection: 'row', alignItems: 'center', borderRadius: radius.md },
   timeCol: { width: 68, alignItems: 'flex-end', paddingRight: spacing.sm, paddingTop: spacing.md, borderRightWidth: 2 },
 });

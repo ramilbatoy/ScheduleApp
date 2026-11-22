@@ -18,15 +18,15 @@ export function goBackOrDashboard(): void {
 }
 
 /** Android hardware back → same safe path as the header back control. */
-export function useSafeAndroidBack(): void {
+export function useSafeAndroidBack(enabled = true): void {
   useFocusEffect(
     useCallback(() => {
-      if (Platform.OS !== 'android') return undefined;
+      if (!enabled || Platform.OS !== 'android') return undefined;
       const sub = BackHandler.addEventListener('hardwareBackPress', () => {
         goBackOrDashboard();
         return true;
       });
       return () => sub.remove();
-    }, []),
+    }, [enabled]),
   );
 }
