@@ -97,7 +97,7 @@ Update this section whenever a phase finishes, a PR merges, or acceptance status
 
 | Item | Status | Notes |
 | --- | --- | --- |
-| Nested subtasks + Node ≥22.13 | Open PR (2026-11-22) | Branch `cursor/nested-subtasks-node22-9d74`; schema v2 `task_subtasks`; 157 tests |
+| Nested subtasks + Node ≥22.13 | Open PR (2026-11-22) | https://github.com/ramilbatoy/ScheduleApp/pull/6 — schema v2 `task_subtasks`; 157 tests |
 | Device re-verify | Optional | Emulator/device smoke of clipping + scheduled alarms on a physical phone |
 | Production signing | Optional | Replace debug-keystore release with Play/EAS credentials when publishing |
 
