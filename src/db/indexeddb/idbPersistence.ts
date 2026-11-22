@@ -27,6 +27,15 @@ const IDB_UPGRADES: { version: number; apply: (db: IDBPDatabase) => void }[] = [
       }
     },
   },
+  {
+    // folders object store. Task folder_id / priority_explicit live on the row documents.
+    version: 3,
+    apply: (db) => {
+      for (const table of TABLES) {
+        if (!db.objectStoreNames.contains(table)) db.createObjectStore(table, { keyPath: 'id' });
+      }
+    },
+  },
 ];
 
 export const IDB_VERSION = IDB_UPGRADES[IDB_UPGRADES.length - 1].version;

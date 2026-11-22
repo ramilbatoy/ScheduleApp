@@ -11,6 +11,7 @@ import { mergeAgendaUnique, projectOverdueOntoToday } from '@/domain/services/ag
 import type { EditScope } from '@/domain/services/taskService';
 import { useServices } from '@/state/appStore';
 import { AgendaRow } from '@/ui/components/AgendaRow';
+import { MenuButton } from '@/ui/components/MenuButton';
 import { currentWeekAnchor, shiftWeekAnchor, weekStartKey } from '@/ui/components/DashboardPlanner';
 import { choose } from '@/ui/components/dialogs';
 import { WEEK_STARTS_ON } from '@/ui/components/MonthGrid';
@@ -249,6 +250,7 @@ export default function CalendarScreen() {
           ]}
         />
         <View style={styles.nav}>
+          <MenuButton />
           <IconButton icon="chevron-back" label="Previous" onPress={() => shift(-1)} testID="cal-prev" />
           <AppText variant="title" style={{ flex: 1, textAlign: 'center' }} testID="cal-title">
             {title}

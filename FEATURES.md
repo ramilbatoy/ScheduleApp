@@ -46,6 +46,8 @@
 
 - Priority visuals (low → urgent)
 - Default + custom categories with colors
+- **Folders / projects:** optional one-folder assignment, archive/restore, progress from occurrences, project target date (does not move task dates). Explicit task priority always wins; otherwise the task inherits the folder priority
+- Tasks in a folder still appear on Today, Week, Month, Calendar, Tasks, search, and statistics. Tasks can filter by folder and by folder target date
 - Global search; filters (status, category, priority, carried, overdue, …)
 - Statistics: today / week / month rates, totals, carry-forward, trends (plain RN charts)
 - Quick-add with optional NL date/time/`!priority`/`#category` parsing
@@ -54,4 +56,4 @@
 
 ## Navigation
 
-Bottom tabs: **Today · Calendar · Tasks · Statistics · Settings**. Modal quick-add and item edit flows.
+Bottom tabs: **Today · Calendar · Tasks · Statistics · Settings**. A header menu opens a left drawer (Today, Calendar, Tasks, Projects, Statistics, Categories, Theme, Backup & Restore, Settings, About). Settings → Navigation turns the drawer on or off, hides or reorders shortcuts, and resets them. Hiding a shortcut does not remove the screen. Modal quick-add and item edit flows.

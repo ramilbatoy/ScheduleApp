@@ -64,6 +64,7 @@ export function Screen({
   title,
   subtitle,
   right,
+  leading,
   children,
   scroll = true,
   contentStyle,
@@ -71,6 +72,7 @@ export function Screen({
   title?: string;
   subtitle?: string;
   right?: ReactNode;
+  leading?: ReactNode;
   children: ReactNode;
   scroll?: boolean;
   contentStyle?: StyleProp<ViewStyle>;
@@ -79,6 +81,7 @@ export function Screen({
   const insets = useSafeAreaInsets();
   const header = title ? (
     <View style={styles.screenHeader}>
+      {leading}
       <View style={{ flex: 1 }}>
         {subtitle ? (
           <AppText variant="label" muted>

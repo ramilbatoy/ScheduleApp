@@ -8,6 +8,7 @@ import type { Agenda, DateKey } from '@/domain/models';
 import { filterAgendaItems, matchesNearDueWindow } from '@/domain/services/agendaService';
 import { useAppStore, useServices, useSettings } from '@/state/appStore';
 import { AgendaRow, formatDeadline } from '@/ui/components/AgendaRow';
+import { MenuButton } from '@/ui/components/MenuButton';
 import { AgendaFilterBar, AGENDA_SORT_OPTIONS, useAgendaFilterState } from '@/ui/components/AgendaFilterBar';
 import {
   DashboardMonthView,
@@ -227,7 +228,12 @@ function TodayDashboard() {
         <AppText variant="label" muted>
           {d ? formatDateKey(d.today, 'EEEE').toUpperCase() : ''}
         </AppText>
-        <AppText variant="display">{d ? formatDateKey(d.today, 'MMMM d, yyyy') : 'Today'}</AppText>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm }}>
+          <MenuButton />
+          <AppText variant="display" style={{ flex: 1 }}>
+            {d ? formatDateKey(d.today, 'MMMM d, yyyy') : 'Today'}
+          </AppText>
+        </View>
       </View>
 
       {dash.error ? <ErrorState message={dash.error} onRetry={dash.reload} /> : null}

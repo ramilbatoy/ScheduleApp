@@ -12,11 +12,14 @@ interface AppState {
   settings: AppSettings | null;
   /** Bumped after every durable write so screens re-query. Cache only; never a source of truth. */
   dataVersion: number;
+  drawerOpen: boolean;
   setReady(services: AppServices, settings: AppSettings): void;
   setError(message: string): void;
   setLoading(): void;
   setSettings(settings: AppSettings): void;
   invalidate(): void;
+  openDrawer(): void;
+  closeDrawer(): void;
 }
 
 export const useAppStore = create<AppState>((set) => ({
@@ -25,11 +28,15 @@ export const useAppStore = create<AppState>((set) => ({
   services: null,
   settings: null,
   dataVersion: 0,
+  drawerOpen: false,
   setReady: (services, settings) => set({ status: 'ready', services, settings, error: null }),
   setError: (message) => set({ status: 'error', error: message }),
   setLoading: () => set({ status: 'loading', error: null }),
-  setSettings: (settings) => set({ settings }),
+  setSettings: (settings) =>
+    set((s) => ({ settings, drawerOpen: settings.navigation.drawerEnabled ? s.drawerOpen : false })),
   invalidate: () => set((s) => ({ dataVersion: s.dataVersion + 1 })),
+  openDrawer: () => set((s) => (s.settings?.navigation.drawerEnabled ? { drawerOpen: true } : { drawerOpen: false })),
+  closeDrawer: () => set({ drawerOpen: false }),
 }));
 
 export function useServices(): AppServices {

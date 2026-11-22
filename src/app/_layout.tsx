@@ -7,6 +7,7 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { ThemeProvider } from '@/theme';
 import { AppProvider } from '@/ui/AppProvider';
 import { DialogHost, ToastHost } from '@/ui/components/dialogs';
+import { NavDrawer } from '@/ui/components/NavDrawer';
 import { IconButton } from '@/ui/components/primitives';
 import { useTheme } from '@/ui/hooks';
 import { goBackOrDashboard } from '@/ui/navigation';
@@ -43,6 +44,8 @@ function Navigation() {
           headerLeft: () => <HeaderBack />,
         }}>
         <Stack.Screen name="(tabs)" options={{ headerShown: false, headerLeft: () => null }} />
+        <Stack.Screen name="about" options={{ title: 'About' }} />
+        <Stack.Screen name="projects" options={{ title: 'Projects' }} />
         <Stack.Screen name="item/edit" options={{ title: 'Edit', presentation: 'modal' }} />
         <Stack.Screen
           name="quick-add"
@@ -50,8 +53,10 @@ function Navigation() {
         />
         <Stack.Screen name="categories" options={{ title: 'Categories' }} />
         <Stack.Screen name="theme-settings" options={{ title: 'Theme' }} />
+        <Stack.Screen name="folder/[id]" options={{ title: 'Folder' }} />
         <Stack.Screen name="item/[id]" options={{ title: 'Details' }} />
       </Stack>
+      <NavDrawer />
       <DialogHost />
       <ToastHost />
     </NavThemeProvider>

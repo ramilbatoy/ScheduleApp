@@ -18,6 +18,8 @@ import {
   type TimeOfDay,
 } from '../models';
 import { createRepos, type Repos } from '../repos/repositories';
+import { resolvePriority } from '../folderProgress';
+import { resolveFolderForWrite } from './folderService';
 import { carryOccurrence, GENERATION_WINDOW_DAYS, generateInstances, newOccurrence, recordHistory } from './occurrenceOps';
 import { buildSubtaskTree } from './subtaskService';
 
@@ -34,7 +36,11 @@ export interface ItemInput {
   title: string;
   notes: string;
   categoryId: string | null;
+  /** Omit or null to leave the task out of every folder. */
+  folderId?: string | null;
   priority: Priority;
+  /** False inherits the folder priority. Omitted means explicit, matching tasks created before folders. */
+  priorityExplicit?: boolean;
   date: DateKey;
   allDay: boolean;
   startTime: TimeOfDay | null;
@@ -101,7 +107,15 @@ export function validateItemInput(input: ItemInput): ItemInput {
       throw new ValidationError('Repeat end date must be on or after the start date.');
     }
   }
-  return { ...input, title, notes: input.notes.trim(), startTime, endTime };
+  return {
+    ...input,
+    title,
+    notes: input.notes.trim(),
+    startTime,
+    endTime,
+    folderId: input.folderId || null,
+    priorityExplicit: input.priorityExplicit !== false,
+  };
 }
 
 export class TaskService {
@@ -136,6 +150,8 @@ export class TaskService {
       if (input.categoryId && !(await repos.categories.get(input.categoryId))) {
         throw new ValidationError('That category no longer exists.');
       }
+      const folder = await resolveFolderForWrite(repos, input.folderId ?? null, null);
+      const resolved = resolvePriority(input, folder);
       let rule: RecurringRule | null = null;
       if (input.recurrence) {
         rule = { id: newId(), ...input.recurrence, startDate: input.date, timezone: deviceTimeZone(), generatedUntil: null, createdAt: now, updatedAt: now };
@@ -147,7 +163,9 @@ export class TaskService {
         title: input.title,
         notes: input.notes,
         categoryId: input.categoryId,
-        priority: input.priority,
+        folderId: folder?.id ?? null,
+        priority: resolved.priority,
+        priorityExplicit: resolved.priorityExplicit,
         allDay: input.allDay,
         defaultStartTime: input.startTime,
         defaultEndTime: input.endTime,
@@ -181,10 +199,11 @@ export class TaskService {
     const repos = createRepos(this.db);
     const { occ, task, rule } = await this.load(repos, occurrenceId);
     const category = task.categoryId ? await repos.categories.get(task.categoryId) : null;
+    const folder = task.folderId ? await repos.folders.get(task.folderId) : null;
     const history = await repos.history.listByTask(task.id);
     const subtasks: SubtaskNode[] =
       task.kind === 'task' ? buildSubtaskTree(await repos.subtasks.listActiveForOccurrence(occ.id)) : [];
-    return { occurrence: occ, task, rule, category, history, subtasks };
+    return { occurrence: occ, task, rule, category, folder, history, subtasks };
   }
 
   /** The values an edit form should start from for the given scope. */
@@ -196,7 +215,9 @@ export class TaskService {
       title: scope === 'occurrence' ? (occ.titleOverride ?? task.title) : task.title,
       notes: scope === 'occurrence' ? (occ.notesOverride ?? task.notes) : task.notes,
       categoryId: task.categoryId,
+      folderId: task.folderId,
       priority: task.priority,
+      priorityExplicit: task.priorityExplicit,
       date: series ? (scope === 'future' ? occ.date : rule.startDate) : occ.date,
       allDay: task.allDay,
       startTime: series ? task.defaultStartTime : occ.startTime,
@@ -247,12 +268,16 @@ export class TaskService {
         return this.splitSeries(repos, now, today, task, rule, occ, input);
       }
 
+      const folder = await resolveFolderForWrite(repos, input.folderId ?? null, task.folderId);
+      const resolved = resolvePriority(input, folder);
       const taskPatch: Partial<Task> = {
         kind: task.kind,
         title: input.title,
         notes: input.notes,
         categoryId: input.categoryId,
-        priority: input.priority,
+        folderId: folder?.id ?? null,
+        priority: resolved.priority,
+        priorityExplicit: resolved.priorityExplicit,
         allDay: input.allDay,
         defaultStartTime: input.startTime,
         defaultEndTime: input.endTime,
@@ -342,13 +367,17 @@ export class TaskService {
       updatedAt: now,
     };
     await repos.rules.insert(newRule);
+    const folder = await resolveFolderForWrite(repos, input.folderId ?? null, task.folderId);
+    const resolved = resolvePriority(input, folder);
     const newTask: Task = {
       ...task,
       id: newId(),
       title: input.title,
       notes: input.notes,
       categoryId: input.categoryId,
-      priority: input.priority,
+      folderId: folder?.id ?? null,
+      priority: resolved.priority,
+      priorityExplicit: resolved.priorityExplicit,
       allDay: input.allDay,
       defaultStartTime: input.startTime,
       defaultEndTime: input.endTime,

@@ -4,7 +4,7 @@ import { Pressable, StyleSheet, View } from 'react-native';
 
 import { formatDateKey, formatTime, todayKey } from '@/domain/dates';
 import type { Agenda } from '@/domain/models';
-import { displayTitle, formatOverdueLabels, isOverdue, overdueTimeline } from '@/domain/services/agendaService';
+import { agendaPriority, displayTitle, formatOverdueLabels, isOverdue, overdueTimeline } from '@/domain/services/agendaService';
 import { useAppStore } from '@/state/appStore';
 
 import { useAction, useTheme } from '../hooks';
@@ -26,14 +26,30 @@ export function ItemBadges({ a, showDate }: { a: Agenda; showDate?: boolean }) {
   const now = services ? services.clock.now() : new Date();
   const o = a.occurrence;
   const overdue = isOverdue(a, today, now);
+  const priority = agendaPriority(a);
+  const inherited = a.task.priorityExplicit === false && !!a.folder;
   const timeline = overdue ? overdueTimeline(a, today, now) : null;
   const overdueLabels = timeline ? formatOverdueLabels(timeline, today) : null;
   const deadlinePassed = !!a.task.deadlineAt && new Date(a.task.deadlineAt) < now && o.status === 'pending';
   return (
     <View style={styles.badges}>
       {showDate ? <Badge label={formatDateKey(o.date, 'MMM d')} color={p.textSecondary} background={p.surfaceVariant} icon="calendar-outline" /> : null}
-      {a.task.kind === 'task' && a.task.priority !== 'medium' ? (
-        <Badge label={PRIORITY_LABEL[a.task.priority]} color={p.priority[a.task.priority]} background={`${p.priority[a.task.priority]}22`} icon="flag" />
+      {a.task.kind === 'task' && (priority !== 'medium' || inherited) ? (
+        <Badge
+          label={inherited ? `${PRIORITY_LABEL[priority]} · folder` : PRIORITY_LABEL[priority]}
+          color={p.priority[priority]}
+          background={`${p.priority[priority]}22`}
+          icon="flag"
+        />
+      ) : null}
+      {a.folder ? (
+        <Pressable
+          testID={`folder-chip-${a.folder.id}`}
+          accessibilityRole="button"
+          accessibilityLabel={`Open folder ${a.folder.name}`}
+          onPress={() => router.push({ pathname: '/folder/[id]', params: { id: a.folder!.id } })}>
+          <Badge label={a.folder.name} color={a.folder.color} background={`${a.folder.color}22`} icon="folder-outline" />
+        </Pressable>
       ) : null}
       {a.category ? <Badge label={a.category.name} color={a.category.color} background={`${a.category.color}22`} /> : null}
       {o.isCarriedForward && o.status === 'pending' ? (
@@ -63,7 +79,7 @@ export function AgendaRow({ a, showDate, testID }: { a: Agenda; showDate?: boole
   const done = o.status === 'completed';
   const title = displayTitle(a);
   const time = o.startTime ? `${formatTime(o.startTime)}${o.endTime ? ` – ${formatTime(o.endTime)}` : ''}` : a.task.allDay ? 'All day' : null;
-  const accent = a.task.kind === 'event' ? (a.category?.color ?? p.primary) : p.priority[a.task.priority];
+  const accent = a.task.kind === 'event' ? (a.category?.color ?? p.primary) : p.priority[agendaPriority(a)];
   const hasSubtasks = a.task.kind === 'task' && a.subtasks.length > 0;
 
   return (

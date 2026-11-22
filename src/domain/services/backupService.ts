@@ -6,7 +6,7 @@ import { ValidationError } from '../models';
 import { createRepos } from '../repos/repositories';
 
 export const BACKUP_APP_ID = 'dayplanner';
-export const BACKUP_FORMAT_VERSION = 1;
+export const BACKUP_FORMAT_VERSION = 2;
 
 /**
  * Tables carried in a backup. `reminders` is deliberately excluded: its rows
@@ -28,6 +28,7 @@ const KNOWN_SETTING_KEYS = new Set([
   'notifications_enabled',
   'last_backup_at',
   'categories_seeded',
+  'navigation',
 ]);
 
 export interface BackupFile {
@@ -45,6 +46,7 @@ export interface BackupSummary {
   categories: number;
   tasks: number;
   events: number;
+  folders: number;
   occurrences: number;
   completed: number;
   history: number;
@@ -59,12 +61,14 @@ export interface ValidatedBackup {
 const ENUMS: Record<string, Record<string, readonly string[]>> = {
   recurring_rules: { frequency: ['daily', 'weekly', 'monthly', 'yearly'] },
   tasks: { item_kind: ['task', 'event'], priority: ['low', 'medium', 'high', 'urgent'] },
+  folders: { priority: ['low', 'medium', 'high', 'urgent'], status: ['active', 'archived', 'completed'] },
   task_occurrences: {
     status: ['pending', 'completed', 'cancelled', 'missed'],
     source: ['manual', 'recurrence', 'carry_forward'],
   },
 };
 const DATE_COLUMNS: Record<string, string[]> = {
+  folders: ['target_date'],
   recurring_rules: ['start_date', 'end_date', 'generated_until'],
   task_occurrences: ['occurrence_date', 'original_occurrence_date'],
   completion_history: ['from_date', 'to_date'],
@@ -75,6 +79,7 @@ const TIME_COLUMNS: Record<string, string[]> = {
 };
 const INSTANT_COLUMNS: Record<string, string[]> = {
   categories: ['created_at', 'updated_at'],
+  folders: ['created_at', 'updated_at', 'archived_at'],
   recurring_rules: ['created_at', 'updated_at'],
   tasks: ['created_at', 'updated_at', 'deleted_at', 'deadline_at'],
   task_occurrences: ['created_at', 'updated_at', 'completed_at'],
@@ -108,6 +113,7 @@ function summarize(backup: BackupFile): BackupSummary {
     categories: backup.data.categories.length,
     tasks: tasks.filter((t) => t.item_kind === 'task').length,
     events: tasks.filter((t) => t.item_kind === 'event').length,
+    folders: backup.data.folders?.length ?? 0,
     occurrences: backup.data.task_occurrences.length,
     completed: backup.data.task_occurrences.filter((o) => o.status === 'completed').length,
     history: backup.data.completion_history.length,
@@ -181,7 +187,7 @@ export class BackupService {
     const data: Record<string, Row[]> = {};
 
     /** Tables added after schema v1 — absent in older backups, treat as empty. */
-    const optionalTables = new Set(['task_subtasks']);
+    const optionalTables = new Set(['task_subtasks', 'folders']);
     for (const table of BACKUP_TABLES) {
       const rows = parsed.data[table];
       if (!Array.isArray(rows)) {
@@ -207,6 +213,10 @@ export class BackupService {
         for (const [col, spec] of Object.entries(def.columns)) {
           const v = raw[col];
           if (v === undefined || v === null) {
+            if (v === undefined && spec.defaultValue !== undefined) {
+              row[col] = spec.defaultValue;
+              continue;
+            }
             if (!spec.nullable) fail(`${where} is missing required field "${col}".`);
             row[col] = null;
             continue;
@@ -258,7 +268,15 @@ export class BackupService {
     data.app_settings = settings;
 
     const idsOf = (table: string) => new Set((data[table] ?? []).map((r) => String(r.id)));
+    const activeFolderNames = new Set<string>();
+    for (const f of data.folders ?? []) {
+      if (f.status !== 'active') continue;
+      const key = String(f.name).trim().toLowerCase();
+      if (activeFolderNames.has(key)) fail(`Two active folders are named "${String(f.name)}".`);
+      activeFolderNames.add(key);
+    }
     const categoryIds = idsOf('categories');
+    const folderIds = idsOf('folders');
     const ruleIds = idsOf('recurring_rules');
     const taskIds = idsOf('tasks');
     const occurrenceIds = idsOf('task_occurrences');
@@ -266,6 +284,11 @@ export class BackupService {
       if (t.category_id !== null && !categoryIds.has(String(t.category_id))) {
         warnings.push(`"${String(t.title)}" referenced a missing category and will be uncategorized.`);
         t.category_id = null;
+      }
+      if (t.folder_id !== null && !folderIds.has(String(t.folder_id))) {
+        warnings.push(`"${String(t.title)}" referenced a missing folder and will be unassigned.`);
+        t.folder_id = null;
+        if (Number(t.priority_explicit) === 0) t.priority_explicit = 1;
       }
       if (t.recurring_rule_id !== null && !ruleIds.has(String(t.recurring_rule_id))) {
         fail(`Task "${String(t.title)}" references a repeat rule that is not in the backup.`);

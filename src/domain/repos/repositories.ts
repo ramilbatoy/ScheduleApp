@@ -1,9 +1,11 @@
 import type { DbOps, Where } from '../../db/types';
+import { sanitizeNavigation } from '../navigationPrefs';
 import {
   DEFAULT_SETTINGS,
   type AppSettings,
   type Category,
   type DateKey,
+  type Folder,
   type HistoryEntry,
   type Occurrence,
   type OccurrenceStatus,
@@ -14,6 +16,8 @@ import {
 } from '../models';
 import {
   categoryMapper,
+  folderMapper,
+  folderPatch,
   historyMapper,
   occurrenceMapper,
   occurrencePatch,
@@ -24,6 +28,30 @@ import {
   taskMapper,
   taskPatch,
 } from './mappers';
+
+export class FolderRepo {
+  constructor(private readonly db: DbOps) {}
+  async list(): Promise<Folder[]> {
+    const rows = await this.db.find('folders', { orderBy: [{ column: 'sort_order' }, { column: 'name' }] });
+    return rows.map(folderMapper.from);
+  }
+  async get(id: string) {
+    const r = await this.db.get('folders', id);
+    return r ? folderMapper.from(r) : null;
+  }
+  insert(f: Folder) {
+    return this.db.insert('folders', folderMapper.to(f));
+  }
+  update(f: Folder) {
+    return this.db.update('folders', f.id, folderMapper.to(f));
+  }
+  patch(id: string, p: Partial<Folder>) {
+    return this.db.update('folders', id, folderPatch(p));
+  }
+  delete(id: string) {
+    return this.db.delete('folders', id);
+  }
+}
 
 export class CategoryRepo {
   constructor(private readonly db: DbOps) {}
@@ -208,6 +236,7 @@ const SETTING_KEYS: Record<keyof AppSettings, string> = {
   notificationsEnabled: 'notifications_enabled',
   lastBackupAt: 'last_backup_at',
   categoriesSeeded: 'categories_seeded',
+  navigation: 'navigation',
 };
 
 export class SettingsRepo {
@@ -247,6 +276,7 @@ export class SettingsRepo {
     if (settings.themeCustomColors && typeof settings.themeCustomColors !== 'object') {
       settings.themeCustomColors = null;
     }
+    settings.navigation = sanitizeNavigation(settings.navigation);
     return settings;
   }
 
@@ -260,6 +290,7 @@ export class SettingsRepo {
 }
 
 export interface Repos {
+  folders: FolderRepo;
   categories: CategoryRepo;
   rules: RuleRepo;
   tasks: TaskRepo;
@@ -272,6 +303,7 @@ export interface Repos {
 
 export function createRepos(db: DbOps): Repos {
   return {
+    folders: new FolderRepo(db),
     categories: new CategoryRepo(db),
     rules: new RuleRepo(db),
     tasks: new TaskRepo(db),

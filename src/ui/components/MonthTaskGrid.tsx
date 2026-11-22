@@ -4,7 +4,7 @@ import { Pressable, StyleSheet, View } from 'react-native';
 import { fromDateKey } from '@/domain/dates';
 import type { Agenda, DateKey } from '@/domain/models';
 import { cellTaskPreview, monthPrefix } from '@/domain/monthTable';
-import { displayTitle, formatOverdueLabels, isOverdue, overdueTimeline } from '@/domain/services/agendaService';
+import { agendaPriority, displayTitle, formatOverdueLabels, isOverdue, overdueTimeline } from '@/domain/services/agendaService';
 
 import { useTheme } from '../hooks';
 import { radius } from '../theme';
@@ -85,7 +85,7 @@ export function MonthTaskGrid({
                     const timeline = overdue && !done ? overdueTimeline(a, today, now) : null;
                     const overdueLabels = timeline ? formatOverdueLabels(timeline, today) : null;
                     const accent =
-                      a.task.kind === 'event' ? (a.category?.color ?? p.primary) : overdue ? p.overdue : p.priority[a.task.priority];
+                      a.task.kind === 'event' ? (a.category?.color ?? p.primary) : overdue ? p.overdue : p.priority[agendaPriority(a)];
                     const title = displayTitle(a);
                     return (
                       <Pressable

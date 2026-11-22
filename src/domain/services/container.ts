@@ -6,6 +6,7 @@ import { AgendaService } from './agendaService';
 import { BackupService, safetyCopyName, type ValidatedBackup } from './backupService';
 import { CarryForwardService, type CarryResult } from './carryForwardService';
 import { CategoryService } from './categoryService';
+import { FolderService } from './folderService';
 import { backfillMissingOriginalDates } from './occurrenceOps';
 import { RecurrenceService } from './recurrenceService';
 import { ReminderService } from './reminderService';
@@ -24,6 +25,7 @@ export interface MaintenanceResult {
 /** Every service, wired to one database, one clock and one notification port. UI talks only to this. */
 export class AppServices {
   readonly categories: CategoryService;
+  readonly folders: FolderService;
   readonly settings: SettingsService;
   readonly recurrence: RecurrenceService;
   readonly carryForward: CarryForwardService;
@@ -41,6 +43,7 @@ export class AppServices {
     private readonly notifications: NotificationPort = noopNotifications,
   ) {
     this.categories = new CategoryService(db, clock);
+    this.folders = new FolderService(db, clock);
     this.settings = new SettingsService(db, clock);
     this.recurrence = new RecurrenceService(db, clock);
     this.carryForward = new CarryForwardService(db, clock);

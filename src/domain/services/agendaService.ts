@@ -1,10 +1,12 @@
 import type { Database } from '../../db/types';
 import { addDaysKey, combineDateTime, diffDays, formatDateKey, isDateKey, minutesOf, toDateKey, todayKey, type Clock } from '../dates';
+import { effectivePriority, folderTargetStatus } from '../folderProgress';
 import {
   PRIORITY_RANK,
   type Agenda,
   type Category,
   type DateKey,
+  type Folder,
   type HistoryEntry,
   type ItemKind,
   type Occurrence,
@@ -27,13 +29,26 @@ const MAX_LOOKAHEAD_DAYS = 3 * 366;
 export type StatusFilter = 'all' | 'pending' | 'completed' | 'overdue' | 'carried' | 'upcoming';
 export type SortKey = 'date' | 'priority' | 'deadline' | 'created';
 
+export type FolderTargetFilter = 'any' | 'overdue' | 'approaching' | 'none' | 'set';
+export type FolderAssignmentFilter = 'any' | 'unassigned' | 'assigned';
+
 export interface ListFilter {
   text?: string;
   status?: StatusFilter;
   kinds?: ItemKind[];
   priorities?: Priority[];
   categoryIds?: string[];
+  /** Restrict to one folder. Date filters still use the occurrence date. */
+  folderId?: string;
+  /** Used when `folderId` is omitted. `any` leaves every task in the list. */
+  folderAssignment?: FolderAssignmentFilter;
+  /** Filter by the folder's project deadline, not the occurrence date. */
+  folderTarget?: FolderTargetFilter;
   sort?: SortKey;
+}
+
+export function agendaPriority(a: Agenda): Priority {
+  return effectivePriority(a.task, a.folder);
 }
 
 export interface DaySummary {
@@ -213,7 +228,7 @@ export function weeklyGoalItems(
       ? overduePending.filter((a) => pendingTask(a) && a.occurrence.date < weekStart)
       : [];
   return mergeAgendaUnique(beforeWeek, inWeek).sort((a, b) => {
-    const byPriority = PRIORITY_RANK[b.task.priority] - PRIORITY_RANK[a.task.priority];
+    const byPriority = PRIORITY_RANK[agendaPriority(b)] - PRIORITY_RANK[agendaPriority(a)];
     if (byPriority) return byPriority;
     return a.occurrence.date < b.occurrence.date ? -1 : a.occurrence.date > b.occurrence.date ? 1 : 0;
   });
@@ -257,20 +272,38 @@ export function compareAgenda(a: Agenda, b: Agenda): number {
   const ta = a.occurrence.startTime ? minutesOf(a.occurrence.startTime) : -1;
   const tb = b.occurrence.startTime ? minutesOf(b.occurrence.startTime) : -1;
   if (ta !== tb) return ta - tb;
-  return PRIORITY_RANK[b.task.priority] - PRIORITY_RANK[a.task.priority];
+  return PRIORITY_RANK[agendaPriority(b)] - PRIORITY_RANK[agendaPriority(a)];
 }
 
 /** Pure status/kind/priority/category/text match — shared by Tasks list and Week/Month filters. */
+function matchesFolderTarget(folder: Folder | null | undefined, filter: FolderTargetFilter | undefined, today: DateKey): boolean {
+  if (!filter || filter === 'any') return true;
+  const target = folderTargetStatus(folder?.targetDate ?? null, today);
+  if (filter === 'none') return !target.date;
+  if (filter === 'set') return !!target.date;
+  if (filter === 'overdue') return target.overdue;
+  return target.approaching;
+}
+
 export function matchesAgendaFilter(a: Agenda, filter: ListFilter, today: DateKey, now: Date): boolean {
   if (filter.kinds?.length && !filter.kinds.includes(a.task.kind)) return false;
-  if (filter.priorities?.length && !filter.priorities.includes(a.task.priority)) return false;
+  if (filter.priorities?.length && !filter.priorities.includes(agendaPriority(a))) return false;
   if (filter.categoryIds?.length && !(a.task.categoryId && filter.categoryIds.includes(a.task.categoryId))) return false;
+  if (filter.folderId) {
+    if (a.task.folderId !== filter.folderId) return false;
+  } else if (filter.folderAssignment === 'unassigned') {
+    if (a.task.folderId) return false;
+  } else if (filter.folderAssignment === 'assigned') {
+    if (!a.task.folderId) return false;
+  }
+  if (!matchesFolderTarget(a.folder, filter.folderTarget, today)) return false;
   const text = filter.text?.trim().toLowerCase();
   if (text) {
     const hay = [
       displayTitle(a),
       a.occurrence.notesOverride ?? a.task.notes,
       a.category?.name ?? '',
+      a.folder?.name ?? '',
       ...flattenSubtaskTitles(a.subtasks),
     ];
     if (!hay.some((s) => s.toLowerCase().includes(text))) return false;
@@ -298,7 +331,7 @@ export function sortAgendaItems(items: Agenda[], sort: SortKey = 'date'): Agenda
   const byDate = compareAgenda;
   out.sort((a, b) => {
     if (sort === 'priority') {
-      const d = PRIORITY_RANK[b.task.priority] - PRIORITY_RANK[a.task.priority];
+      const d = PRIORITY_RANK[agendaPriority(b)] - PRIORITY_RANK[agendaPriority(a)];
       return d || byDate(a, b);
     }
     if (sort === 'deadline') {
@@ -330,6 +363,7 @@ export class AgendaService {
   private async join(repos: Repos, occs: Occurrence[], includeDeleted = false): Promise<Agenda[]> {
     const tasks = new Map((await repos.tasks.listByIds([...new Set(occs.map((o) => o.taskId))])).map((t) => [t.id, t]));
     const categories = new Map<string, Category>((await repos.categories.list()).map((c) => [c.id, c]));
+    const folders = new Map<string, Folder>((await repos.folders.list()).map((f) => [f.id, f]));
     const ruleIds = [...new Set([...tasks.values()].map((t) => t.recurringRuleId).filter((x): x is string => !!x))];
     const rules = new Map<string, RecurringRule>();
     for (const id of ruleIds) {
@@ -362,6 +396,7 @@ export class AgendaService {
         task,
         rule: task.recurringRuleId ? (rules.get(task.recurringRuleId) ?? null) : null,
         category: task.categoryId ? (categories.get(task.categoryId) ?? null) : null,
+        folder: task.folderId ? (folders.get(task.folderId) ?? null) : null,
         subtasks,
         history: historyByTask.get(occurrence.taskId) ?? [],
       });

@@ -7,6 +7,7 @@ import { addDaysKey, formatDateKey, fromDateKey, todayKey, toDateKey } from '@/d
 import type { Agenda, DateKey } from '@/domain/models';
 import { groupAgendaByDate, isSameMonth } from '@/domain/monthTable';
 import {
+  agendaPriority,
   filterAgendaItems,
   mergeAgendaUnique,
   projectOverdueOntoToday,
@@ -98,7 +99,7 @@ export function WeeklyGoalsSection({
           ))}
         </View>
       ) : null}
-      {goals.length && !goals.some((a) => a.task.priority === 'urgent' || a.task.priority === 'high') ? (
+      {goals.length && !goals.some((a) => agendaPriority(a) === 'urgent' || agendaPriority(a) === 'high') ? (
         <AppText variant="caption" color={p.textSecondary}>
           Nothing marked urgent or high yet.
         </AppText>

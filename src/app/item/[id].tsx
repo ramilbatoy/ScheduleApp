@@ -5,7 +5,7 @@ import { ScrollView, View } from 'react-native';
 import { formatDateKey, formatTime, todayKey } from '@/domain/dates';
 import type { HistoryEntry } from '@/domain/models';
 import { describeRule } from '@/domain/recurrence';
-import { displayTitle, formatOverdueDetail, overdueTimeline } from '@/domain/services/agendaService';
+import { agendaPriority, displayTitle, formatOverdueDetail, overdueTimeline } from '@/domain/services/agendaService';
 import { describeOffset } from '@/domain/services/reminderService';
 import type { EditScope } from '@/domain/services/taskService';
 import { useServices } from '@/state/appStore';
@@ -127,6 +127,16 @@ export default function ItemDetailScreen() {
             <Button testID="detail-move-today" label="Move to today" icon="return-down-forward" tone="secondary" compact onPress={() => run((s) => s.tasks.moveToToday([o.id]), 'Moved to today')} />
           ) : null}
           <Button testID="detail-delete" label="Delete" icon="trash-outline" tone="ghost" compact onPress={onDelete} />
+          {d.folder ? (
+            <Button
+              testID="detail-open-folder"
+              label="Open folder"
+              icon="folder-outline"
+              tone="secondary"
+              compact
+              onPress={() => router.push({ pathname: '/folder/[id]', params: { id: d.folder!.id } })}
+            />
+          ) : null}
         </View>
 
         <Card>
@@ -139,7 +149,18 @@ export default function ItemDetailScreen() {
             value={d.task.allDay ? 'All day' : o.startTime ? `${formatTime(o.startTime)}${o.endTime ? ` – ${formatTime(o.endTime)}` : ''}` : 'Anytime'}
           />
           {d.task.deadlineAt ? <InfoRow icon="hourglass-outline" label="Deadline" value={formatDeadline(d.task.deadlineAt)} /> : null}
-          {d.task.kind === 'task' ? <InfoRow icon="flag-outline" label="Priority" value={PRIORITY_LABEL[d.task.priority]} /> : null}
+          {d.task.kind === 'task' ? (
+            <InfoRow
+              icon="flag-outline"
+              label="Priority"
+              value={
+                d.task.priorityExplicit === false && d.folder
+                  ? `${PRIORITY_LABEL[agendaPriority(d)]} (inherited from ${d.folder.name})`
+                  : PRIORITY_LABEL[agendaPriority(d)]
+              }
+            />
+          ) : null}
+          <InfoRow icon="folder-outline" label="Folder" value={d.folder?.name ?? 'None'} />
           <InfoRow icon="pricetag-outline" label="Category" value={d.category?.name ?? 'None'} />
           {d.rule ? <InfoRow icon="repeat" label="Repeats" value={describeRule(d.rule)} /> : null}
           {o.carryForwardCount > 0 ? (

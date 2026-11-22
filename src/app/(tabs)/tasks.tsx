@@ -3,8 +3,9 @@ import { FlatList, ScrollView, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { PRIORITIES, type ItemKind, type Priority } from '@/domain/models';
-import type { SortKey, StatusFilter } from '@/domain/services/agendaService';
+import type { FolderAssignmentFilter, FolderTargetFilter, SortKey, StatusFilter } from '@/domain/services/agendaService';
 import { AgendaRow, PRIORITY_LABEL } from '@/ui/components/AgendaRow';
+import { MenuButton } from '@/ui/components/MenuButton';
 import { OptionsModal } from '@/ui/components/Pickers';
 import { AppText, Chip, EmptyState, ErrorState, Icon, Input, LoadingState } from '@/ui/components/primitives';
 import { QuickAddButton } from '@/ui/components/QuickAddButton';
@@ -37,21 +38,39 @@ export default function TasksScreen() {
   const [kind, setKind] = useState<KindFilter>('task');
   const [priority, setPriority] = useState<Priority | null>(null);
   const [categoryId, setCategoryId] = useState<string | null>(null);
+  const [folderId, setFolderId] = useState<string | null>(null);
+  const [folderAssignment, setFolderAssignment] = useState<FolderAssignmentFilter>('any');
+  const [folderTarget, setFolderTarget] = useState<FolderTargetFilter>('any');
   const [sort, setSort] = useState<SortKey>('date');
-  const [picker, setPicker] = useState<null | 'sort' | 'category' | 'priority'>(null);
+  const [picker, setPicker] = useState<null | 'sort' | 'category' | 'priority' | 'folder' | 'folderTarget'>(null);
   const categories = useQuery((s) => s.categories.list(), []);
+  const folders = useQuery((s) => s.folders.list(), []);
   const kinds: ItemKind[] | undefined = kind === 'all' ? undefined : [kind];
   const list = useQuery(
-    (s) => s.agenda.list({ text, status, kinds, priorities: priority ? [priority] : undefined, categoryIds: categoryId ? [categoryId] : undefined, sort }),
-    [text, status, kind, priority, categoryId, sort],
+    (s) =>
+      s.agenda.list({
+        text,
+        status,
+        kinds,
+        priorities: priority ? [priority] : undefined,
+        categoryIds: categoryId ? [categoryId] : undefined,
+        folderId: folderId ?? undefined,
+        folderAssignment: folderId ? 'any' : folderAssignment,
+        folderTarget,
+        sort,
+      }),
+    [text, status, kind, priority, categoryId, folderId, folderAssignment, folderTarget, sort],
   );
   const category = categories.data?.find((c) => c.id === categoryId);
 
   const header = (
     <View style={{ gap: spacing.md, paddingBottom: spacing.sm }}>
-      <AppText variant="display" style={{ paddingTop: spacing.md }}>
-        {kind === 'event' ? 'Events' : kind === 'all' ? 'Everything' : 'Tasks'}
-      </AppText>
+      <View style={{ flexDirection: 'row', alignItems: 'center', paddingTop: spacing.md, gap: spacing.sm }}>
+        <MenuButton />
+        <AppText variant="display" style={{ flex: 1 }}>
+          {kind === 'event' ? 'Events' : kind === 'all' ? 'Everything' : 'Tasks'}
+        </AppText>
+      </View>
       <View style={styles.search}>
         <View style={styles.searchIcon}>
           <Icon name="search" size={18} color={p.textSecondary} />
@@ -65,6 +84,20 @@ export default function TasksScreen() {
         <Chip testID="filter-priority" icon="flag" label={priority ? PRIORITY_LABEL[priority] : 'Priority'} color={priority ? p.priority[priority] : undefined} selected={!!priority} onPress={() => setPicker('priority')} />
         <Chip testID="filter-category" label={category?.name ?? 'Category'} icon={category ? undefined : 'pricetag-outline'} color={category?.color} selected={!!category} onPress={() => setPicker('category')} />
         <Chip testID="filter-sort" icon="swap-vertical" label={`Sort: ${SORTS.find((s) => s.value === sort)!.label}`} onPress={() => setPicker('sort')} />
+        <Chip
+          testID="filter-folder"
+          icon="folder-outline"
+          label={folderId ? (folders.data?.find((f) => f.id === folderId)?.name ?? 'Folder') : folderAssignment === 'unassigned' ? 'No folder' : folderAssignment === 'assigned' ? 'In a folder' : 'Folder'}
+          selected={!!folderId || folderAssignment !== 'any'}
+          onPress={() => setPicker('folder')}
+        />
+        <Chip
+          testID="filter-folder-target"
+          icon="flag-outline"
+          label={folderTarget === 'any' ? 'Folder target' : folderTarget === 'overdue' ? 'Target overdue' : folderTarget === 'approaching' ? 'Target soon' : folderTarget === 'set' ? 'Has target' : 'No target'}
+          selected={folderTarget !== 'any'}
+          onPress={() => setPicker('folderTarget')}
+        />
       </ScrollView>
       <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: spacing.sm }}>
         {STATUSES.map((s) => (
@@ -114,6 +147,42 @@ export default function TasksScreen() {
         value={categoryId}
         options={[{ value: null, label: 'Any category' }, ...(categories.data ?? []).map((c) => ({ value: c.id, label: c.name, color: c.color }))]}
         onChange={setCategoryId}
+        onClose={() => setPicker(null)}
+      />
+      <OptionsModal<string>
+        visible={picker === 'folder'}
+        title="Folder"
+        value={folderId ?? folderAssignment}
+        options={[
+          { value: 'any', label: 'Any folder' },
+          { value: 'unassigned', label: 'No folder' },
+          { value: 'assigned', label: 'In a folder' },
+          ...(folders.data ?? []).filter((f) => f.status !== 'archived').map((f) => ({ value: f.id, label: f.name, color: f.color })),
+          ...(folders.data ?? []).filter((f) => f.status === 'archived').map((f) => ({ value: f.id, label: `${f.name} (archived)`, color: f.color })),
+        ]}
+        onChange={(value) => {
+          if (value === 'any' || value === 'unassigned' || value === 'assigned') {
+            setFolderId(null);
+            setFolderAssignment(value);
+          } else {
+            setFolderId(value);
+            setFolderAssignment('any');
+          }
+        }}
+        onClose={() => setPicker(null)}
+      />
+      <OptionsModal<FolderTargetFilter>
+        visible={picker === 'folderTarget'}
+        title="Folder target date"
+        value={folderTarget}
+        options={[
+          { value: 'any', label: 'Any target' },
+          { value: 'overdue', label: 'Target overdue' },
+          { value: 'approaching', label: 'Due within 7 days' },
+          { value: 'set', label: 'Has a target' },
+          { value: 'none', label: 'No target' },
+        ]}
+        onChange={setFolderTarget}
         onClose={() => setPicker(null)}
       />
     </View>

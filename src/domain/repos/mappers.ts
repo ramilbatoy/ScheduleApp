@@ -1,6 +1,7 @@
 import type { Row } from '../../db/types';
 import type {
   Category,
+  Folder,
   HistoryEntry,
   Occurrence,
   RecurringRule,
@@ -22,6 +23,37 @@ function parseJson<T>(v: unknown): T | null {
     return null;
   }
 }
+
+export const folderMapper = {
+  from: (r: Row): Folder => ({
+    id: String(r.id),
+    name: String(r.name),
+    description: String(r.description ?? ''),
+    color: String(r.color),
+    icon: String(r.icon),
+    targetDate: s(r.target_date),
+    priority: r.priority as Folder['priority'],
+    status: r.status as Folder['status'],
+    sortOrder: Number(r.sort_order ?? 0),
+    createdAt: String(r.created_at),
+    updatedAt: String(r.updated_at),
+    archivedAt: s(r.archived_at),
+  }),
+  to: (f: Folder): Row => ({
+    id: f.id,
+    name: f.name,
+    description: f.description,
+    color: f.color,
+    icon: f.icon,
+    target_date: f.targetDate,
+    priority: f.priority,
+    status: f.status,
+    sort_order: f.sortOrder,
+    created_at: f.createdAt,
+    updated_at: f.updatedAt,
+    archived_at: f.archivedAt,
+  }),
+};
 
 export const categoryMapper = {
   from: (r: Row): Category => ({
@@ -80,7 +112,9 @@ export const taskMapper = {
     title: String(r.title),
     notes: String(r.notes ?? ''),
     categoryId: s(r.category_id),
+    folderId: r.folder_id === undefined ? null : s(r.folder_id),
     priority: r.priority as Task['priority'],
+    priorityExplicit: r.priority_explicit === undefined || r.priority_explicit === null ? true : b(r.priority_explicit),
     allDay: b(r.all_day),
     defaultStartTime: s(r.default_start_time),
     defaultEndTime: s(r.default_end_time),
@@ -99,7 +133,9 @@ export const taskMapper = {
     title: t.title,
     notes: t.notes,
     category_id: t.categoryId,
+    folder_id: t.folderId,
     priority: t.priority,
+    priority_explicit: bi(t.priorityExplicit),
     all_day: bi(t.allDay),
     default_start_time: t.defaultStartTime,
     default_end_time: t.defaultEndTime,
@@ -171,6 +207,19 @@ function makePatcher<T>(spec: { [K in keyof T]?: Encoder }) {
 }
 
 /** Partial domain patch → partial row containing only the provided fields. */
+export const folderPatch = makePatcher<Folder>({
+  name: ['name'],
+  description: ['description'],
+  color: ['color'],
+  icon: ['icon'],
+  targetDate: ['target_date'],
+  priority: ['priority'],
+  status: ['status'],
+  sortOrder: ['sort_order'],
+  updatedAt: ['updated_at'],
+  archivedAt: ['archived_at'],
+});
+
 export const occurrencePatch = makePatcher<Occurrence>({
   taskId: ['task_id'],
   date: ['occurrence_date'],
@@ -194,7 +243,9 @@ export const taskPatch = makePatcher<Task>({
   title: ['title'],
   notes: ['notes'],
   categoryId: ['category_id'],
+  folderId: ['folder_id'],
   priority: ['priority'],
+  priorityExplicit: ['priority_explicit', bi],
   allDay: ['all_day', bi],
   defaultStartTime: ['default_start_time'],
   defaultEndTime: ['default_end_time'],

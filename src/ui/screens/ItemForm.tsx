@@ -9,6 +9,7 @@ import type { EditScope, ItemInput } from '@/domain/services/taskService';
 import { useAppStore, useServices, useSettings } from '@/state/appStore';
 
 import { PRIORITY_LABEL } from '../components/AgendaRow';
+import { FolderForm } from '../components/FolderForm';
 import { DatePickerModal, OptionsModal, TimePickerModal } from '../components/Pickers';
 import { AppText, Button, Card, Chip, ErrorState, Field, Input, LoadingState, Segmented, SelectButton, SwitchRow } from '../components/primitives';
 import { RecurrenceEditor } from '../components/RecurrenceEditor';
@@ -26,6 +27,7 @@ export interface ItemFormParams {
   date?: DateKey;
   kind?: ItemKind;
   title?: string;
+  folderId?: string;
 }
 
 export function ItemForm({
@@ -57,7 +59,9 @@ export function ItemForm({
           title: params.title ?? '',
           notes: '',
           categoryId: null,
+          folderId: params.folderId ?? null,
           priority: 'medium',
+          priorityExplicit: params.folderId ? false : true,
           date: params.date ?? today,
           allDay: false,
           startTime: null,
@@ -69,7 +73,7 @@ export function ItemForm({
         },
       };
     },
-    [params.id, scope],
+    [params.id, scope, params.folderId],
   );
 
   if (initial.error) return <ErrorState message={initial.error} onRetry={initial.reload} />;
@@ -116,8 +120,10 @@ function Form({
   const [v, setV] = useState<ItemInput>(initial);
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
-  const [picker, setPicker] = useState<null | 'date' | 'start' | 'end' | 'deadlineDate' | 'deadlineTime' | 'category' | 'reminder' | 'deadlineReminder'>(null);
+  const [picker, setPicker] = useState<null | 'date' | 'start' | 'end' | 'deadlineDate' | 'deadlineTime' | 'category' | 'folder' | 'reminder' | 'deadlineReminder'>(null);
+  const [makingFolder, setMakingFolder] = useState(false);
   const categories = useQuery((s) => s.categories.list(), []);
+  const folders = useQuery((s) => s.folders.list(), []);
   const subtasks = useQuery(
     async (s): Promise<SubtaskNode[]> => (occurrenceId && v.kind === 'task' ? s.subtasks.treeForOccurrence(occurrenceId) : []),
     [occurrenceId, v.kind],
@@ -133,6 +139,8 @@ function Form({
     ? `${String(new Date(v.deadlineAt).getHours()).padStart(2, '0')}:${String(new Date(v.deadlineAt).getMinutes()).padStart(2, '0')}`
     : null;
   const category = categories.data?.find((c) => c.id === v.categoryId) ?? null;
+  const folder = folders.data?.find((f) => f.id === v.folderId) ?? null;
+  const inheriting = v.priorityExplicit === false && !!v.folderId;
 
   const title = useMemo(() => {
     if (!editing) return isEvent ? 'New event' : 'New task';
@@ -241,10 +249,25 @@ function Form({
         ) : null}
 
         <View style={{ gap: spacing.lg, opacity: occurrenceOnly ? 0.5 : 1 }} pointerEvents={occurrenceOnly ? 'none' : 'auto'}>
-          <Field label="Priority">
+          <Field label="Folder" hint="A project. Categories stay separate, and a task can have both.">
+            <SelectButton
+              testID="input-folder"
+              icon="folder-outline"
+              placeholder="No folder"
+              value={folder ? folder.name : null}
+              onPress={() => setPicker('folder')}
+              onClear={() => set({ folderId: null, ...(inheriting ? { priorityExplicit: true, priority: folder?.priority ?? v.priority } : {}) })}
+            />
+            <Button label="New folder" tone="ghost" compact icon="add" onPress={() => setMakingFolder(true)} />
+          </Field>
+
+          <Field label="Priority" hint={inheriting ? 'Inherited from the folder. Pick a level to set it on this task.' : 'Set on this task. It will not change when the folder priority changes.'}>
             <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm }}>
+              {v.folderId ? (
+                <Chip testID="priority-inherit" label="Inherit from folder" icon="folder-outline" selected={inheriting} onPress={() => set({ priorityExplicit: false })} />
+              ) : null}
               {PRIORITIES.map((pr) => (
-                <Chip key={pr} testID={`priority-${pr}`} label={PRIORITY_LABEL[pr]} color={p.priority[pr]} icon="flag" selected={v.priority === pr} onPress={() => set({ priority: pr })} />
+                <Chip key={pr} testID={`priority-${pr}`} label={PRIORITY_LABEL[pr]} color={p.priority[pr]} icon="flag" selected={!inheriting && v.priority === pr} onPress={() => set({ priority: pr, priorityExplicit: true })} />
               ))}
             </View>
           </Field>
@@ -329,6 +352,25 @@ function Form({
         title="Deadline time"
         onChange={(t) => deadlineDate && set({ deadlineAt: combineDateTime(deadlineDate, t).toISOString() })}
         onClose={() => setPicker(null)}
+      />
+      <OptionsModal<string | null>
+        visible={picker === 'folder'}
+        title="Folder"
+        value={v.folderId ?? null}
+        options={[
+          { value: null, label: 'No folder' },
+          ...(folders.data ?? []).filter((f) => f.status !== 'archived' || f.id === v.folderId).map((f) => ({ value: f.id, label: f.status === 'archived' ? `${f.name} (archived)` : f.name, color: f.color })),
+        ]}
+        onChange={(folderId) => set({ folderId, ...(folderId && v.priorityExplicit === false ? { priorityExplicit: false } : {}) })}
+        onClose={() => setPicker(null)}
+      />
+      <FolderForm
+        visible={makingFolder}
+        onClose={() => setMakingFolder(false)}
+        onSaved={(created) => {
+          folders.reload();
+          set({ folderId: created.id });
+        }}
       />
       <OptionsModal<string | null>
         visible={picker === 'category'}

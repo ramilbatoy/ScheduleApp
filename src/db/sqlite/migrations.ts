@@ -140,6 +140,31 @@ export const SQLITE_MIGRATIONS: SqlMigration[] = [
       `CREATE INDEX ix_subtasks_deleted ON task_subtasks(deleted_at)`,
     ],
   },
+  {
+    version: 3,
+    name: '003_folders',
+    statements: [
+      `CREATE TABLE folders (
+        id TEXT PRIMARY KEY NOT NULL,
+        name TEXT NOT NULL,
+        description TEXT NOT NULL DEFAULT '',
+        color TEXT NOT NULL,
+        icon TEXT NOT NULL,
+        target_date TEXT,
+        priority TEXT NOT NULL CHECK (priority IN ('low','medium','high','urgent')),
+        status TEXT NOT NULL CHECK (status IN ('active','archived','completed')),
+        sort_order INTEGER NOT NULL DEFAULT 0,
+        created_at TEXT NOT NULL,
+        updated_at TEXT NOT NULL,
+        archived_at TEXT
+      )`,
+      `CREATE UNIQUE INDEX ux_folders_active_name ON folders(name) WHERE status = 'active'`,
+      `CREATE INDEX ix_folders_status ON folders(status, sort_order)`,
+      `ALTER TABLE tasks ADD COLUMN folder_id TEXT`,
+      `ALTER TABLE tasks ADD COLUMN priority_explicit INTEGER NOT NULL DEFAULT 1`,
+      `CREATE INDEX ix_tasks_folder ON tasks(folder_id)`,
+    ],
+  },
 ];
 
 export const LATEST_SCHEMA_VERSION = SQLITE_MIGRATIONS[SQLITE_MIGRATIONS.length - 1].version;

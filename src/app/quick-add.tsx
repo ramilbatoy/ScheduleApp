@@ -15,7 +15,7 @@ import { goBackOrDashboard, useSafeAndroidBack } from '@/ui/navigation';
 import { radius, spacing } from '@/ui/theme';
 
 export default function QuickAddScreen() {
-  const params = useLocalSearchParams<{ date?: DateKey; kind?: ItemKind }>();
+  const params = useLocalSearchParams<{ date?: DateKey; kind?: ItemKind; folderId?: string }>();
   const p = useTheme();
   const insets = useSafeAreaInsets();
   const services = useServices();
@@ -25,12 +25,14 @@ export default function QuickAddScreen() {
   useSafeAndroidBack();
   const today = todayKey(services.clock);
   const categories = useQuery((s) => s.categories.list(), []);
+  const folders = useQuery((s) => s.folders.list(), []);
 
   const [kind, setKind] = useState<ItemKind>(params.kind ?? 'task');
   const [text, setText] = useState('');
   const [date, setDate] = useState<DateKey | null>(null);
   const [time, setTime] = useState<TimeOfDay | null>(null);
   const [priority, setPriority] = useState<Priority | null>(null);
+  const [folderId, setFolderId] = useState<string | null>(typeof params.folderId === 'string' ? params.folderId : null);
   const [picker, setPicker] = useState<null | 'date' | 'time'>(null);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -38,7 +40,10 @@ export default function QuickAddScreen() {
   const parsed = useMemo(() => parseQuickAdd(text, today), [text, today]);
   const effectiveDate = date ?? parsed.date ?? params.date ?? today;
   const effectiveTime = time ?? parsed.time;
-  const effectivePriority = priority ?? parsed.priority ?? 'medium';
+  const chosenPriority = priority ?? parsed.priority;
+  const selectedFolder = folders.data?.find((f) => f.id === folderId) ?? null;
+  const inheriting = !!selectedFolder && chosenPriority == null;
+  const effectivePriority = chosenPriority ?? selectedFolder?.priority ?? 'medium';
   const category = parsed.categoryName
     ? (categories.data?.find((c) => c.name.toLowerCase() === parsed.categoryName!.toLowerCase()) ?? null)
     : null;
@@ -62,7 +67,9 @@ export default function QuickAddScreen() {
         title,
         notes: '',
         categoryId: category?.id ?? null,
+        folderId,
         priority: effectivePriority,
+        priorityExplicit: !inheriting,
         date: effectiveDate,
         allDay: false,
         startTime: effectiveTime,
@@ -130,10 +137,30 @@ export default function QuickAddScreen() {
           <Chip testID="quick-time" label={effectiveTime ? formatTime(effectiveTime) : 'Add time'} icon="time-outline" selected={!!effectiveTime} onPress={() => setPicker('time')} />
           {category ? <Chip label={category.name} color={category.color} selected /> : null}
         </View>
+        {folders.data && folders.data.some((f) => f.status !== 'archived') ? (
+          <View style={styles.wrap}>
+            <Chip label="No folder" icon="folder-outline" selected={!folderId} onPress={() => setFolderId(null)} />
+            {folders.data
+              .filter((f) => f.status !== 'archived')
+              .map((f) => (
+                <Chip key={f.id} label={f.name} color={f.color} selected={folderId === f.id} onPress={() => setFolderId(f.id)} />
+              ))}
+          </View>
+        ) : null}
         {kind === 'task' ? (
           <View style={styles.wrap}>
+            {selectedFolder ? (
+              <Chip label="Inherit folder" icon="folder-outline" selected={inheriting} onPress={() => setPriority(null)} />
+            ) : null}
             {PRIORITIES.map((pr) => (
-              <Chip key={pr} label={PRIORITY_LABEL[pr]} icon="flag" color={p.priority[pr]} selected={effectivePriority === pr} onPress={() => setPriority(pr)} />
+              <Chip
+                key={pr}
+                label={PRIORITY_LABEL[pr]}
+                icon="flag"
+                color={p.priority[pr]}
+                selected={chosenPriority === pr}
+                onPress={() => setPriority(chosenPriority === pr && selectedFolder ? null : pr)}
+              />
             ))}
           </View>
         ) : null}

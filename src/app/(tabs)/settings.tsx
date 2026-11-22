@@ -2,13 +2,28 @@ import { router } from 'expo-router';
 import { useState } from 'react';
 import { View } from 'react-native';
 
+import { DEFAULT_NAVIGATION, NAV_ITEM_IDS, type NavItemId } from '@/domain/navigationPrefs';
 import type { AppSettings, ThemePreference } from '@/domain/models';
 import type { PermissionState } from '@/domain/ports';
 import { useAppStore, useServices, useSettings } from '@/state/appStore';
-import { AppText, Card, Divider, ErrorState, ListRow, Screen, Segmented, SwitchRow } from '@/ui/components/primitives';
+import { MenuButton } from '@/ui/components/MenuButton';
+import { AppText, Button, Card, Divider, ErrorState, ListRow, Screen, Segmented, SwitchRow } from '@/ui/components/primitives';
 import { exportBackupFlow, latestSafetyCopyDate, restoreBackupFlow, undoRestoreFlow, type FlowResult } from '@/ui/backupActions';
 import { errorMessage, useAction, useQuery, useToast } from '@/ui/hooks';
 import { spacing } from '@/ui/theme';
+
+const NAV_LABEL: Record<NavItemId, string> = {
+  today: 'Today',
+  calendar: 'Calendar',
+  tasks: 'Tasks',
+  projects: 'Projects',
+  statistics: 'Statistics',
+  categories: 'Categories',
+  theme: 'Theme',
+  backup: 'Backup & Restore',
+  settings: 'Settings',
+  about: 'About',
+};
 
 const PERMISSION_LABEL: Record<PermissionState, string> = {
   granted: 'Allowed',
@@ -30,6 +45,17 @@ export default function SettingsScreen() {
   const invalidate = useAppStore((s) => s.invalidate);
   const [busy, setBusy] = useState(false);
   const run = useAction();
+
+  function moveNav(id: NavItemId, dir: -1 | 1) {
+    const order = [...settings.navigation.order];
+    const index = order.indexOf(id);
+    const next = index + dir;
+    if (index < 0 || next < 0 || next >= order.length) return;
+    const copy = [...order];
+    const [row] = copy.splice(index, 1);
+    copy.splice(next, 0, row);
+    update('navigation', { ...settings.navigation, order: copy });
+  }
 
   async function update<K extends keyof AppSettings>(key: K, value: AppSettings[K]) {
     try {
@@ -64,7 +90,7 @@ export default function SettingsScreen() {
   }
 
   return (
-    <Screen title="Settings">
+    <Screen title="Settings" leading={<MenuButton />}>
       <AppText variant="label" muted>
         APPEARANCE
       </AppText>
@@ -95,6 +121,47 @@ export default function SettingsScreen() {
       </Card>
 
       <AppText variant="label" muted>
+        NAVIGATION
+      </AppText>
+      <Card>
+        <SwitchRow
+          testID="toggle-drawer"
+          label="Show menu button"
+          description="Opens a drawer of shortcuts. The bottom tabs stay either way."
+          value={settings.navigation.drawerEnabled}
+          onChange={(drawerEnabled) => update('navigation', { ...settings.navigation, drawerEnabled })}
+        />
+        <Divider />
+        <AppText variant="caption" muted>
+          Shown in the drawer
+        </AppText>
+        {settings.navigation.order.map((id, index) => (
+          <View key={id} style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm }}>
+            <AppText style={{ flex: 1 }}>{NAV_LABEL[id]}</AppText>
+            <Button label="Up" compact tone="ghost" disabled={index === 0} onPress={() => moveNav(id, -1)} />
+            <Button label="Down" compact tone="ghost" disabled={index === settings.navigation.order.length - 1} onPress={() => moveNav(id, 1)} />
+            <Button label="Hide" compact tone="ghost" onPress={() => update('navigation', { ...settings.navigation, order: settings.navigation.order.filter((x) => x !== id) })} />
+          </View>
+        ))}
+        {NAV_ITEM_IDS.filter((id) => !settings.navigation.order.includes(id)).length ? (
+          <>
+            <Divider />
+            <AppText variant="caption" muted>
+              Hidden shortcuts
+            </AppText>
+            {NAV_ITEM_IDS.filter((id) => !settings.navigation.order.includes(id)).map((id) => (
+              <ListRow key={id} label={NAV_LABEL[id]} value="Show" onPress={() => update('navigation', { ...settings.navigation, order: [...settings.navigation.order, id] })} />
+            ))}
+          </>
+        ) : null}
+        <Divider />
+        <ListRow testID="nav-reset" icon="refresh" label="Reset menu" onPress={() => update('navigation', { ...DEFAULT_NAVIGATION, order: [...DEFAULT_NAVIGATION.order] })} />
+        <AppText variant="caption" muted>
+          Hiding a shortcut does not remove the screen. Tabs stay. Projects, Categories, Theme, Backup, and About also stay available from this page.
+        </AppText>
+      </Card>
+
+      <AppText variant="label" muted>
         TASKS
       </AppText>
       <Card>
@@ -105,6 +172,8 @@ export default function SettingsScreen() {
           value={settings.autoCarryForward}
           onChange={(v) => update('autoCarryForward', v)}
         />
+        <Divider />
+        <ListRow testID="open-projects" icon="folder-outline" label="Projects" value="Folders" onPress={() => router.push('/projects')} />
         <Divider />
         <ListRow
           testID="carry-now"
@@ -211,6 +280,8 @@ export default function SettingsScreen() {
         <AppText variant="caption" muted>
           All data stays on this device. No account, no cloud.
         </AppText>
+        <Divider />
+        <ListRow testID="open-about" icon="information-circle-outline" label="About DayPlanner" onPress={() => router.push('/about')} />
       </Card>
     </Screen>
   );

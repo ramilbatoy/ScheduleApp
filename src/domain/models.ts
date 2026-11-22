@@ -1,3 +1,5 @@
+import { DEFAULT_NAVIGATION, type NavigationPrefs } from './navigationPrefs';
+
 export type ItemKind = 'task' | 'event';
 export type Priority = 'low' | 'medium' | 'high' | 'urgent';
 /** `missed`: a past recurring instance superseded by a newer instance of the same series. */
@@ -95,13 +97,39 @@ export interface RecurringRule {
   updatedAt: string;
 }
 
+export type FolderStatus = 'active' | 'archived' | 'completed';
+
+export interface Folder {
+  id: string;
+  name: string;
+  description: string;
+  color: string;
+  icon: string;
+  /** Project deadline (civil date). Never an occurrence date. */
+  targetDate: DateKey | null;
+  priority: Priority;
+  status: FolderStatus;
+  sortOrder: number;
+  createdAt: string;
+  updatedAt: string;
+  archivedAt: string | null;
+}
+
 export interface Task {
   id: string;
   kind: ItemKind;
   title: string;
   notes: string;
   categoryId: string | null;
+  /** Optional project. At most one. Categories stay independent. */
+  folderId: string | null;
   priority: Priority;
+  /**
+   * False when the task inherits its folder's priority.
+   * Explicit priority is never rewritten by folder updates.
+   * Missing on hand-built fixtures means explicit.
+   */
+  priorityExplicit: boolean;
   allDay: boolean;
   defaultStartTime: TimeOfDay | null;
   defaultEndTime: TimeOfDay | null;
@@ -199,6 +227,8 @@ export interface AppSettings {
   notificationsEnabled: boolean;
   lastBackupAt: string | null;
   categoriesSeeded: boolean;
+  /** Hamburger drawer: on/off, visible shortcuts, and their order. */
+  navigation: NavigationPrefs;
 }
 
 export const DEFAULT_SETTINGS: AppSettings = {
@@ -212,6 +242,7 @@ export const DEFAULT_SETTINGS: AppSettings = {
   notificationsEnabled: true,
   lastBackupAt: null,
   categoriesSeeded: false,
+  navigation: DEFAULT_NAVIGATION,
 };
 
 /** An occurrence joined with its parent definition — what most screens render. */
@@ -222,6 +253,8 @@ export interface Agenda {
   category: Category | null;
   /** Nested checklist for this occurrence (empty for events). */
   subtasks: SubtaskNode[];
+  /** Project this task belongs to, when the agenda query loaded it. */
+  folder?: Folder | null;
   /**
    * Completion / carry / reschedule history for the parent task, when the
    * agenda query loaded it. Detail screens always have this. Used to place

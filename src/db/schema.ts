@@ -1,10 +1,12 @@
-import type { Row } from './types';
+import type { Row, SqlValue } from './types';
 
 export type ColumnType = 'text' | 'integer';
 
 export interface ColumnDef {
   type: ColumnType;
   nullable?: boolean;
+  /** Used when a row omits the column (older backups, pre-migration memory rows). */
+  defaultValue?: SqlValue;
 }
 
 export interface UniqueDef {
@@ -65,10 +67,36 @@ export const SCHEMA: Record<string, TableDef> = {
       series_id: t(true),
       reminder_offset_minutes: i(true),
       deadline_reminder_offset_minutes: i(true),
+      folder_id: t(true),
+      /** 1 = user chose this priority; 0 = inherit the folder priority. Existing rows default to explicit. */
+      priority_explicit: { type: 'integer', defaultValue: 1 },
       created_at: t(),
       updated_at: t(),
       deleted_at: t(true),
     },
+  },
+  folders: {
+    columns: {
+      id: t(),
+      name: t(),
+      description: t(),
+      color: t(),
+      icon: t(),
+      target_date: t(true),
+      priority: t(),
+      status: t(),
+      sort_order: i(),
+      created_at: t(),
+      updated_at: t(),
+      archived_at: t(true),
+    },
+    unique: [
+      {
+        name: 'ux_folders_active_name',
+        columns: ['name'],
+        when: (row) => row.status === 'active',
+      },
+    ],
   },
   task_occurrences: {
     columns: {
@@ -159,6 +187,7 @@ export const TABLES = Object.keys(SCHEMA);
 export const TABLE_INSERT_ORDER = [
   'app_settings',
   'categories',
+  'folders',
   'recurring_rules',
   'tasks',
   'task_occurrences',

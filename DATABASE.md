@@ -1,6 +1,6 @@
 # Database — DayPlanner
 
-Single schema shared by Android (SQLite) and web (in-memory tables + IndexedDB persistence). Migrations are append-only; current version: **2** (`002_task_subtasks`).
+Single schema shared by Android (SQLite) and web (in-memory tables + IndexedDB persistence). Migrations are append-only; current version: **3** (`003_folders`).
 
 ## Tables
 
@@ -48,6 +48,8 @@ Default seed: Personal, Work, Meetings, Health, Family, Finance, Projects, Other
 | series_id | TEXT NULL | series membership |
 | reminder_offset_minutes | INTEGER NULL | before start |
 | deadline_reminder_offset_minutes | INTEGER NULL | |
+| folder_id | TEXT NULL | optional project; deleting a folder does not delete the task |
+| priority_explicit | INTEGER | `1` = user chose `priority`; `0` = inherit the folder priority. Existing rows default to `1` |
 | created_at | TEXT | **immutable original creation** |
 | updated_at | TEXT | |
 | deleted_at | TEXT NULL | soft delete |
@@ -75,6 +77,24 @@ Default seed: Personal, Work, Meetings, Health, Family, Finance, Projects, Other
 
 - `(task_id, occurrence_date)` where status ∈ pending|completed — one active row per day
 - `(task_id, recurrence_instance_key)` where key IS NOT NULL
+
+### `folders`
+
+Projects. A task has at most one folder. Categories stay separate.
+
+| Column | Type | Notes |
+| --- | --- | --- |
+| id | TEXT PK | |
+| name / description | TEXT | active names are unique, case-insensitive, in the service |
+| color / icon | TEXT | hex; Ionicons name |
+| target_date | TEXT NULL | civil project deadline; never an occurrence date |
+| priority | TEXT | low / medium / high / urgent |
+| status | TEXT | `active` \| `archived` \| `completed` |
+| sort_order | INTEGER | manual order |
+| created_at / updated_at | TEXT | |
+| archived_at | TEXT NULL | set while archived |
+
+Archived folders reject new task assignments. Unique index `ux_folders_active_name` covers exact active names; the service also rejects case-insensitive duplicates.
 
 ### `task_subtasks`
 
@@ -114,7 +134,7 @@ Audit trail for create / complete / reopen / carry / delete / date changes.
 
 ### `app_settings`
 
-Key/value rows mapped to `AppSettings` (appearance `theme`, `theme_preset`, `theme_custom_colors`, `theme_last_used`, auto carry-forward, notifications, default reminder offset, last carry/backup dates, categories seeded flag).
+Key/value rows mapped to `AppSettings` (appearance `theme`, `theme_preset`, `theme_custom_colors`, `theme_last_used`, auto carry-forward, notifications, default reminder offset, last carry/backup dates, categories seeded flag, `navigation` drawer prefs).
 
 ## Indexes
 

@@ -179,6 +179,52 @@ describe.each(DRIVERS)('backup and restore (%s)', (_name, open) => {
       expect(plants.task.categoryId).toBeNull();
     });
 
+    it('restores a pre-folder backup and clears dangling folder ids', async () => {
+      await seed(app);
+      await app.settings.set('notificationsEnabled', false);
+      await app.settings.set('navigation', { drawerEnabled: false, order: ['today', 'projects'] });
+      const old = await valid();
+      delete old.data.folders;
+      old.formatVersion = 1;
+      old.schemaVersion = 2;
+      for (const task of old.data.tasks) {
+        delete task.folder_id;
+        delete task.priority_explicit;
+      }
+      const validated = app.backup.validate(JSON.stringify(old));
+      expect(validated.warnings.some((w) => /folders/.test(w))).toBe(true);
+      const notifications = (await app.settings.get()).notificationsEnabled;
+      await app.restoreBackup(validated, saveSafety);
+      const tasks = await app.db.find('tasks');
+      expect(tasks.every((t) => t.folder_id === null && t.priority_explicit === 1)).toBe(true);
+      expect((await app.settings.get()).notificationsEnabled).toBe(notifications);
+
+      const fresh = await valid();
+      fresh.data.tasks[0].folder_id = 'missing-folder';
+      fresh.data.tasks[0].priority_explicit = 0;
+      const dangling = app.backup.validate(JSON.stringify(fresh));
+      expect(dangling.warnings.some((w) => /missing folder/.test(w))).toBe(true);
+      await app.restoreBackup(dangling, saveSafety);
+      const row = (await app.db.find('tasks')).find((t) => t.title === fresh.data.tasks[0].title);
+      expect(row).toMatchObject({ folder_id: null, priority_explicit: 1 });
+    });
+
+    it('round-trips folders and navigation without replacing notification prefs', async () => {
+      const folder = await app.folders.create({ name: 'Launch', color: '#6366F1', icon: 'folder-outline', priority: 'high', targetDate: '2026-04-01' });
+      await app.tasks.create(item({ title: 'In folder', folderId: folder.id, priorityExplicit: false }));
+      await app.settings.set('navigation', { drawerEnabled: true, order: ['projects', 'tasks'] });
+      const json = await app.backup.exportJson();
+      const { app: other } = await makeApp(open, '2026-03-10T09:00:00');
+      await other.settings.set('notificationsEnabled', false);
+      await other.restoreBackup(other.backup.validate(json), saveSafety);
+      expect((await other.settings.get()).notificationsEnabled).toBe(false);
+      expect((await other.settings.get()).navigation.order).toEqual(['projects', 'tasks']);
+      const restored = (await other.agenda.list()).find((a) => a.task.title === 'In folder');
+      expect(restored?.task.folderId).toBeTruthy();
+      expect(restored?.folder?.name).toBe('Launch');
+      expect(restored?.task.priorityExplicit).toBe(false);
+    });
+
     it('leaves existing data untouched when validation fails', async () => {
       await app.tasks.create(item({ title: 'Original' }));
       expect(() => app.backup.validate('{"app":"dayplanner"}')).toThrow(ValidationError);

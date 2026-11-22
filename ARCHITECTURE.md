@@ -10,7 +10,7 @@ Full design notes: Project store `docs/architecture-plan.md`. Authoritative play
 UI (Expo Router + Paper App* + theme tokens)
         │
 Domain services (Task, Occurrence ops, CarryForward, Recurrence,
-                 Reminder, Stats, Backup, Settings, Category, Agenda)
+                 Reminder, Stats, Backup, Settings, Category, Folder, Agenda)
         │
 Repositories (SQL-shaped API over Database)
         │
@@ -69,7 +69,7 @@ Repositories (SQL-shaped API over Database)
 
 ## Backup
 
-- Versioned JSON export/import.
+- Versioned JSON export/import (format 2). Folders, task links, and navigation prefs are included. Format 1 backups restore with empty folders and explicit priorities. A task that points at a missing folder is unassigned. Device notification prefs are not overwritten.
 - Restore: validate → write safety copy → single transaction replace → cancel stale notification ids → run maintenance.
 - Undo last restore from the latest safety copy when available.
 

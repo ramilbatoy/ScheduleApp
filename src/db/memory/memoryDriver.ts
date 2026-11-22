@@ -20,6 +20,19 @@ export interface MemoryPersistence {
 
 type Tables = Map<string, Map<string, Row>>;
 
+/** Fill columns added by later migrations so older IndexedDB rows stay writable. */
+function fillStoredDefaults(table: string, row: Row): Row {
+  const def = SCHEMA[table];
+  let changed = false;
+  const out: Row = { ...row };
+  for (const [col, cdef] of Object.entries(def.columns)) {
+    if (out[col] !== undefined) continue;
+    out[col] = cdef.defaultValue !== undefined ? cdef.defaultValue : null;
+    changed = true;
+  }
+  return changed ? out : row;
+}
+
 class MemoryOps implements DbOps {
   /** Original value of every row touched in this unit of work (undefined = did not exist). */
   readonly journal = new Map<string, { table: string; id: string; before: Row | undefined }>();
@@ -44,7 +57,7 @@ class MemoryOps implements DbOps {
     assertKnownColumns(table, Object.keys(row));
     const out: Row = {};
     for (const [col, cdef] of Object.entries(def.columns)) {
-      const v = row[col] === undefined ? null : row[col];
+      const v = row[col] === undefined ? (cdef.defaultValue !== undefined ? cdef.defaultValue : null) : row[col];
       if (v === null && !cdef.nullable) throw new ConstraintError(`NOT NULL constraint failed: ${table}.${col}`);
       out[col] = v;
     }
@@ -156,15 +169,22 @@ export class MemoryDatabase implements Database {
 
   static async open(persistence: MemoryPersistence | null = null, kind: DriverKind = 'memory'): Promise<MemoryDatabase> {
     const tables: Tables = new Map(TABLES.map((name) => [name, new Map<string, Row>()]));
+    const backfill: RowChange[] = [];
     if (persistence) {
       const data = await persistence.load();
       for (const [name, rows] of Object.entries(data)) {
         const store = tables.get(name);
-        if (!store) continue;
-        for (const r of rows) store.set(String(r.id), r);
+        if (!store || !SCHEMA[name]) continue;
+        for (const r of rows) {
+          const filled = fillStoredDefaults(name, r);
+          store.set(String(filled.id), filled);
+          if (filled !== r) backfill.push({ table: name, id: String(filled.id), row: filled });
+        }
       }
     }
-    return new MemoryDatabase(tables, persistence, kind);
+    const db = new MemoryDatabase(tables, persistence, kind);
+    if (backfill.length && persistence) await persistence.commit(backfill);
+    return db;
   }
 
   async schemaVersion(): Promise<number> {
