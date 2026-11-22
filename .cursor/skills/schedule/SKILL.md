@@ -96,7 +96,8 @@ Update this section whenever a phase finishes, a PR merges, or acceptance status
 | Dashboard Week/Month + safe back | Merged to main (2026-11-22) | https://github.com/ramilbatoy/ScheduleApp/pull/7 — Today\|Week\|Month; `goBackOrDashboard` |
 | Dashboard filters, goals, hierarchy | Merged to main (2026-11-22) | https://github.com/ramilbatoy/ScheduleApp/pull/8 — Week/Month search·sort·filter; Today stats + near-due + weekly goals by urgency; main vs subtask visual hierarchy |
 | Month table + in-cell edit + go-to-date | Merged to main (2026-11-22) | https://github.com/ramilbatoy/ScheduleApp/pull/9 — month grid task titles; ItemForm modal; Go to date; Calendar month parity |
-| Nested button + overdue on today | Open PR (2026-11-22) | https://github.com/ramilbatoy/ScheduleApp/pull/10 — month cell no nested `<button>`; unfinished overdue project onto Today / current-date month cell with Overdue badge (no duplicate rows); 179 tests |
+| Nested button + overdue on today | Merged to main (2026-11-22) | https://github.com/ramilbatoy/ScheduleApp/pull/10 — month cell no nested `<button>`; unfinished overdue project onto Today / current-date month cell with Overdue badge (no duplicate rows); 179 tests |
+| Overdue start and overdue-since | Open PR (2026-11-22) | https://github.com/ramilbatoy/ScheduleApp/pull/11 — “Started Mar 1” / “Overdue since Mar 2” from `original_occurrence_date`, assigned day, deadline, and carry/reschedule history; today stats include still-open earlier tasks; near-due uses the local deadline date; weekly goals include pre-week overdue; 199 tests |
 
 ### In progress / remaining
 
@@ -104,7 +105,7 @@ Update this section whenever a phase finishes, a PR merges, or acceptance status
 | --- | --- | --- |
 | Device re-verify | Optional | Emulator/device smoke of clipping + scheduled alarms on a physical phone |
 | Production signing | Optional | Replace debug-keystore release with Play/EAS credentials when publishing |
-| Merge nested-button / overdue-on-today PR | Pending review | Branch `cursor/nested-button-overdue-today-a2d7` → `main` |
+| Merge overdue timeline PR | Pending review | Branch `cursor/overdue-timeline-cb78` → `main` |
 
 ### Known issues / limitations (live)
 
@@ -114,10 +115,11 @@ Update this section whenever a phase finishes, a PR merges, or acceptance status
 - Expo Go is not acceptance; use EAS/dev/Gradle APK
 - Package/display name remain placeholders (`com.dayplanner.app` / DayPlanner)
 - Nested subtasks are per-occurrence (not series template); new recurring instances start with an empty checklist
+- “Overdue since” is derived from stored dates (original occurrence date, assigned day, deadline local date, carry-forward and late reschedule history). There is no separate overdue timestamp. A task entered today with an earlier assigned date is overdue from the day after that assigned date.
 
 ## How to work
 
-1. Branch from updated `main` (dashboard stack #8/#9 merged). Tip work: `cursor/nested-button-overdue-today-a2d7` / #10 while open.
+1. Branch from updated `main` (#10 merged). Tip work: `cursor/overdue-timeline-cb78` / #11 while open.
 2. Keep domain services pure of UI; add tests on **both** SQLite and IndexedDB drivers for storage-touching logic.
 3. Run `npm test` and `npm run typecheck` before declaring a slice done.
 4. After each completed phase or merged PR: **update Accomplishments above** and `project-context.md`.
