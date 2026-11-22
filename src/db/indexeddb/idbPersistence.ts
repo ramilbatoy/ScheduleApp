@@ -18,6 +18,15 @@ const IDB_UPGRADES: { version: number; apply: (db: IDBPDatabase) => void }[] = [
       }
     },
   },
+  {
+    // Ensures stores added after v1 (e.g. task_subtasks) exist on upgrade.
+    version: 2,
+    apply: (db) => {
+      for (const table of TABLES) {
+        if (!db.objectStoreNames.contains(table)) db.createObjectStore(table, { keyPath: 'id' });
+      }
+    },
+  },
 ];
 
 export const IDB_VERSION = IDB_UPGRADES[IDB_UPGRADES.length - 1].version;

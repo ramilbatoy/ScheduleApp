@@ -9,6 +9,7 @@ import {
   type OccurrenceStatus,
   type RecurringRule,
   type Reminder,
+  type Subtask,
   type Task,
 } from '../models';
 import {
@@ -18,6 +19,8 @@ import {
   occurrencePatch,
   reminderMapper,
   ruleMapper,
+  subtaskMapper,
+  subtaskPatch,
   taskMapper,
   taskPatch,
 } from './mappers';
@@ -166,6 +169,34 @@ export class HistoryRepo {
   }
 }
 
+export class SubtaskRepo {
+  constructor(private readonly db: DbOps) {}
+  async get(id: string) {
+    const r = await this.db.get('task_subtasks', id);
+    return r ? subtaskMapper.from(r) : null;
+  }
+  async list(where?: Where): Promise<Subtask[]> {
+    const rows = await this.db.find('task_subtasks', {
+      where,
+      orderBy: [{ column: 'sort_order' }, { column: 'created_at' }],
+    });
+    return rows.map(subtaskMapper.from);
+  }
+  listActiveForOccurrence(occurrenceId: string) {
+    return this.list({ occurrence_id: occurrenceId, deleted_at: null });
+  }
+  listActiveForOccurrences(occurrenceIds: string[]) {
+    if (!occurrenceIds.length) return Promise.resolve([] as Subtask[]);
+    return this.list({ occurrence_id: { in: occurrenceIds }, deleted_at: null });
+  }
+  insert(s: Subtask) {
+    return this.db.insert('task_subtasks', subtaskMapper.to(s));
+  }
+  patch(id: string, p: Partial<Subtask>) {
+    return this.db.update('task_subtasks', id, subtaskPatch(p));
+  }
+}
+
 const SETTING_KEYS: Record<keyof AppSettings, string> = {
   autoCarryForward: 'auto_carry_forward_enabled',
   theme: 'theme',
@@ -211,6 +242,7 @@ export interface Repos {
   occurrences: OccurrenceRepo;
   reminders: ReminderRepo;
   history: HistoryRepo;
+  subtasks: SubtaskRepo;
   settings: SettingsRepo;
 }
 
@@ -222,6 +254,7 @@ export function createRepos(db: DbOps): Repos {
     occurrences: new OccurrenceRepo(db),
     reminders: new ReminderRepo(db),
     history: new HistoryRepo(db),
+    subtasks: new SubtaskRepo(db),
     settings: new SettingsRepo(db),
   };
 }

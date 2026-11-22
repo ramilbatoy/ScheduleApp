@@ -75,6 +75,7 @@ const INSTANT_COLUMNS: Record<string, string[]> = {
   recurring_rules: ['created_at', 'updated_at'],
   tasks: ['created_at', 'updated_at', 'deleted_at', 'deadline_at'],
   task_occurrences: ['created_at', 'updated_at', 'completed_at'],
+  task_subtasks: ['created_at', 'updated_at', 'completed_at', 'deleted_at'],
   completion_history: ['created_at'],
 };
 
@@ -176,9 +177,16 @@ export class BackupService {
     };
     const data: Record<string, Row[]> = {};
 
+    /** Tables added after schema v1 — absent in older backups, treat as empty. */
+    const optionalTables = new Set(['task_subtasks']);
     for (const table of BACKUP_TABLES) {
       const rows = parsed.data[table];
       if (!Array.isArray(rows)) {
+        if (rows === undefined && optionalTables.has(table)) {
+          warnings.push(`Backup has no "${table}" table; treating as empty.`);
+          data[table] = [];
+          continue;
+        }
         fail(`Missing table "${table}".`);
         data[table] = [];
         continue;
@@ -250,6 +258,7 @@ export class BackupService {
     const categoryIds = idsOf('categories');
     const ruleIds = idsOf('recurring_rules');
     const taskIds = idsOf('tasks');
+    const occurrenceIds = idsOf('task_occurrences');
     for (const t of data.tasks ?? []) {
       if (t.category_id !== null && !categoryIds.has(String(t.category_id))) {
         warnings.push(`"${String(t.title)}" referenced a missing category and will be uncategorized.`);
@@ -272,6 +281,15 @@ export class BackupService {
         const k = `${String(o.task_id)}|${String(o.recurrence_instance_key)}`;
         if (instanceKeys.has(k)) fail(`A repeating task has a duplicated instance (${String(o.recurrence_instance_key)}).`);
         instanceKeys.add(k);
+      }
+    }
+    const subtaskIds = idsOf('task_subtasks');
+    for (const s of data.task_subtasks ?? []) {
+      if (!occurrenceIds.has(String(s.occurrence_id))) {
+        fail(`Subtask ${String(s.id)} belongs to an occurrence that is not in the backup.`);
+      }
+      if (s.parent_subtask_id !== null && !subtaskIds.has(String(s.parent_subtask_id))) {
+        fail(`Subtask ${String(s.id)} references a missing parent subtask.`);
       }
     }
 

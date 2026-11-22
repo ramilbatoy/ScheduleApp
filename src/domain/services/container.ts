@@ -9,6 +9,7 @@ import { RecurrenceService } from './recurrenceService';
 import { ReminderService } from './reminderService';
 import { SettingsService } from './settingsService';
 import { StatsService } from './statsService';
+import { SubtaskService } from './subtaskService';
 import { TaskService } from './taskService';
 
 export interface MaintenanceResult {
@@ -26,6 +27,7 @@ export class AppServices {
   readonly carryForward: CarryForwardService;
   readonly reminders: ReminderService;
   readonly tasks: TaskService;
+  readonly subtasks: SubtaskService;
   readonly agenda: AgendaService;
   readonly stats: StatsService;
   readonly backup: BackupService;
@@ -44,6 +46,7 @@ export class AppServices {
     this.tasks = new TaskService(db, clock, async (ids) => {
       await this.resyncReminders(ids);
     });
+    this.subtasks = new SubtaskService(db, clock);
     this.agenda = new AgendaService(db, clock, this.recurrence);
     this.stats = new StatsService(db, clock);
     this.backup = new BackupService(db, clock);

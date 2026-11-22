@@ -38,12 +38,20 @@ Repositories (SQL-shaped API over Database)
 | `src/ui/` | Theme tokens, primitives, shared components |
 | `src/platform/` | `notifications(.web)`, `backupFiles(.web)` |
 
+## Nested subtasks
+
+- Table `task_subtasks` keyed by `occurrence_id` (+ optional `parent_subtask_id` for nesting).
+- Domain: `SubtaskService` (add / update / toggle / remove subtree); agenda join attaches the tree.
+- UI: indented checklist on Today/Tasks rows; full editor on detail and edit.
+- Carry-forward moves the occurrence in place → subtasks come along. Recurring instances do not inherit a sibling instance’s checklist.
+
 ## Carry-forward
 
 - Applies to **tasks only** (not events).
 - Moves pending occurrence to the next civil day; records history; increments `carry_forward_count`.
 - Idempotent via `last_carry_forward_run_date` + unique active occurrence constraints.
 - Completed / deleted definitions stop rollover. Manual date changes are respected.
+- Subtask checklists stay on the moved occurrence (no separate rollover).
 
 ## Recurrence
 

@@ -10,6 +10,7 @@ import { useAppStore } from '@/state/appStore';
 import { useAction, useTheme } from '../hooks';
 import { radius, spacing, TOUCH } from '../theme';
 import { AppText, Badge } from './primitives';
+import { AgendaSubtasks, SubtaskProgressBadge } from './SubtaskList';
 
 export const PRIORITY_LABEL = { low: 'Low', medium: 'Medium', high: 'High', urgent: 'Urgent' } as const;
 
@@ -58,43 +59,51 @@ export function AgendaRow({ a, showDate, testID }: { a: Agenda; showDate?: boole
   return (
     <View style={[styles.row, { backgroundColor: p.surface, borderColor: p.border }]}>
       <View style={[styles.accent, { backgroundColor: accent }]} />
-      <Pressable
-        testID={testID ? `${testID}-toggle` : undefined}
-        accessibilityRole="checkbox"
-        accessibilityState={{ checked: done }}
-        accessibilityLabel={done ? `Mark ${title} not done` : `Mark ${title} done`}
-        hitSlop={8}
-        onPress={() => run((s) => s.tasks.toggleComplete(o.id), done ? 'Marked as not done' : 'Completed')}
-        style={styles.check}>
-        <Ionicons
-          name={done ? 'checkmark-circle' : a.task.kind === 'event' ? 'ellipse-outline' : 'radio-button-off'}
-          size={26}
-          color={done ? p.success : p.textMuted}
-        />
-      </Pressable>
-      <Pressable
-        testID={testID}
-        onPress={() => router.push({ pathname: '/item/[id]', params: { id: o.id } })}
-        accessibilityRole="button"
-        accessibilityLabel={`${title}${done ? ', completed' : ''}`}
-        style={({ pressed }) => [{ flex: 1, gap: 4, paddingVertical: spacing.md, paddingRight: spacing.md }, pressed && { opacity: 0.7 }]}>
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm }}>
-          {a.task.kind === 'event' ? <Ionicons name="calendar" size={14} color={p.textMuted} /> : null}
-          <AppText
-            variant="heading"
-            numberOfLines={2}
-            style={[{ flex: 1 }, done && { textDecorationLine: 'line-through' }]}
-            color={done ? p.textMuted : p.text}>
-            {title}
-          </AppText>
+      <View style={{ flex: 1 }}>
+        <View style={{ flexDirection: 'row', alignItems: 'stretch' }}>
+          <Pressable
+            testID={testID ? `${testID}-toggle` : undefined}
+            accessibilityRole="checkbox"
+            accessibilityState={{ checked: done }}
+            accessibilityLabel={done ? `Mark ${title} not done` : `Mark ${title} done`}
+            hitSlop={8}
+            onPress={() => run((s) => s.tasks.toggleComplete(o.id), done ? 'Marked as not done' : 'Completed')}
+            style={styles.check}>
+            <Ionicons
+              name={done ? 'checkmark-circle' : a.task.kind === 'event' ? 'ellipse-outline' : 'radio-button-off'}
+              size={26}
+              color={done ? p.success : p.textMuted}
+            />
+          </Pressable>
+          <Pressable
+            testID={testID}
+            onPress={() => router.push({ pathname: '/item/[id]', params: { id: o.id } })}
+            accessibilityRole="button"
+            accessibilityLabel={`${title}${done ? ', completed' : ''}`}
+            style={({ pressed }) => [{ flex: 1, gap: 4, paddingVertical: spacing.md, paddingRight: spacing.md }, pressed && { opacity: 0.7 }]}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm }}>
+              {a.task.kind === 'event' ? <Ionicons name="calendar" size={14} color={p.textMuted} /> : null}
+              <AppText
+                variant="heading"
+                numberOfLines={2}
+                style={[{ flex: 1 }, done && { textDecorationLine: 'line-through' }]}
+                color={done ? p.textMuted : p.text}>
+                {title}
+              </AppText>
+            </View>
+            {time ? (
+              <AppText variant="caption" muted>
+                {time}
+              </AppText>
+            ) : null}
+            <SubtaskProgressBadge nodes={a.subtasks} />
+            <ItemBadges a={a} showDate={showDate} />
+          </Pressable>
         </View>
-        {time ? (
-          <AppText variant="caption" muted>
-            {time}
-          </AppText>
+        {a.task.kind === 'task' && a.subtasks.length > 0 ? (
+          <AgendaSubtasks nodes={a.subtasks} testID={testID ? `${testID}-subs` : undefined} />
         ) : null}
-        <ItemBadges a={a} showDate={showDate} />
-      </Pressable>
+      </View>
     </View>
   );
 }

@@ -14,6 +14,7 @@
 - CRUD with title, notes, date, optional start/end, deadline, category, priority
 - All-day events; detail view; delete confirmation
 - Complete / reopen; edit scopes for recurring series
+- **Nested subtasks** (tasks only): multi-layer checklist under a main task occurrence — tick, edit title/notes, nest under a subtask; shown on Today / Tasks / detail / edit; ride with carry-forward; not separate agenda rows
 
 ## Carry-forward (tasks only)
 

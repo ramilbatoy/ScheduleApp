@@ -61,9 +61,10 @@ Use this skill for **any** work on `ramilbatoy/ScheduleApp` (DayPlanner): featur
 ## Data model (summary)
 
 - Unified `tasks` + `task_occurrences` with `item_kind` = `task` | `event`
-- Also: `recurring_rules`, `categories`, `reminders`, `app_settings`, `completion_history`
+- Also: `recurring_rules`, `categories`, `reminders`, `app_settings`, `completion_history`, `task_subtasks` (nested checklist per occurrence)
 - Unique: one active occurrence per task per day; unique recurrence instance key
 - Soft-delete definitions (`deleted_at`); keep history
+- Nested subtasks: keyed by `occurrence_id` (+ `parent_subtask_id`); ride with carry-forward; new recurrence instances start empty
 
 ## Product rules already implemented
 
@@ -85,18 +86,20 @@ Update this section whenever a phase finishes, a PR merges, or acceptance status
 | Item | Status | Evidence |
 | --- | --- | --- |
 | Phase 1 architecture | Done (approved 2026-11-22) | `/cursor/stores/self/docs/architecture-plan.md` |
-| Phase 2 foundation | Shipped in PR (open) | https://github.com/ramilbatoy/ScheduleApp/pull/1 — Expo 58, storage abstraction, `001_init`, theme, tabs |
-| Phase 3 core | Shipped in PR (open, stacked on #1) | https://github.com/ramilbatoy/ScheduleApp/pull/2 — CRUD, calendar, recurrence, carry-forward, reminders, quick-add |
-| Phase 4 productivity | Shipped in PR (open, stacked on #2) | https://github.com/ramilbatoy/ScheduleApp/pull/4 — stats, category CRUD, JSON backup/restore; 147→149 tests |
-| Phase 5 Android + web | Shipped in PR (open, stacked on #4) | https://github.com/ramilbatoy/ScheduleApp/pull/5 — Gradle debug+release APKs, `ANDROID_BUILD.md`, `WEB_TESTING.md`, `eas.json`, button clipping fix, reminder scheduling/`alarmClock`, timed default offsets |
-| Phase 6 QA + audit | Shipped with Phase 5 PR (#5) | `/cursor/stores/self/docs/acceptance-audit.md`; repo docs README/ARCHITECTURE/DATABASE/FEATURES/TESTING/ACCEPTANCE_AUDIT; 149 tests green |
+| Phase 2 foundation | Merged to main (2026-11-22) | https://github.com/ramilbatoy/ScheduleApp/pull/1 |
+| Phase 3 core | Merged to main (2026-11-22) | https://github.com/ramilbatoy/ScheduleApp/pull/2 |
+| Phase 4 productivity | Merged to main (2026-11-22) | https://github.com/ramilbatoy/ScheduleApp/pull/4 |
+| Phase 5 Android + web | Merged to main (2026-11-22) | https://github.com/ramilbatoy/ScheduleApp/pull/5 — APKs in `/cursor/stores/self/artifacts/` |
+| Phase 6 QA + audit | Merged with #5 | `/cursor/stores/self/docs/acceptance-audit.md`; 149 tests |
+| PR stack merge | Done | `#1` → `#2` → `#4` → `#5` merged into `main` (async stack merge) |
 
 ### In progress / remaining
 
 | Item | Status | Notes |
 | --- | --- | --- |
-| PR stack merge | Awaiting review | Merge #1 → #2 → #4 → Phase 5/6 PR in stack order |
-| Device re-verify | Optional | Emulator/device smoke of clipping + scheduled alarms after Phase 5 UI/notification changes |
+| Nested subtasks + Node ≥22.13 | Open PR (2026-11-22) | https://github.com/ramilbatoy/ScheduleApp/pull/6 — schema v2 `task_subtasks`; 157 tests |
+| Device re-verify | Optional | Emulator/device smoke of clipping + scheduled alarms on a physical phone |
+| Production signing | Optional | Replace debug-keystore release with Play/EAS credentials when publishing |
 
 ### Known issues / limitations (live)
 
@@ -105,10 +108,11 @@ Update this section whenever a phase finishes, a PR merges, or acceptance status
 - Local `assembleRelease` uses the debug keystore until Play/EAS production credentials
 - Expo Go is not acceptance; use EAS/dev/Gradle APK
 - Package/display name remain placeholders (`com.dayplanner.app` / DayPlanner)
+- Nested subtasks are per-occurrence (not series template); new recurring instances start with an empty checklist
 
 ## How to work
 
-1. Prefer continuing the tip of the PR stack (Phase 5/6 branch or later), not bare `main`, until the stack merges.
+1. Work from `main` (stack merged 2026-11-22). Open new branches off `main` for follow-ups.
 2. Keep domain services pure of UI; add tests on **both** SQLite and IndexedDB drivers for storage-touching logic.
 3. Run `npm test` and `npm run typecheck` before declaring a slice done.
 4. After each completed phase or merged PR: **update Accomplishments above** and `project-context.md`.

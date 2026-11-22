@@ -3,7 +3,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { KeyboardAvoidingView, Platform, ScrollView, View } from 'react-native';
 
 import { combineDateTime, formatDateKey, formatTime, toDateKey, todayKey } from '@/domain/dates';
-import { PRIORITIES, type DateKey, type ItemKind } from '@/domain/models';
+import { PRIORITIES, type DateKey, type ItemKind, type SubtaskNode } from '@/domain/models';
 import { describeOffset } from '@/domain/services/reminderService';
 import type { EditScope, ItemInput } from '@/domain/services/taskService';
 import { useAppStore, useServices, useSettings } from '@/state/appStore';
@@ -12,6 +12,7 @@ import { PRIORITY_LABEL } from '../components/AgendaRow';
 import { DatePickerModal, OptionsModal, TimePickerModal } from '../components/Pickers';
 import { AppText, Button, Card, Chip, ErrorState, Field, Input, LoadingState, Segmented, SelectButton, SwitchRow } from '../components/primitives';
 import { RecurrenceEditor } from '../components/RecurrenceEditor';
+import { SubtaskEditor } from '../components/SubtaskList';
 import { errorMessage, useQuery, useTheme, useToast } from '../hooks';
 import { spacing } from '../theme';
 
@@ -62,10 +63,24 @@ export function ItemForm({ params }: { params: ItemFormParams }) {
 
   if (initial.error) return <ErrorState message={initial.error} onRetry={initial.reload} />;
   if (!initial.data) return <LoadingState />;
-  return <Form key={params.id ?? 'new'} initial={initial.data.input} recurring={initial.data.recurring} editing={editing} scope={scope} occurrenceId={params.id} />;
+  return (
+    <Form key={params.id ?? 'new'} initial={initial.data.input} recurring={initial.data.recurring} editing={editing} scope={scope} occurrenceId={params.id} />
+  );
 }
 
-function Form({ initial, recurring, editing, scope, occurrenceId }: { initial: ItemInput; recurring: boolean; editing: boolean; scope: EditScope; occurrenceId?: string }) {
+function Form({
+  initial,
+  recurring,
+  editing,
+  scope,
+  occurrenceId,
+}: {
+  initial: ItemInput;
+  recurring: boolean;
+  editing: boolean;
+  scope: EditScope;
+  occurrenceId?: string;
+}) {
   const p = useTheme();
   const services = useServices();
   const settings = useSettings();
@@ -77,6 +92,10 @@ function Form({ initial, recurring, editing, scope, occurrenceId }: { initial: I
   const [saving, setSaving] = useState(false);
   const [picker, setPicker] = useState<null | 'date' | 'start' | 'end' | 'deadlineDate' | 'deadlineTime' | 'category' | 'reminder' | 'deadlineReminder'>(null);
   const categories = useQuery((s) => s.categories.list(), []);
+  const subtasks = useQuery(
+    async (s): Promise<SubtaskNode[]> => (occurrenceId && v.kind === 'task' ? s.subtasks.treeForOccurrence(occurrenceId) : []),
+    [occurrenceId, v.kind],
+  );
   const occurrenceOnly = editing && recurring && scope === 'occurrence';
   const isEvent = v.kind === 'event';
   const set = (patch: Partial<ItemInput>) => setV((cur) => ({ ...cur, ...patch }));
@@ -159,6 +178,14 @@ function Form({ initial, recurring, editing, scope, occurrenceId }: { initial: I
         <Field label="Notes">
           <Input testID="input-notes" value={v.notes} onChangeText={(notes) => set({ notes })} placeholder="Details, links, checklist…" multiline />
         </Field>
+
+        {editing && occurrenceId && !isEvent ? (
+          <SubtaskEditor occurrenceId={occurrenceId} nodes={subtasks.data ?? []} testID="edit-subtasks" />
+        ) : !editing && !isEvent ? (
+          <AppText variant="caption" muted>
+            After you save, open the task to add nested subtasks with their own checkboxes and notes.
+          </AppText>
+        ) : null}
 
         <Field label={recurring && !occurrenceOnly && scope === 'series' ? 'Series starts' : isEvent ? 'Date' : 'Assigned date'}>
           <SelectButton testID="input-date" icon="calendar-outline" placeholder="Pick a date" value={formatDateKey(v.date, 'EEE, MMM d, yyyy')} onPress={() => setPicker('date')} />

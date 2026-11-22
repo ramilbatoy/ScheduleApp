@@ -6,6 +6,8 @@ Expo (React Native) + TypeScript. All data lives on the device: **SQLite on Andr
 
 ## Quick start
 
+Requires **Node.js ≥ 22.13.0** (Expo SDK 58 / Metro). This repo pins `22.13.0` via `.nvmrc` / `.node-version`.
+
 ```bash
 npm install
 npm test            # domain + storage tests (SQLite via node:sqlite, IndexedDB via fake-indexeddb)

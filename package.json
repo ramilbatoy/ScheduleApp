@@ -2,6 +2,9 @@
   "name": "dayplanner",
   "version": "1.0.0",
   "main": "expo-router/entry",
+  "engines": {
+    "node": ">=22.13.0"
+  },
   "dependencies": {
     "@expo/vector-icons": "^15.0.2",
     "@types/jest": "30.0.0",
