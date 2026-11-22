@@ -2,6 +2,7 @@ import { Ionicons } from '@expo/vector-icons';
 import type { ComponentProps, ReactNode } from 'react';
 import {
   ActivityIndicator,
+  Platform,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -45,6 +46,8 @@ export function AppText({
     <Text
       testID={testID}
       numberOfLines={numberOfLines}
+      // Android can mis-measure bold label width and clip content-sized buttons (e.g. "Add a task" → "Add a").
+      {...(Platform.OS === 'android' ? { textBreakStrategy: 'simple' as const, android_hyphenationFrequency: 'none' as const } : {})}
       style={[type[variant], { color: color ?? (muted ? p.textMuted : p.text) }, style]}>
       {children}
     </Text>
@@ -171,7 +174,7 @@ export function Button({
         { backgroundColor: bg, opacity: disabled ? 0.5 : pressed ? 0.8 : 1 },
         style,
       ]}>
-      {loading ? <ActivityIndicator color={fg} /> : icon ? <Ionicons name={icon} size={18} color={fg} /> : null}
+      {loading ? <ActivityIndicator color={fg} /> : icon ? <Ionicons name={icon} size={18} color={fg} style={styles.buttonIcon} /> : null}
       <AppText variant="label" color={fg} numberOfLines={1} style={styles.buttonLabel}>
         {label}
       </AppText>
@@ -272,7 +275,7 @@ export function EmptyState({ icon, title, message, action }: { icon: IconName; t
           {message}
         </AppText>
       ) : null}
-      {action}
+      {action ? <View style={styles.emptyAction}>{action}</View> : null}
     </View>
   );
 }
@@ -442,7 +445,9 @@ const styles = StyleSheet.create({
     overflow: 'visible',
   },
   buttonCompact: { minHeight: 40, paddingHorizontal: spacing.md, paddingVertical: spacing.xs },
-  buttonLabel: { flexShrink: 1, textAlign: 'center' },
+  buttonIcon: { flexShrink: 0 },
+  // flexShrink: 0 — prior EmptyState bug clipped "Add a task" to "Add a" when the label could shrink beside the icon.
+  buttonLabel: { flexShrink: 0, textAlign: 'center' },
   iconButton: { minWidth: 40, minHeight: 40, borderRadius: radius.pill, alignItems: 'center', justifyContent: 'center' },
   chip: {
     flexDirection: 'row',
@@ -455,10 +460,11 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     overflow: 'visible',
   },
-  chipLabel: { flexShrink: 1 },
+  chipLabel: { flexShrink: 0 },
   dot: { width: 8, height: 8, borderRadius: 4 },
   badge: { flexDirection: 'row', alignItems: 'center', gap: 3, paddingHorizontal: 6, paddingVertical: 2, borderRadius: radius.sm },
-  empty: { alignItems: 'center', justifyContent: 'center', padding: spacing.xl, gap: spacing.sm },
+  empty: { alignItems: 'center', justifyContent: 'center', padding: spacing.xl, gap: spacing.sm, width: '100%' },
+  emptyAction: { alignSelf: 'center', maxWidth: '100%' },
   input: { minHeight: TOUCH, borderWidth: 1, borderRadius: radius.md, paddingHorizontal: spacing.md, fontSize: 15 },
   select: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
   row: { minHeight: TOUCH + 4, flexDirection: 'row', alignItems: 'center', gap: spacing.md, paddingVertical: spacing.sm },
@@ -475,5 +481,6 @@ const styles = StyleSheet.create({
     borderColor: 'transparent',
     overflow: 'visible',
   },
+  // Segments share a fixed row width — allow label shrink with ellipsis rather than overflow clip.
   segmentLabel: { flexShrink: 1, textAlign: 'center' },
 });
