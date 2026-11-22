@@ -100,7 +100,7 @@ Update this section whenever a phase finishes, a PR merges, or acceptance status
 
 | Item | Status | Notes |
 | --- | --- | --- |
-| Dashboard Week/Month + safe back | Open PR (2026-11-22) | Branch `cursor/dashboard-week-month-nav-0012` — Today\|Week\|Month on Today tab; `goBackOrDashboard`; 159 tests |
+| Dashboard Week/Month + safe back | Open PR (2026-11-22) | https://github.com/ramilbatoy/ScheduleApp/pull/7 — Today\|Week\|Month on Today tab; `goBackOrDashboard`; 159 tests |
 | Device re-verify | Optional | Emulator/device smoke of clipping + scheduled alarms on a physical phone |
 | Production signing | Optional | Replace debug-keystore release with Play/EAS credentials when publishing |
 
