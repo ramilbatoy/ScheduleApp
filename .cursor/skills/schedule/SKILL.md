@@ -94,7 +94,8 @@ Update this section whenever a phase finishes, a PR merges, or acceptance status
 | PR stack merge | Done | `#1` → `#2` → `#4` → `#5` merged into `main` (async stack merge) |
 | Nested subtasks + Node ≥22.13 | Merged to main (2026-11-22) | https://github.com/ramilbatoy/ScheduleApp/pull/6 — schema v2 `task_subtasks`; 157 tests |
 | Dashboard Week/Month + safe back | Merged to main (2026-11-22) | https://github.com/ramilbatoy/ScheduleApp/pull/7 — Today\|Week\|Month; `goBackOrDashboard` |
-| Dashboard filters, goals, hierarchy | Open PR (2026-11-22) | Week/Month search·sort·filter; Today stats + near-due + weekly goals by urgency; main vs subtask visual hierarchy; 164 tests |
+| Dashboard filters, goals, hierarchy | Open PR (2026-11-22) | https://github.com/ramilbatoy/ScheduleApp/pull/8 — Week/Month search·sort·filter; Today stats + near-due + weekly goals by urgency; main vs subtask visual hierarchy; 164 tests |
+| Month table + in-cell edit + go-to-date | Open PR (2026-11-22) | Stacked on #8 (`cursor/month-table-task-modal-3036`) — month grid shows main task titles in cells; tap opens ItemForm modal (save/cancel); Go to date above month; Calendar month parity; 168 tests |
 
 ### In progress / remaining
 
@@ -102,6 +103,7 @@ Update this section whenever a phase finishes, a PR merges, or acceptance status
 | --- | --- | --- |
 | Device re-verify | Optional | Emulator/device smoke of clipping + scheduled alarms on a physical phone |
 | Production signing | Optional | Replace debug-keystore release with Play/EAS credentials when publishing |
+| Merge stack #8 → month-table PR | Pending review | Keep filters/goals by merging/stacking onto #8 tip before main |
 
 ### Known issues / limitations (live)
 
@@ -114,7 +116,7 @@ Update this section whenever a phase finishes, a PR merges, or acceptance status
 
 ## How to work
 
-1. Work from `main` (stack merged 2026-11-22). Open new branches off `main` for follow-ups.
+1. Prefer tip of the open dashboard stack (`cursor/dashboard-filters-goals-253a` / #8) while it is unmerged; otherwise branch from updated `main`.
 2. Keep domain services pure of UI; add tests on **both** SQLite and IndexedDB drivers for storage-touching logic.
 3. Run `npm test` and `npm run typecheck` before declaring a slice done.
 4. After each completed phase or merged PR: **update Accomplishments above** and `project-context.md`.

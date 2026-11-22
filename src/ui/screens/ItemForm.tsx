@@ -28,7 +28,17 @@ export interface ItemFormParams {
   title?: string;
 }
 
-export function ItemForm({ params }: { params: ItemFormParams }) {
+export function ItemForm({
+  params,
+  embedded,
+  onDone,
+}: {
+  params: ItemFormParams;
+  /** When true, skip stack chrome and Android-back hook (used inside modals). */
+  embedded?: boolean;
+  /** Called instead of stack navigation after save/cancel when provided. */
+  onDone?: () => void;
+}) {
   const services = useServices();
   const today = todayKey(services.clock);
   const editing = !!params.id;
@@ -65,7 +75,16 @@ export function ItemForm({ params }: { params: ItemFormParams }) {
   if (initial.error) return <ErrorState message={initial.error} onRetry={initial.reload} />;
   if (!initial.data) return <LoadingState />;
   return (
-    <Form key={params.id ?? 'new'} initial={initial.data.input} recurring={initial.data.recurring} editing={editing} scope={scope} occurrenceId={params.id} />
+    <Form
+      key={params.id ?? 'new'}
+      initial={initial.data.input}
+      recurring={initial.data.recurring}
+      editing={editing}
+      scope={scope}
+      occurrenceId={params.id}
+      embedded={embedded}
+      onDone={onDone}
+    />
   );
 }
 
@@ -75,19 +94,24 @@ function Form({
   editing,
   scope,
   occurrenceId,
+  embedded,
+  onDone,
 }: {
   initial: ItemInput;
   recurring: boolean;
   editing: boolean;
   scope: EditScope;
   occurrenceId?: string;
+  embedded?: boolean;
+  onDone?: () => void;
 }) {
   const p = useTheme();
   const services = useServices();
   const settings = useSettings();
   const invalidate = useAppStore((s) => s.invalidate);
   const toast = useToast((s) => s.show);
-  useSafeAndroidBack();
+  useSafeAndroidBack(!embedded);
+  const finish = onDone ?? goBackOrDashboard;
   const today = todayKey(services.clock);
   const [v, setV] = useState<ItemInput>(initial);
   const [error, setError] = useState<string | null>(null);
@@ -135,14 +159,15 @@ function Form({
         const updated = await services.tasks.update(occurrenceId, v, scope);
         invalidate();
         toast('Saved', 'success');
-        goBackOrDashboard();
+        finish();
         // A series edit can regenerate the instance being viewed; point the detail screen at its replacement.
-        if (updated.id !== occurrenceId) setTimeout(() => router.setParams({ id: updated.id }), 0);
+        if (!embedded && updated.id !== occurrenceId) setTimeout(() => router.setParams({ id: updated.id }), 0);
       } else {
         const created = await services.tasks.create(v);
         invalidate();
         toast(isEvent ? 'Event added' : 'Task added', 'success');
-        router.replace({ pathname: '/item/[id]', params: { id: created.id } });
+        if (embedded) finish();
+        else router.replace({ pathname: '/item/[id]', params: { id: created.id } });
       }
     } catch (e) {
       setError(errorMessage(e));
@@ -153,7 +178,12 @@ function Form({
 
   return (
     <KeyboardAvoidingView style={{ flex: 1, backgroundColor: p.background }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-      <Stack.Screen options={{ title }} />
+      {embedded ? null : <Stack.Screen options={{ title }} />}
+      {embedded ? (
+        <AppText variant="title" style={{ paddingHorizontal: spacing.lg, paddingTop: spacing.md }}>
+          {title}
+        </AppText>
+      ) : null}
       <ScrollView contentContainerStyle={{ padding: spacing.lg, gap: spacing.lg, paddingBottom: 140 }} keyboardShouldPersistTaps="handled">
         {occurrenceOnly ? (
           <Card style={{ backgroundColor: p.infoSoft, borderColor: p.infoSoft }}>
@@ -262,7 +292,7 @@ function Form({
         ) : null}
 
         <View style={{ flexDirection: 'row', gap: spacing.md }}>
-          <Button label="Cancel" tone="secondary" onPress={goBackOrDashboard} style={{ flex: 1 }} />
+          <Button label="Cancel" tone="secondary" onPress={finish} style={{ flex: 1 }} testID="cancel-item" />
           <Button testID="save-item" label={editing ? 'Save changes' : isEvent ? 'Add event' : 'Add task'} onPress={save} loading={saving} disabled={!v.title.trim()} style={{ flex: 2 }} />
         </View>
       </ScrollView>
