@@ -88,8 +88,8 @@ Update this section whenever a phase finishes, a PR merges, or acceptance status
 | Phase 2 foundation | Shipped in PR (open) | https://github.com/ramilbatoy/ScheduleApp/pull/1 — Expo 58, storage abstraction, `001_init`, theme, tabs |
 | Phase 3 core | Shipped in PR (open, stacked on #1) | https://github.com/ramilbatoy/ScheduleApp/pull/2 — CRUD, calendar, recurrence, carry-forward, reminders, quick-add |
 | Phase 4 productivity | Shipped in PR (open, stacked on #2) | https://github.com/ramilbatoy/ScheduleApp/pull/4 — stats, category CRUD, JSON backup/restore; 147→149 tests |
-| Phase 5 Android + web | Shipped in PR (open, stacked on #4) | Branch `cursor/phase5-android-web-8dca` — Gradle debug+release APKs, `ANDROID_BUILD.md`, `WEB_TESTING.md`, `eas.json`, button clipping fix, reminder scheduling/`alarmClock`, timed default offsets |
-| Phase 6 QA + audit | Shipped with Phase 5 PR | `/cursor/stores/self/docs/acceptance-audit.md`; repo docs README/ARCHITECTURE/DATABASE/FEATURES/TESTING; 149 tests green |
+| Phase 5 Android + web | Shipped in PR (open, stacked on #4) | https://github.com/ramilbatoy/ScheduleApp/pull/5 — Gradle debug+release APKs, `ANDROID_BUILD.md`, `WEB_TESTING.md`, `eas.json`, button clipping fix, reminder scheduling/`alarmClock`, timed default offsets |
+| Phase 6 QA + audit | Shipped with Phase 5 PR (#5) | `/cursor/stores/self/docs/acceptance-audit.md`; repo docs README/ARCHITECTURE/DATABASE/FEATURES/TESTING/ACCEPTANCE_AUDIT; 149 tests green |
 
 ### In progress / remaining
 

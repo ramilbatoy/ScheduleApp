@@ -2,7 +2,7 @@
 
 **Date:** 2026-11-22 (Asia/Manila)  
 **Against:** `/cursor/stores/self/internal/requirements-spec.md` + architecture plan  
-**Code tip:** `cursor/phase5-android-web-8dca` (stacked on Phase 4 PR #4)  
+**Code tip:** `cursor/phase5-android-web-8dca` — https://github.com/ramilbatoy/ScheduleApp/pull/5 (stacked on Phase 4 PR #4)  
 **Automated:** `npm test` — 149+ tests green; `npm run typecheck` clean (re-verify on final commit)
 
 Legend: **Pass** · **Partial** · **Fail** · **N/A**
