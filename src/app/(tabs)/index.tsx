@@ -306,7 +306,15 @@ function TodayDashboard() {
   );
 }
 
+/** Placeholder while AppProvider finishes opening storage (Stack stays mounted). */
 export default function TodayScreen() {
+  const ready = useAppStore((s) => s.status === 'ready');
+  const p = useTheme();
+  if (!ready) return <View style={{ flex: 1, backgroundColor: p.background }} />;
+  return <TodayScreenReady />;
+}
+
+function TodayScreenReady() {
   const p = useTheme();
   const insets = useSafeAreaInsets();
   const services = useServices();

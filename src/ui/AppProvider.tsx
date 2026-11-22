@@ -1,6 +1,6 @@
 import { router } from 'expo-router';
 import { useCallback, useEffect, type ReactNode } from 'react';
-import { AppState, View } from 'react-native';
+import { AppState, StyleSheet, View } from 'react-native';
 
 import { openAppDatabase } from '../db/openDatabase';
 import { AppServices } from '../domain/services/container';
@@ -29,7 +29,10 @@ function msUntilNextMidnight(): number {
 
 /**
  * Opens + migrates local storage and runs startup maintenance before
- * rendering the app; re-runs day-boundary maintenance on resume and at midnight.
+ * revealing the app; re-runs day-boundary maintenance on resume and at midnight.
+ *
+ * Children (root Stack) stay mounted during bootstrap so Expo Router can
+ * handle ROUTE_NAMES_CHANGED against a live navigator.
  */
 export function AppProvider({ children }: { children: ReactNode }) {
   const status = useAppStore((s) => s.status);
@@ -82,14 +85,25 @@ export function AppProvider({ children }: { children: ReactNode }) {
     };
   }, [services]);
 
-  if (status === 'ready') return <>{children}</>;
   return (
-    <View style={{ flex: 1, justifyContent: 'center', backgroundColor: p.background }}>
-      {status === 'error' ? (
-        <ErrorState message={`Local storage could not be opened. ${error ?? ''}`} onRetry={start} />
-      ) : (
-        <LoadingState label="Opening your schedule…" />
-      )}
+    <View style={styles.root}>
+      <View style={styles.root} pointerEvents={status === 'ready' ? 'auto' : 'none'} accessibilityElementsHidden={status !== 'ready'}>
+        {children}
+      </View>
+      {status !== 'ready' ? (
+        <View style={[styles.boot, { backgroundColor: p.background }]} accessibilityLabel={status === 'error' ? 'Storage error' : 'Opening your schedule'}>
+          {status === 'error' ? (
+            <ErrorState message={`Local storage could not be opened. ${error ?? ''}`} onRetry={start} />
+          ) : (
+            <LoadingState label="Opening your schedule…" />
+          )}
+        </View>
+      ) : null}
     </View>
   );
 }
+
+const styles = StyleSheet.create({
+  root: { flex: 1 },
+  boot: { ...StyleSheet.absoluteFill, justifyContent: 'center', zIndex: 1000 },
+});

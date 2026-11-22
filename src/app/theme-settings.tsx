@@ -1,5 +1,15 @@
-import { ThemeSettingsScreen } from '@/ui/screens/ThemeSettings';
+import { Stack } from 'expo-router';
 
+import { ThemeSettingsScreen } from '@/ui/screens/ThemeSettings';
+import { useSafeAndroidBack } from '@/ui/navigation';
+
+/** Root-stack screen — same registration pattern as `categories`. */
 export default function ThemeSettingsRoute() {
-  return <ThemeSettingsScreen />;
+  useSafeAndroidBack();
+  return (
+    <>
+      <Stack.Screen options={{ title: 'Theme' }} />
+      <ThemeSettingsScreen />
+    </>
+  );
 }
