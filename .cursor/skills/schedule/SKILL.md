@@ -116,13 +116,13 @@ Update this section whenever a phase finishes, a PR merges, or acceptance status
 | Nested buttons after header and folders | Merged to main (2026-11-23) | https://github.com/ramilbatoy/ScheduleApp/pull/17 — AgendaRow folder chip + Projects reorder; no nested web `<button>`; **238** tests |
 | Folder-first Today / Week / Month | Merged to main (2026-11-23) | https://github.com/ramilbatoy/ScheduleApp/pull/18 — `plannerGroups` + `PlannerFolderGroups`; Tasks individual + optional Group by Folder; **241** tests |
 | Main audit + sideload APK | Merged to main (2026-11-23) | https://github.com/ramilbatoy/ScheduleApp/pull/19 — audit clean (**241** tests, typecheck). APK: `~/Desktop/git/ScheduleApp/Finalinstall/NeoOrganizer-1.0.0-release.apk` (~98 MB, `assembleRelease`, debug keystore, `com.dayplanner.app` 1.0.0). `Finalinstall/*.apk` gitignored |
-| Today tab minimal redesign | Open PR (2026-11-23) | Date strip + status dropdown + selected-date progress; removed Today stats / near-due / weekly goals. **245** tests. PR: https://github.com/ramilbatoy/ScheduleApp/pull/20 (branch `cursor/today-tab-date-strip-3f02`) |
+| Today tab minimal redesign | Open PR (2026-11-23) | Date strip + status dropdown + selected-date progress; removed Today stats / near-due / weekly goals. **245** tests. PR: https://github.com/ramilbatoy/ScheduleApp/pull/21 (branch `cursor/today-tab-date-strip-3f02`) |
 
 ### In progress / remaining
 
 | Item | Status | Notes |
 | --- | --- | --- |
-| Today tab PR #20 | Open | Merge after review; then bump Accomplishments to Merged |
+| Today tab PR #21 | Open | Merge after review; then bump Accomplishments to Merged |
 | Device re-verify | Optional | Physical phone smoke: install Finalinstall APK, alarms, clipping |
 | Production signing | Optional | Replace debug-keystore release with Play/EAS credentials when publishing |
 | Project templates | Optional | Spec mentioned Website Launch / etc.; not required for core folders |
