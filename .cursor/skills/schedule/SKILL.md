@@ -109,7 +109,7 @@ Update this section whenever a phase finishes, a PR merges, or acceptance status
 | Folders / projects + navigation drawer | On main (2026-11-23) | https://github.com/ramilbatoy/ScheduleApp/pull/15 — schema v3, backup format 2, Projects + folder detail, customizable drawer; **230** tests |
 | Shared header, NeoOrganizer branding, folder-first Tasks | Open PR (2026-11-23) | https://github.com/ramilbatoy/ScheduleApp/pull/16 — `AppHeader` once in the layouts; logo bytes in `app_settings` (no schema bump); Tasks list groups folder tasks; **238** tests |
 | Nested buttons after header and folders | On main (2026-11-23) | https://github.com/ramilbatoy/ScheduleApp/pull/17 — folder chip no longer sits inside a row `<button>`; folder-card reorder buttons sit beside the open control. Month cells, drawer rows, header menu, and checkbox/switch rows stay non-nested. **238** tests |
-| Main audit + sideload APK | Done (2026-11-23) | `npm test` **241** passed, `npm run typecheck` clean. No product bugs. `assembleRelease` APK signed with the debug keystore: `~/Desktop/git/ScheduleApp/Finalinstall/NeoOrganizer-1.0.0-release.apk` (`com.dayplanner.app` 1.0.0). |
+| Main audit + sideload APK | Done (2026-11-23) | https://github.com/ramilbatoy/ScheduleApp/pull/19 — `npm test` **241** passed, `npm run typecheck` clean. No product bugs. `assembleRelease` APK signed with the debug keystore: `~/Desktop/git/ScheduleApp/Finalinstall/NeoOrganizer-1.0.0-release.apk` (`com.dayplanner.app` 1.0.0). |
 
 ### In progress / remaining
 
