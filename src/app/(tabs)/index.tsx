@@ -4,23 +4,22 @@ import { RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
 
 import { formatDateKey, todayKey } from '@/domain/dates';
 import type { Agenda, DateKey } from '@/domain/models';
-import { filterAgendaItems, matchesNearDueWindow } from '@/domain/services/agendaService';
+import { filterAgendaItems, type StatusFilter } from '@/domain/services/agendaService';
 import { groupDayByFolder } from '@/domain/plannerGroups';
 import { selectEmptyFoldersForTasks } from '@/domain/taskListFolders';
 import { useAppStore, useServices, useSettings } from '@/state/appStore';
-import { AgendaRow, formatDeadline } from '@/ui/components/AgendaRow';
-import { AgendaFilterBar, AGENDA_SORT_OPTIONS, useAgendaFilterState } from '@/ui/components/AgendaFilterBar';
+import { AgendaRow } from '@/ui/components/AgendaRow';
+import { DateStrip, DATE_STRIP_RADIUS, dateStripWindow, dayProgressFromAgenda } from '@/ui/components/DateStrip';
 import {
   DashboardMonthView,
   DashboardWeekView,
-  WeeklyGoalsSection,
   currentWeekAnchor,
-  mondayWeekRange,
   shiftMonthAnchor,
   shiftWeekAnchor,
 } from '@/ui/components/DashboardPlanner';
 import { PlannerDayGroups } from '@/ui/components/PlannerFolderGroups';
-import { AppText, Button, Card, Chip, EmptyState, ErrorState, LoadingState, SectionHeader, Segmented } from '@/ui/components/primitives';
+import { StatusFilterDropdown } from '@/ui/components/StatusFilterDropdown';
+import { AppText, Button, Card, EmptyState, ErrorState, LoadingState, SectionHeader, Segmented } from '@/ui/components/primitives';
 import { QuickAddButton } from '@/ui/components/QuickAddButton';
 import { useAction, useQuery, useTheme } from '@/ui/hooks';
 import { radius, spacing } from '@/ui/theme';
@@ -62,70 +61,6 @@ function ProgressCard({ completed, total, carried }: { completed: number; total:
   );
 }
 
-/** Lightweight StatsService snapshot for Today (day + week completion). */
-function TodayStatsSummary() {
-  const p = useTheme();
-  const day = useQuery((s) => s.stats.report('day'), []);
-  const week = useQuery((s) => s.stats.report('week'), []);
-  if (day.error && week.error) return <ErrorState message={day.error} onRetry={day.reload} />;
-  if (!day.data || !week.data) return day.error || week.error ? null : <LoadingState />;
-  const d = day.data.period;
-  const w = week.data.period;
-  const dayRate = d.completionRate === null ? '—' : `${Math.round(d.completionRate * 100)}%`;
-  const weekRate = w.completionRate === null ? '—' : `${Math.round(w.completionRate * 100)}%`;
-  return (
-    <Card testID="today-stats-summary">
-      <AppText variant="label" muted>
-        STATISTICS
-      </AppText>
-      <View style={styles.statsRow}>
-        <View style={styles.statCell}>
-          <AppText variant="caption" muted>
-            Today done
-          </AppText>
-          <AppText variant="heading">
-            {d.completed}/{d.total}
-          </AppText>
-          <AppText variant="caption" color={p.primary}>
-            {dayRate}
-          </AppText>
-        </View>
-        <View style={styles.statCell}>
-          <AppText variant="caption" muted>
-            Remaining
-          </AppText>
-          <AppText variant="heading">{d.pending}</AppText>
-          <AppText variant="caption" muted>
-            {d.overdue ? `${d.overdue} overdue` : 'on track'}
-          </AppText>
-        </View>
-        <View style={styles.statCell}>
-          <AppText variant="caption" muted>
-            Carried
-          </AppText>
-          <AppText variant="heading" color={d.carryMoves ? p.warning : p.text}>
-            {d.carryMoves}
-          </AppText>
-          <AppText variant="caption" muted>
-            this day
-          </AppText>
-        </View>
-        <View style={styles.statCell}>
-          <AppText variant="caption" muted>
-            This week
-          </AppText>
-          <AppText variant="heading">
-            {w.completed}/{w.total}
-          </AppText>
-          <AppText variant="caption" color={p.primary}>
-            {weekRate}
-          </AppText>
-        </View>
-      </View>
-    </Card>
-  );
-}
-
 function List({ items, testPrefix }: { items: Agenda[]; testPrefix: string }) {
   return (
     <View style={{ gap: spacing.sm }}>
@@ -136,124 +71,72 @@ function List({ items, testPrefix }: { items: Agenda[]; testPrefix: string }) {
   );
 }
 
-/** Soonest deadlines / next upcoming tasks with search, sort, and date filters. */
-function NearDueTracker({ upcoming, today }: { upcoming: Agenda[]; today: DateKey }) {
-  const services = useServices();
-  const filterCtl = useAgendaFilterState({ sort: 'deadline', status: 'all' });
-  const [dateMode, setDateMode] = useState<'any' | 'today' | 'week'>('any');
-  const now = services.clock.now();
-  const [weekStart, weekEnd] = mondayWeekRange(today);
-  const scheduledSoon = useQuery(
-    (s) => s.agenda.list({ status: 'upcoming', kinds: ['task'], sort: 'date' }),
-    [],
-  );
-
-  const pool = useMemo(() => {
-    const byId = new Map<string, Agenda>();
-    for (const a of upcoming) byId.set(a.occurrence.id, a);
-    for (const a of scheduledSoon.data ?? []) {
-      if (!byId.has(a.occurrence.id)) byId.set(a.occurrence.id, a);
-    }
-    return [...byId.values()];
-  }, [upcoming, scheduledSoon.data]);
-
-  const scoped = useMemo(() => {
-    const items = pool.filter((a) => matchesNearDueWindow(a, dateMode, today, weekStart, weekEnd));
-    return filterAgendaItems(items, filterCtl.filter, today, now);
-  }, [pool, dateMode, today, weekStart, weekEnd, filterCtl.state.text, filterCtl.state.status, filterCtl.state.priority, filterCtl.state.categoryId, filterCtl.state.sort, filterCtl.filter, now]);
-
-  return (
-    <View style={{ gap: spacing.sm }} testID="near-due-tracker">
-      <SectionHeader title="Near-due / upcoming" count={scoped.length} />
-      <AppText variant="caption" muted>
-        Soonest deadlines and next tasks — search, sort, and narrow by date.
-      </AppText>
-      <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm }} testID="near-due-date">
-        {(
-          [
-            { value: 'any' as const, label: 'Any date' },
-            { value: 'today' as const, label: 'Today' },
-            { value: 'week' as const, label: 'This week' },
-          ] as const
-        ).map((o) => (
-          <Chip key={o.value} testID={`near-due-date-${o.value}`} label={o.label} selected={dateMode === o.value} onPress={() => setDateMode(o.value)} />
-        ))}
-      </View>
-      <AgendaFilterBar
-        testID="near-due-filter"
-        state={filterCtl.state}
-        onText={filterCtl.setText}
-        onStatus={filterCtl.setStatus}
-        onPriority={filterCtl.setPriority}
-        onCategoryId={filterCtl.setCategoryId}
-        onSort={filterCtl.setSort}
-        showStatusRow={false}
-        sorts={AGENDA_SORT_OPTIONS}
-        matchCount={scoped.length}
-        searchPlaceholder="Search near-due tasks"
-      />
-      {scoped.length ? (
-        <View style={{ gap: spacing.sm }}>
-          {scoped.map((a, i) => (
-            <View key={a.occurrence.id} style={{ gap: 4 }}>
-              {a.task.deadlineAt ? (
-                <AppText variant="caption" muted>
-                  Due {formatDeadline(a.task.deadlineAt)}
-                </AppText>
-              ) : null}
-              <AgendaRow a={a} showDate testID={`near-due-${i}`} />
-            </View>
-          ))}
-        </View>
-      ) : (
-        <AppText muted>{pool.length ? 'No matches for these filters.' : 'No near-due or upcoming tasks.'}</AppText>
-      )}
-    </View>
-  );
-}
-
-function TodayDashboard() {
+function TodayDashboard({
+  selectedDate,
+  onSelectDate,
+}: {
+  selectedDate: DateKey;
+  onSelectDate: (d: DateKey) => void;
+}) {
   const settings = useSettings();
   const run = useAction();
   const services = useServices();
-  const today = todayKey(services.clock);
-  const dash = useQuery((s) => s.agenda.dashboard(), []);
+  const systemToday = todayKey(services.clock);
+  const dayQ = useQuery((s) => s.agenda.day(selectedDate), [selectedDate]);
+  const overdueQ = useQuery((s) => s.agenda.pendingOverdueBeforeToday(), []);
   const cards = useQuery((s) => s.folders.cards(), []);
-  const filterCtl = useAgendaFilterState({ sort: 'date', status: 'all' });
+  const stripDays = useMemo(() => dateStripWindow(selectedDate, DATE_STRIP_RADIUS), [selectedDate]);
+  const stripStart = stripDays[0]!;
+  const stripEnd = stripDays[stripDays.length - 1]!;
+  const summariesQ = useQuery((s) => s.agenda.summaries(stripStart, stripEnd), [stripStart, stripEnd]);
+  const [status, setStatus] = useState<StatusFilter>('all');
   const now = services.clock.now();
-  const d = dash.data;
-  const pastOverdue = d?.overdue.filter((a) => a.occurrence.date < d.today) ?? [];
+  const items = dayQ.data ?? [];
+  const pastOverdue =
+    selectedDate === systemToday ? (overdueQ.data ?? []).filter((a) => a.occurrence.date < systemToday) : [];
   const overall = new Map((cards.data ?? []).map((c) => [c.id, c.progress]));
   const emptyFolders = selectEmptyFoldersForTasks(cards.data ?? [], {
     enabled: settings.showEmptyFoldersOnTasks,
-    search: filterCtl.state.text,
-    status: filterCtl.state.status,
-    hasPriority: !!filterCtl.state.priority,
-    hasCategory: !!filterCtl.state.categoryId,
+    search: '',
+    status,
+    hasPriority: false,
+    hasCategory: false,
     includeOnThisKind: true,
-    today: d?.today ?? today,
+    today: systemToday,
   });
-  const filteredEvents = d ? filterAgendaItems(d.events, filterCtl.filter, d.today, now) : [];
-  const filteredTasks = d ? filterAgendaItems(d.tasks, filterCtl.filter, d.today, now) : [];
-  const todayGroups = groupDayByFolder(filteredTasks, { today: d?.today ?? today, now, overall, emptyFolders });
+  const filtered = filterAgendaItems(items, { status, sort: 'date' }, systemToday, now);
+  const filteredEvents = filtered.filter((a) => a.task.kind === 'event');
+  const filteredTasks = filtered.filter((a) => a.task.kind === 'task');
+  const dayGroups = groupDayByFolder(filteredTasks, { today: systemToday, now, overall, emptyFolders });
+  const progress = dayProgressFromAgenda(items);
 
   return (
     <View style={{ gap: spacing.md }} testID="dashboard-today">
       <View style={{ paddingTop: spacing.sm }}>
         <AppText variant="label" muted>
-          {d ? formatDateKey(d.today, 'EEEE').toUpperCase() : ''}
+          {formatDateKey(selectedDate, 'EEEE').toUpperCase()}
+          {selectedDate === systemToday ? ' · TODAY' : ''}
         </AppText>
-        <AppText variant="display">{d ? formatDateKey(d.today, 'MMMM d, yyyy') : 'Today'}</AppText>
+        <AppText variant="display" testID="today-heading">
+          {formatDateKey(selectedDate, 'MMMM d, yyyy')}
+        </AppText>
       </View>
 
-      {dash.error ? <ErrorState message={dash.error} onRetry={dash.reload} /> : null}
-      {!d && !dash.error ? <LoadingState /> : null}
+      <DateStrip
+        selected={selectedDate}
+        today={systemToday}
+        summaries={summariesQ.data}
+        onSelect={onSelectDate}
+        testID="today-date-strip"
+      />
 
-      {d ? (
+      <StatusFilterDropdown value={status} onChange={setStatus} testID="today-status-filter" />
+
+      {dayQ.error ? <ErrorState message={dayQ.error} onRetry={dayQ.reload} /> : null}
+      {!dayQ.data && !dayQ.error ? <LoadingState /> : null}
+
+      {dayQ.data ? (
         <>
-          <ProgressCard completed={d.completed} total={d.total} carried={d.carriedCount} />
-          <TodayStatsSummary />
-
           {pastOverdue.length > 0 ? (
             <SectionHeader
               title="Overdue on today"
@@ -277,47 +160,43 @@ function TodayDashboard() {
             </AppText>
           ) : null}
 
-          <AgendaFilterBar
-            testID="dash-today-filter"
-            state={filterCtl.state}
-            onText={filterCtl.setText}
-            onStatus={filterCtl.setStatus}
-            onPriority={filterCtl.setPriority}
-            onCategoryId={filterCtl.setCategoryId}
-            onSort={filterCtl.setSort}
-            matchCount={filteredEvents.length + filteredTasks.length}
-          />
-
           <SectionHeader title="Schedule" count={filteredEvents.length} />
           {filteredEvents.length ? (
             <List items={filteredEvents} testPrefix="event" />
           ) : (
-            <AppText muted>{d.events.length ? 'No events match these filters.' : 'No events today.'}</AppText>
+            <AppText muted>{items.some((a) => a.task.kind === 'event') ? 'No events match this filter.' : 'No events this day.'}</AppText>
           )}
 
           <SectionHeader title="Tasks" count={filteredTasks.length} />
-          {d.tasks.length || emptyFolders.length ? (
+          {items.some((a) => a.task.kind === 'task') || emptyFolders.length ? (
             <PlannerDayGroups
-              groups={todayGroups}
-              today={d.today}
-              rangeLabel="Today"
+              groups={dayGroups}
+              today={systemToday}
+              rangeLabel={selectedDate === systemToday ? 'Today' : formatDateKey(selectedDate, 'MMM d')}
               testID="dash-today-groups"
-              emptyText={d.tasks.length ? 'No tasks match these filters.' : 'No tasks today.'}
-              showTaskDate={(a) => a.occurrence.date < d.today}
+              emptyText={items.some((a) => a.task.kind === 'task') ? 'No tasks match this filter.' : 'No tasks this day.'}
+              showTaskDate={(a) => a.occurrence.date < systemToday}
             />
-          ) : d.events.length ? (
-            <AppText muted>No tasks today.</AppText>
+          ) : items.some((a) => a.task.kind === 'event') ? (
+            <AppText muted>No tasks this day.</AppText>
           ) : (
             <EmptyState
               icon="checkbox-outline"
-              title="Nothing planned for today"
+              title={selectedDate === systemToday ? 'Nothing planned for today' : `Nothing planned for ${formatDateKey(selectedDate, 'MMM d')}`}
               message="Use the + button to add a task or event."
-              action={<Button label="Add a task" tone="secondary" icon="add" onPress={() => router.push('/quick-add')} />}
+              action={
+                <Button
+                  label="Add a task"
+                  tone="secondary"
+                  icon="add"
+                  testID="today-empty-add"
+                  onPress={() => router.push({ pathname: '/quick-add', params: { date: selectedDate } })}
+                />
+              }
             />
           )}
 
-          <NearDueTracker upcoming={d.upcomingDeadlines} today={d.today} />
-          <WeeklyGoalsSection anchor={today} testID="today-weekly-goals" />
+          <ProgressCard completed={progress.completed} total={progress.total} carried={progress.carried} />
         </>
       ) : null}
     </View>
@@ -338,6 +217,7 @@ function TodayScreenReady() {
   const invalidate = useAppStore((s) => s.invalidate);
   const today = todayKey(services.clock);
   const [mode, setMode] = useState<DashMode>('today');
+  const [selectedDate, setSelectedDate] = useState<DateKey>(today);
   const [weekAnchor, setWeekAnchor] = useState<DateKey>(() => currentWeekAnchor(today));
   const [weekNavigated, setWeekNavigated] = useState(false);
   const [monthAnchor, setMonthAnchor] = useState<DateKey>(today);
@@ -360,13 +240,14 @@ function TodayScreenReady() {
     }
   }
 
-  const quickAddDate = mode === 'month' ? monthAnchor : mode === 'week' ? weekAnchor : today;
+  const quickAddDate = mode === 'month' ? monthAnchor : mode === 'week' ? weekAnchor : selectedDate;
 
   return (
     <View style={{ flex: 1, backgroundColor: p.background }}>
       <ScrollView
         contentContainerStyle={{ padding: spacing.lg, paddingBottom: 120, gap: spacing.md }}
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={refresh} />}>
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={refresh} />}
+        nestedScrollEnabled>
         <Segmented<DashMode>
           testID="dashboard-mode"
           value={mode}
@@ -378,7 +259,7 @@ function TodayScreenReady() {
           ]}
         />
 
-        {mode === 'today' ? <TodayDashboard /> : null}
+        {mode === 'today' ? <TodayDashboard selectedDate={selectedDate} onSelectDate={setSelectedDate} /> : null}
         {mode === 'week' ? (
           <DashboardWeekView
             anchor={weekAnchor}
@@ -411,6 +292,4 @@ function TodayScreenReady() {
 const styles = StyleSheet.create({
   track: { height: 10, borderRadius: radius.pill, overflow: 'hidden' },
   fill: { height: '100%', borderRadius: radius.pill },
-  statsRow: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.md, marginTop: spacing.sm },
-  statCell: { minWidth: '40%', flexGrow: 1, gap: 2 },
 });

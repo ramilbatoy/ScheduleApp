@@ -116,11 +116,13 @@ Update this section whenever a phase finishes, a PR merges, or acceptance status
 | Nested buttons after header and folders | Merged to main (2026-11-23) | https://github.com/ramilbatoy/ScheduleApp/pull/17 — AgendaRow folder chip + Projects reorder; no nested web `<button>`; **238** tests |
 | Folder-first Today / Week / Month | Merged to main (2026-11-23) | https://github.com/ramilbatoy/ScheduleApp/pull/18 — `plannerGroups` + `PlannerFolderGroups`; Tasks individual + optional Group by Folder; **241** tests |
 | Main audit + sideload APK | Merged to main (2026-11-23) | https://github.com/ramilbatoy/ScheduleApp/pull/19 — audit clean (**241** tests, typecheck). APK: `~/Desktop/git/ScheduleApp/Finalinstall/NeoOrganizer-1.0.0-release.apk` (~98 MB, `assembleRelease`, debug keystore, `com.dayplanner.app` 1.0.0). `Finalinstall/*.apk` gitignored |
+| Today tab minimal redesign | Open PR (2026-11-23) | Date strip + status dropdown + selected-date progress; removed Today stats / near-due / weekly goals. **245** tests. PR: https://github.com/ramilbatoy/ScheduleApp/pull/20 (branch `cursor/today-tab-date-strip-3f02`) |
 
 ### In progress / remaining
 
 | Item | Status | Notes |
 | --- | --- | --- |
+| Today tab PR #20 | Open | Merge after review; then bump Accomplishments to Merged |
 | Device re-verify | Optional | Physical phone smoke: install Finalinstall APK, alarms, clipping |
 | Production signing | Optional | Replace debug-keystore release with Play/EAS credentials when publishing |
 | Project templates | Optional | Spec mentioned Website Launch / etc.; not required for core folders |
@@ -136,7 +138,7 @@ Update this section whenever a phase finishes, a PR merges, or acceptance status
 - Nested subtasks are per-occurrence (not series template); new recurring instances start with an empty checklist
 - “Overdue since” is derived from stored dates (original occurrence date, assigned day, deadline local date, carry-forward and late reschedule history). There is no separate overdue timestamp
 - Folder progress counts occurrences on or before today. Future recurring instances and events are excluded from the percent
-- Near-due and Weekly goals still list tasks individually beside the grouped schedule
+- Week view still shows Weekly goals by urgency (individual rows). Today no longer includes near-due / weekly goals / stats summary
 - `npm run lint` has no committed ESLint config; first `expo lint` can fail on pre-existing files
 - Header branding is separate from the Android launcher. Custom logo is PNG/JPEG/WebP bytes in `app_settings` (max ~1.5 MB). Invalid/missing → NeoOrganizer
 - Folder target dates and folder priorities never rewrite task dates or explicit task priorities
@@ -144,6 +146,7 @@ Update this section whenever a phase finishes, a PR merges, or acceptance status
 
 ## How to work
 
+0. **Always** open this skill (and any other relevant Project skills) before planning or coding a change; treat skill rules as binding for this thread.
 1. Branch from updated `main` (through #19). Prefer the Mac local checkout for all new work.
 2. Keep domain services pure of UI; add tests on **both** SQLite and IndexedDB drivers for storage-touching logic.
 3. Run `npm test` and `npm run typecheck` before declaring a slice done. Avoid nested web buttons.
