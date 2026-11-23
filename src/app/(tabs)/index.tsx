@@ -18,6 +18,7 @@ import {
   shiftWeekAnchor,
 } from '@/ui/components/DashboardPlanner';
 import { PlannerDayGroups } from '@/ui/components/PlannerFolderGroups';
+import { ReadyScreen } from '@/ui/components/ReadyScreen';
 import { StatusFilterDropdown } from '@/ui/components/StatusFilterDropdown';
 import { AppText, Button, Card, EmptyState, ErrorState, LoadingState, SectionHeader, Segmented } from '@/ui/components/primitives';
 import { QuickAddButton } from '@/ui/components/QuickAddButton';
@@ -205,10 +206,11 @@ function TodayDashboard({
 
 /** Placeholder while AppProvider finishes opening storage (Stack stays mounted). */
 export default function TodayScreen() {
-  const ready = useAppStore((s) => s.status === 'ready');
-  const p = useTheme();
-  if (!ready) return <View style={{ flex: 1, backgroundColor: p.background }} />;
-  return <TodayScreenReady />;
+  return (
+    <ReadyScreen testID="today-boot">
+      <TodayScreenReady />
+    </ReadyScreen>
+  );
 }
 
 function TodayScreenReady() {

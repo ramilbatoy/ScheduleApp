@@ -15,6 +15,7 @@ import { choose } from '@/ui/components/dialogs';
 import { WEEK_STARTS_ON } from '@/ui/components/MonthGrid';
 import { MonthTaskGrid } from '@/ui/components/MonthTaskGrid';
 import { DatePickerModal } from '@/ui/components/Pickers';
+import { ReadyScreen } from '@/ui/components/ReadyScreen';
 import { TaskEditModal } from '@/ui/components/TaskEditModal';
 import { AppText, Button, Card, ErrorState, IconButton, LoadingState, Segmented } from '@/ui/components/primitives';
 import { QuickAddButton } from '@/ui/components/QuickAddButton';
@@ -196,7 +197,16 @@ function DayView({ anchor }: { anchor: DateKey }) {
   );
 }
 
+/** Placeholder while AppProvider finishes opening storage (tabs stay mounted). */
 export default function CalendarScreen() {
+  return (
+    <ReadyScreen testID="calendar-boot">
+      <CalendarScreenReady />
+    </ReadyScreen>
+  );
+}
+
+function CalendarScreenReady() {
   const p = useTheme();
   const services = useServices();
   const today = todayKey(services.clock);

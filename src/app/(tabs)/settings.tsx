@@ -9,6 +9,7 @@ import type { PermissionState } from '@/domain/ports';
 import { pickBrandingLogo } from '@/platform/brandingFiles';
 import { useAppStore, useServices, useSettings } from '@/state/appStore';
 import { HeaderBrand } from '@/ui/components/AppHeader';
+import { ReadyScreen } from '@/ui/components/ReadyScreen';
 import { AppText, Button, Card, Divider, ErrorState, ListRow, Screen, Segmented, SwitchRow } from '@/ui/components/primitives';
 import { exportBackupFlow, latestSafetyCopyDate, restoreBackupFlow, undoRestoreFlow, type FlowResult } from '@/ui/backupActions';
 import { errorMessage, useAction, useQuery, useToast } from '@/ui/hooks';
@@ -34,7 +35,16 @@ const PERMISSION_LABEL: Record<PermissionState, string> = {
   unsupported: 'Not supported here',
 };
 
+/** Placeholder while AppProvider finishes opening storage (tabs stay mounted). */
 export default function SettingsScreen() {
+  return (
+    <ReadyScreen testID="settings-boot">
+      <SettingsScreenReady />
+    </ReadyScreen>
+  );
+}
+
+function SettingsScreenReady() {
   const settings = useSettings();
   const services = useServices();
   const setSettings = useAppStore((s) => s.setSettings);
