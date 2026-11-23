@@ -42,7 +42,9 @@ example
 /ios
 /android
 
-# local APK builds (artifacts live outside git)
+# local APK builds (artifacts live on disk under Finalinstall/; not committed)
 *.apk
-# Phone sideload copies stay on disk under Finalinstall/ and are not committed.
-Finalinstall/*.apk
+Finalinstall/**/*.apk
+# Keep Neo.jpeg / README tracked; ignore other large binaries under Finalinstall if added
+!Finalinstall/README.md
+!Finalinstall/Neo.jpeg

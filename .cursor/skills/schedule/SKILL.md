@@ -39,7 +39,7 @@ Use this skill for **any** work on `ramilbatoy/ScheduleApp` (DayPlanner): featur
 
 | Layer | Choice |
 | --- | --- |
-| App | Expo SDK 58 + TypeScript strict; package `com.dayplanner.app`; display name DayPlanner |
+| App | Expo SDK 58 + TypeScript strict; package `com.dayplanner.app`; launcher display name **NeoOrganizer** (was DayPlanner in 1.0.0) |
 | Nav | Expo Router; tabs Today / Calendar / Tasks / Statistics / Settings |
 | State | Zustand (UI only) |
 | Android DB | expo-sqlite |
@@ -118,6 +118,7 @@ Update this section whenever a phase finishes, a PR merges, or acceptance status
 | Main audit + sideload APK | Merged to main (2026-11-23) | https://github.com/ramilbatoy/ScheduleApp/pull/19 — audit clean (**241** tests, typecheck). APK: `~/Desktop/git/ScheduleApp/Finalinstall/NeoOrganizer-1.0.0-release.apk` (~98 MB, `assembleRelease`, debug keystore, `com.dayplanner.app` 1.0.0). `Finalinstall/*.apk` gitignored |
 | Today tab minimal redesign | Open PR (2026-11-23) | Date strip + status dropdown + selected-date progress; removed Today stats / near-due / weekly goals. **245** tests. Also `ReadyScreen` gates Calendar/Settings/Today so web bootstrap cannot throw `useServices` before DB open. PR: https://github.com/ramilbatoy/ScheduleApp/pull/21 (branch `cursor/today-tab-date-strip-3f02`) |
 | Drawer / forms / Week / Settings polish | Open PR (2026-11-23) | Default drawer Tasks·Folders·About; brand→Today; searchable folder + priority dropdowns; Week folder cards + compact filters (no weekly-goals list); Settings hides Branding/Navigation; About creator + version; `collapseFoldersByDefault` ON. **247** tests. PR: https://github.com/ramilbatoy/ScheduleApp/pull/22 (branch `cursor/drawer-forms-week-settings-2031`) |
+| NeoOrganizer 1.1.0 upgrade APK | Open PR (2026-11-24 Asia/Manila) | Same package `com.dayplanner.app`, `versionName` 1.1.0 / `versionCode` 2, launcher **NeoOrganizer** + `Finalinstall/Neo.jpeg` adaptive icons. APK: `~/Desktop/git/ScheduleApp/Finalinstall/1.1.0/NeoOrganizer-1.1.0-release.apk` (~98 MB, `assembleRelease`, **same debug keystore** as 1.0.0 — SHA-1 `5E:8F:16:06:…:F6:25`). Versioned Finalinstall layout + README; APKs gitignored. Branch `cursor/neoorganizer-1.1.0-upgrade-83b2` |
 
 ### In progress / remaining
 
@@ -125,7 +126,8 @@ Update this section whenever a phase finishes, a PR merges, or acceptance status
 | --- | --- | --- |
 | Today tab PR #21 | Open | Merge after review; then bump Accomplishments to Merged |
 | Drawer/forms/Week/Settings PR | Open | Merge after review; then bump Accomplishments to Merged |
-| Device re-verify | Optional | Physical phone smoke: install Finalinstall APK, alarms, clipping |
+| NeoOrganizer 1.1.0 upgrade APK PR | Open | Merge after review; device install-over-1.0.0 smoke recommended |
+| Device re-verify | Optional | Physical phone smoke: install-over Finalinstall 1.1.0 APK (data keep), alarms, clipping |
 | Production signing | Optional | Replace debug-keystore release with Play/EAS credentials when publishing |
 | Project templates | Optional | Spec mentioned Website Launch / etc.; not required for core folders |
 | Calendar-tab month titles | Known gap | Dashboard Month uses folder markers; Calendar tab month may still show task titles |
@@ -136,7 +138,7 @@ Update this section whenever a phase finishes, a PR merges, or acceptance status
 - Exact Android alarm delivery depends on OS / exact-alarm permission (`alarmClock` vs `bestEffort`)
 - Local `assembleRelease` / Finalinstall APK uses the debug keystore until Play/EAS production credentials
 - Expo Go is not acceptance; use EAS/dev/Gradle APK or `Finalinstall/`
-- Package id remains `com.dayplanner.app`; launcher display name DayPlanner; in-app header branding defaults to NeoOrganizer
+- Package id remains `com.dayplanner.app`; launcher display name **NeoOrganizer** (1.1.0+); in-app header branding also defaults to NeoOrganizer
 - Nested subtasks are per-occurrence (not series template); new recurring instances start with an empty checklist
 - “Overdue since” is derived from stored dates (original occurrence date, assigned day, deadline local date, carry-forward and late reschedule history). There is no separate overdue timestamp
 - Folder progress counts occurrences on or before today. Future recurring instances and events are excluded from the percent
@@ -171,7 +173,9 @@ cd android && ./gradlew assembleDebug assembleRelease
 ```
 
 APK artifacts:  
-- Sideload (preferred): `~/Desktop/git/ScheduleApp/Finalinstall/NeoOrganizer-1.0.0-release.apk`  
+- Sideload (preferred, versioned): `~/Desktop/git/ScheduleApp/Finalinstall/<version>/NeoOrganizer-<version>-release.apk`  
+  - `…/Finalinstall/1.1.0/NeoOrganizer-1.1.0-release.apk`  
+  - Legacy flat: `…/Finalinstall/NeoOrganizer-1.0.0-release.apk`  
 - Earlier Project store copies: `/cursor/stores/self/artifacts/dayplanner-1.0.0-debug.apk`, `dayplanner-1.0.0-release.apk`  
 Also under `/opt/cursor/artifacts/` on build VMs.
 

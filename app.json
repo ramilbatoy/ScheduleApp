@@ -1,16 +1,17 @@
 {
   "expo": {
-    "name": "DayPlanner",
+    "name": "NeoOrganizer",
     "slug": "dayplanner",
-    "version": "1.0.0",
+    "version": "1.1.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "dayplanner",
     "userInterfaceStyle": "automatic",
     "android": {
       "package": "com.dayplanner.app",
+      "versionCode": 2,
       "adaptiveIcon": {
-        "backgroundColor": "#4F46E5",
+        "backgroundColor": "#CFD6E1",
         "foregroundImage": "./assets/images/android-icon-foreground.png",
         "backgroundImage": "./assets/images/android-icon-background.png",
         "monochromeImage": "./assets/images/android-icon-monochrome.png"
@@ -32,7 +33,7 @@
       [
         "expo-splash-screen",
         {
-          "backgroundColor": "#4F46E5",
+          "backgroundColor": "#CFD6E1",
           "image": "./assets/images/splash-icon.png",
           "imageWidth": 76
         }

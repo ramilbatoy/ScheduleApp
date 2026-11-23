@@ -29,12 +29,14 @@ cd android
 ./gradlew assembleDebug -PreactNativeArchitectures=arm64-v8a
 ```
 
-Copy artifacts out of the tree when needed:
+Copy artifacts out of the tree when needed (versioned Finalinstall convention):
 
 ```bash
-cp android/app/build/outputs/apk/debug/app-debug.apk ./dayplanner-1.0.0-debug.apk
-cp android/app/build/outputs/apk/release/app-release.apk ./dayplanner-1.0.0-release.apk
+mkdir -p Finalinstall/1.1.0
+cp android/app/build/outputs/apk/release/app-release.apk   Finalinstall/1.1.0/NeoOrganizer-1.1.0-release.apk
 ```
+
+APKs under `Finalinstall/` are gitignored. See `Finalinstall/README.md`.
 
 ### Install on a device / emulator
 
@@ -44,7 +46,7 @@ adb install -r dayplanner-1.0.0-debug.apk
 adb install -r dayplanner-1.0.0-release.apk
 ```
 
-Package id: `com.dayplanner.app` · Display name: **DayPlanner**
+Package id: `com.dayplanner.app` · Launcher display name: **NeoOrganizer**
 
 ### Dev client (optional)
 
