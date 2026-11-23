@@ -54,12 +54,13 @@ Use this skill for **any** work on `ramilbatoy/ScheduleApp` (DayPlanner): featur
 
 ## Layout (key paths)
 
-- `src/db/` — drivers, migrations, types
-- `src/domain/` — models, repos, services (Task, CarryForward, Recurrence, Reminder, Stats, Backup, Settings, Category, agenda)
-- `src/app/` — Expo Router screens (tabs, item edit, quick-add, categories)
+- `src/db/` — drivers, migrations, types (schema through v3 folders)
+- `src/domain/` — models, repos, services (Task, CarryForward, Recurrence, Reminder, Stats, Backup, Settings, Category, Folder, agenda, `plannerGroups`)
+- `src/app/` — Expo Router (tabs, projects/folders, theme-settings, about, item edit, quick-add, categories)
 - `src/theme/` — semantic tokens, presets, ThemeProvider, Paper bridge
-- `src/ui/` — App* wrappers, primitives, screens/components
+- `src/ui/` — AppHeader, App* wrappers, PlannerFolderGroups, primitives, screens/components
 - `src/platform/` — notifications, backup file I/O adapters
+- `docs/information.docx` — in-repo app details (from code); `Finalinstall/` — sideload APKs (gitignored)
 
 ## Data model (summary)
 
@@ -78,10 +79,13 @@ Use this skill for **any** work on `ramilbatoy/ScheduleApp` (DayPlanner): featur
 - Quick-add NL: dates, times, `!priority`, `#category`
 - Backup: validate → safety copy → single-transaction restore → rebuild notifications; undo last restore
 - Theme: system / light / dark + 10 presets + custom HEX + last-used snapshot in `app_settings`
+- Header branding: default text **NeoOrganizer**; optional local logo bytes in `app_settings` (not the Android launcher icon)
 - Folders: explicit task priority always wins; otherwise inherit folder priority. Folder target date is a project deadline and never rewrites occurrence dates. Progress is computed. Backup format 2 includes folders and `navigation` prefs; device notification prefs are not overwritten
-- Drawer: header menu, bottom tabs stay. Settings → Navigation can hide or reorder shortcuts without making screens unreachable
+- Folder-first display: Today / Week / Month group assigned tasks under folders (expand/collapse); unassigned stay individual. Tasks screen defaults to individual list + optional Group by Folder. Occurrence dates stay authoritative
+- Drawer: AppHeader hamburger, bottom tabs stay. Settings → Navigation can hide or reorder shortcuts without making screens unreachable
 - Timed items apply Settings default reminder offset; OS alarms use `alarmClock` when exact-alarm granted else `bestEffort`
 - Android button/chip/segment labels: `includeFontPadding: false` + vertical padding; EmptyState labels use `flexShrink: 0` + `textBreakStrategy: simple` (Phase 5 clipping fix)
+- Web: never nest `<button>` (Pressable / Paper `accessibilityRole="button"`). Outer cards that wrap chips use non-button parents
 
 ## Accomplishments (keep current)
 
@@ -105,41 +109,44 @@ Update this section whenever a phase finishes, a PR merges, or acceptance status
 | Nested button + overdue on today | Merged to main (2026-11-22) | https://github.com/ramilbatoy/ScheduleApp/pull/10 — month cell no nested `<button>`; unfinished overdue project onto Today / current-date month cell with Overdue badge (no duplicate rows); 179 tests |
 | Overdue start and overdue-since | Merged to main (2026-11-22) | https://github.com/ramilbatoy/ScheduleApp/pull/11 — “Started Mar 1” / “Overdue since Mar 2”; 199 tests |
 | Week view opens on current week | Merged to main (2026-11-22) | https://github.com/ramilbatoy/ScheduleApp/pull/12 — Today→Week and Calendar Week reset to the week containing today; 201 tests |
-| Centralized theme + Paper UI | Open PR (2026-11-22) | https://github.com/ramilbatoy/ScheduleApp/pull/13 — Paper MD3, 10 presets, Theme Settings (HEX/preview/apply/reset/restore), semantic tokens app-wide; audit `/cursor/stores/self/docs/theme-ui-audit.md`; **207** tests |
-| Folders / projects + navigation drawer | On main (2026-11-23) | https://github.com/ramilbatoy/ScheduleApp/pull/15 — schema v3, backup format 2, Projects + folder detail, customizable drawer; **230** tests |
-| Shared header, NeoOrganizer branding, folder-first Tasks | Open PR (2026-11-23) | https://github.com/ramilbatoy/ScheduleApp/pull/16 — `AppHeader` once in the layouts; logo bytes in `app_settings` (no schema bump); Tasks list groups folder tasks; **238** tests |
-| Nested buttons after header and folders | On main (2026-11-23) | https://github.com/ramilbatoy/ScheduleApp/pull/17 — folder chip no longer sits inside a row `<button>`; folder-card reorder buttons sit beside the open control. Month cells, drawer rows, header menu, and checkbox/switch rows stay non-nested. **238** tests |
-| Main audit + sideload APK | Done (2026-11-23) | https://github.com/ramilbatoy/ScheduleApp/pull/19 — `npm test` **241** passed, `npm run typecheck` clean. No product bugs. `assembleRelease` APK signed with the debug keystore: `~/Desktop/git/ScheduleApp/Finalinstall/NeoOrganizer-1.0.0-release.apk` (`com.dayplanner.app` 1.0.0). |
+| Centralized theme + Paper UI | Merged to main (2026-11-22) | https://github.com/ramilbatoy/ScheduleApp/pull/13 — Paper MD3, 10 presets, Theme Settings, semantic tokens; audit `/cursor/stores/self/docs/theme-ui-audit.md`; **207** tests |
+| App details Word doc | Merged to main (2026-11-23) | https://github.com/ramilbatoy/ScheduleApp/pull/14 — `docs/information.docx` from live code (not Agent Store mirrors) |
+| Folders / projects + navigation drawer | Merged to main (2026-11-23) | https://github.com/ramilbatoy/ScheduleApp/pull/15 — schema v3, backup format 2, Projects + folder detail, customizable drawer; **230** tests |
+| Shared header, NeoOrganizer branding, folder-first Tasks | Merged to main (2026-11-23) | https://github.com/ramilbatoy/ScheduleApp/pull/16 — `AppHeader`; logo bytes in `app_settings`; Tasks folder cards; **238** tests |
+| Nested buttons after header and folders | Merged to main (2026-11-23) | https://github.com/ramilbatoy/ScheduleApp/pull/17 — AgendaRow folder chip + Projects reorder; no nested web `<button>`; **238** tests |
+| Folder-first Today / Week / Month | Merged to main (2026-11-23) | https://github.com/ramilbatoy/ScheduleApp/pull/18 — `plannerGroups` + `PlannerFolderGroups`; Tasks individual + optional Group by Folder; **241** tests |
+| Main audit + sideload APK | Merged to main (2026-11-23) | https://github.com/ramilbatoy/ScheduleApp/pull/19 — audit clean (**241** tests, typecheck). APK: `~/Desktop/git/ScheduleApp/Finalinstall/NeoOrganizer-1.0.0-release.apk` (~98 MB, `assembleRelease`, debug keystore, `com.dayplanner.app` 1.0.0). `Finalinstall/*.apk` gitignored |
 
 ### In progress / remaining
 
 | Item | Status | Notes |
 | --- | --- | --- |
-| Device re-verify | Optional | Emulator/device smoke of clipping + scheduled alarms on a physical phone |
+| Device re-verify | Optional | Physical phone smoke: install Finalinstall APK, alarms, clipping |
 | Production signing | Optional | Replace debug-keystore release with Play/EAS credentials when publishing |
-| Merge theme + Paper UI PR | Pending review | Branch `cursor/theme-paper-ui-39f4` → `main` |
-| Merge folders + drawer PR | On main | https://github.com/ramilbatoy/ScheduleApp/pull/15 |
-| Merge header + folder-first Tasks | Pending review | https://github.com/ramilbatoy/ScheduleApp/pull/16 |
+| Project templates | Optional | Spec mentioned Website Launch / etc.; not required for core folders |
+| Calendar-tab month titles | Known gap | Dashboard Month uses folder markers; Calendar tab month may still show task titles |
 
 ### Known issues / limitations (live)
 
 - Web reminders only while the tab is open
 - Exact Android alarm delivery depends on OS / exact-alarm permission (`alarmClock` vs `bestEffort`)
-- Local `assembleRelease` uses the debug keystore until Play/EAS production credentials
-- Expo Go is not acceptance; use EAS/dev/Gradle APK
-- Package/display name remain placeholders (`com.dayplanner.app` / DayPlanner)
+- Local `assembleRelease` / Finalinstall APK uses the debug keystore until Play/EAS production credentials
+- Expo Go is not acceptance; use EAS/dev/Gradle APK or `Finalinstall/`
+- Package id remains `com.dayplanner.app`; launcher display name DayPlanner; in-app header branding defaults to NeoOrganizer
 - Nested subtasks are per-occurrence (not series template); new recurring instances start with an empty checklist
-- “Overdue since” is derived from stored dates (original occurrence date, assigned day, deadline local date, carry-forward and late reschedule history). There is no separate overdue timestamp. A task entered today with an earlier assigned date is overdue from the day after that assigned date.
-- Folder progress counts occurrences on or before today. Future recurring instances are excluded so a daily habit does not dilute the percent. Events are excluded from the percent.
-- `npm run lint` has no committed ESLint config. The first `expo lint` run installs ESLint and then fails on pre-existing files.
-- Header branding is separate from the Android launcher (`DayPlanner` / `com.dayplanner.app`). A custom logo is PNG/JPEG/WebP bytes in `app_settings` (max 1.5 MB). Invalid or missing bytes show the name NeoOrganizer.
-- The folder-first list is the main Tasks screen only. Today, Calendar, statistics, carry-forward, and recurrence still use individual tasks. Folder target dates and priorities do not rewrite task dates or priorities.
+- “Overdue since” is derived from stored dates (original occurrence date, assigned day, deadline local date, carry-forward and late reschedule history). There is no separate overdue timestamp
+- Folder progress counts occurrences on or before today. Future recurring instances and events are excluded from the percent
+- Near-due and Weekly goals still list tasks individually beside the grouped schedule
+- `npm run lint` has no committed ESLint config; first `expo lint` can fail on pre-existing files
+- Header branding is separate from the Android launcher. Custom logo is PNG/JPEG/WebP bytes in `app_settings` (max ~1.5 MB). Invalid/missing → NeoOrganizer
+- Folder target dates and folder priorities never rewrite task dates or explicit task priorities
+- Local-first: ship features on the Mac checkout at `~/Desktop/git/ScheduleApp` against `main`
 
 ## How to work
 
-1. Branch from updated `main` (#11/#12 merged; theme Paper PR may be tip).
+1. Branch from updated `main` (through #19). Prefer the Mac local checkout for all new work.
 2. Keep domain services pure of UI; add tests on **both** SQLite and IndexedDB drivers for storage-touching logic.
-3. Run `npm test` and `npm run typecheck` before declaring a slice done.
+3. Run `npm test` and `npm run typecheck` before declaring a slice done. Avoid nested web buttons.
 4. After each completed phase or merged PR: **update Accomplishments above** and `project-context.md`.
 5. Kickoff workers with this skill path: `/cursor/stores/self/skills/schedule/SKILL.md`.
 6. Mirror into the repo at `.cursor/skills/schedule/SKILL.md` so checkout-local agents see it; **Project store copy remains authoritative** until mirrors sync.
@@ -156,9 +163,9 @@ npx expo prebuild --platform android --no-install
 cd android && ./gradlew assembleDebug assembleRelease
 ```
 
-APK artifacts (this Project):  
-`/cursor/stores/self/artifacts/dayplanner-1.0.0-debug.apk`  
-`/cursor/stores/self/artifacts/dayplanner-1.0.0-release.apk`  
+APK artifacts:  
+- Sideload (preferred): `~/Desktop/git/ScheduleApp/Finalinstall/NeoOrganizer-1.0.0-release.apk`  
+- Earlier Project store copies: `/cursor/stores/self/artifacts/dayplanner-1.0.0-debug.apk`, `dayplanner-1.0.0-release.apk`  
 Also under `/opt/cursor/artifacts/` on build VMs.
 
 ## Preference hooks
