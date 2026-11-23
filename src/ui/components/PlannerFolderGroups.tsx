@@ -199,7 +199,7 @@ export function PlannerWeekGroups({ groups, today, testID }: { groups: WeekFolde
   const { width } = useWindowDimensions();
   const columns = weekFolderColumns(width);
   const looseCount = groups.unassignedByDay.reduce((n, d) => n + d.tasks.length, 0);
-  if (!groups.folders.length && !looseCount) return <AppText muted>No tasks this week.</AppText>;
+  if (!groups.folders.length && !looseCount) return <AppText muted>Nothing is currently listed here.</AppText>;
   return (
     <View style={{ gap: spacing.md }} testID={testID}>
       <View style={[styles.grid, { gap: spacing.md }]} testID={`${testID}-grid`}>

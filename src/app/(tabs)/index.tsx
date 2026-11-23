@@ -4,7 +4,7 @@ import { RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
 
 import { formatDateKey, todayKey } from '@/domain/dates';
 import type { Agenda, DateKey } from '@/domain/models';
-import { filterAgendaItems, type StatusFilter } from '@/domain/services/agendaService';
+import { filterAgendaItems } from '@/domain/services/agendaService';
 import { groupDayByFolder } from '@/domain/plannerGroups';
 import { selectEmptyFoldersForTasks } from '@/domain/taskListFolders';
 import { useAppStore, useServices, useSettings } from '@/state/appStore';
@@ -19,11 +19,13 @@ import {
 } from '@/ui/components/DashboardPlanner';
 import { PlannerDayGroups } from '@/ui/components/PlannerFolderGroups';
 import { ReadyScreen } from '@/ui/components/ReadyScreen';
-import { StatusFilterDropdown } from '@/ui/components/StatusFilterDropdown';
+import { useWeekFilterState, WeekFilterBar } from '@/ui/components/WeekFilterBar';
 import { AppText, Button, Card, ErrorState, LoadingState, SectionHeader, Segmented } from '@/ui/components/primitives';
 import { QuickAddButton } from '@/ui/components/QuickAddButton';
 import { useAction, useQuery, useTheme } from '@/ui/hooks';
 import { radius, spacing } from '@/ui/theme';
+
+const EMPTY_DAY_COPY = 'Nothing is currently listed here.';
 
 type DashMode = 'today' | 'week' | 'month';
 
@@ -90,29 +92,32 @@ function TodayDashboard({
   const stripStart = stripDays[0]!;
   const stripEnd = stripDays[stripDays.length - 1]!;
   const summariesQ = useQuery((s) => s.agenda.summaries(stripStart, stripEnd), [stripStart, stripEnd]);
-  const [status, setStatus] = useState<StatusFilter>('all');
+  const filterCtl = useWeekFilterState({ status: 'all' });
   const now = services.clock.now();
   const items = dayQ.data ?? [];
-  const pastOverdue =
-    selectedDate === systemToday ? (overdueQ.data ?? []).filter((a) => a.occurrence.date < systemToday) : [];
   const overall = new Map((cards.data ?? []).map((c) => [c.id, c.progress]));
   const emptyFolders = selectEmptyFoldersForTasks(cards.data ?? [], {
     enabled: settings.showEmptyFoldersOnTasks,
-    search: '',
-    status,
-    hasPriority: false,
-    hasCategory: false,
+    search: filterCtl.state.text,
+    status: filterCtl.state.status,
+    hasPriority: filterCtl.hasPriority,
+    hasCategory: filterCtl.hasCategory,
     includeOnThisKind: true,
     today: systemToday,
   });
-  const filtered = filterAgendaItems(items, { status, sort: 'date' }, systemToday, now);
+  const filtered = filterAgendaItems(items, filterCtl.filter, systemToday, now);
+  const pastOverdueRaw =
+    selectedDate === systemToday ? (overdueQ.data ?? []).filter((a) => a.occurrence.date < systemToday) : [];
+  const pastOverdue = filterAgendaItems(pastOverdueRaw, filterCtl.filter, systemToday, now);
   const filteredEvents = filtered.filter((a) => a.task.kind === 'event');
   const filteredTasks = filtered.filter((a) => a.task.kind === 'task');
   const dayGroups = groupDayByFolder(filteredTasks, { today: systemToday, now, overall, emptyFolders });
-  const progress = dayProgressFromAgenda(items);
-
-  const dayEmpty =
-    !!dayQ.data && items.length === 0 && pastOverdue.length === 0 && emptyFolders.length === 0;
+  const progress = dayProgressFromAgenda(filtered);
+  const hasListed =
+    pastOverdue.length > 0 ||
+    filteredEvents.length > 0 ||
+    dayGroups.folders.length > 0 ||
+    dayGroups.unassigned.length > 0;
 
   return (
     <View style={{ gap: spacing.md }} testID="dashboard-today">
@@ -130,12 +135,23 @@ function TodayDashboard({
         testID="today-date-strip"
       />
 
-      <StatusFilterDropdown value={status} onChange={setStatus} testID="today-status-filter" />
+      <WeekFilterBar
+        testID="today-status-filter"
+        state={filterCtl.state}
+        onText={filterCtl.setText}
+        onStatus={filterCtl.setStatus}
+        onPriority={filterCtl.setPriority}
+        onCategoryId={filterCtl.setCategoryId}
+        onFolder={filterCtl.setFolder}
+        hideSearch
+      />
 
       {dayQ.error ? <ErrorState message={dayQ.error} onRetry={dayQ.reload} /> : null}
       {!dayQ.data && !dayQ.error ? <LoadingState /> : null}
 
-      {dayQ.data && !dayEmpty ? (
+      {dayQ.data && !hasListed ? <AppText muted testID="today-empty-copy">{EMPTY_DAY_COPY}</AppText> : null}
+
+      {dayQ.data && hasListed ? (
         <>
           {pastOverdue.length > 0 ? (
             <SectionHeader
@@ -160,33 +176,25 @@ function TodayDashboard({
             </AppText>
           ) : null}
 
-          {filteredEvents.length > 0 || items.some((a) => a.task.kind === 'event') ? (
+          {filteredEvents.length > 0 ? (
             <>
               <SectionHeader title="Schedule" count={filteredEvents.length} />
-              {filteredEvents.length ? (
-                <List items={filteredEvents} testPrefix="event" />
-              ) : (
-                <AppText muted>No events match this filter.</AppText>
-              )}
+              <List items={filteredEvents} testPrefix="event" />
             </>
           ) : null}
 
-          {items.some((a) => a.task.kind === 'task') || emptyFolders.length || filteredTasks.length ? (
+          {dayGroups.folders.length > 0 || dayGroups.unassigned.length > 0 ? (
             <>
               <SectionHeader title="Tasks" count={filteredTasks.length} />
-              {items.some((a) => a.task.kind === 'task') || emptyFolders.length ? (
-                <PlannerDayGroups
-                  groups={dayGroups}
-                  today={systemToday}
-                  rangeLabel={selectedDate === systemToday ? 'Today' : formatDateKey(selectedDate, 'MMM d')}
-                  testID="dash-today-groups"
-                  emptyText={items.some((a) => a.task.kind === 'task') ? 'No tasks match this filter.' : 'No tasks this day.'}
-                  showTaskDate={(a) => a.occurrence.date < systemToday}
-                  hideUnassignedHeader
-                />
-              ) : (
-                <AppText muted>No tasks match this filter.</AppText>
-              )}
+              <PlannerDayGroups
+                groups={dayGroups}
+                today={systemToday}
+                rangeLabel={selectedDate === systemToday ? 'Today' : formatDateKey(selectedDate, 'MMM d')}
+                testID="dash-today-groups"
+                emptyText={EMPTY_DAY_COPY}
+                showTaskDate={(a) => a.occurrence.date < systemToday}
+                hideUnassignedHeader
+              />
             </>
           ) : null}
 

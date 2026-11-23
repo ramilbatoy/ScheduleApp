@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { ScrollView, StyleSheet, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 
 import { PRIORITIES, type Priority } from '@/domain/models';
 import type { ListFilter, SortKey, StatusFilter } from '@/domain/services/agendaService';
@@ -83,8 +83,8 @@ type Props = {
 };
 
 /**
- * Search + status/priority/category/sort chips matching the Tasks tab.
- * Reused on Week/Month planner views and Today trackers.
+ * Search + status/priority/category/sort compact dropdowns.
+ * Status is a single dropdown (not a permanent chip strip). Chips wrap on narrow widths.
  */
 export function AgendaFilterBar({
   state,
@@ -101,9 +101,10 @@ export function AgendaFilterBar({
   searchPlaceholder = 'Search titles, notes',
 }: Props) {
   const p = useTheme();
-  const [picker, setPicker] = useState<null | 'sort' | 'category' | 'priority'>(null);
+  const [picker, setPicker] = useState<null | 'sort' | 'category' | 'priority' | 'status'>(null);
   const categories = useQuery((s) => s.categories.list(), []);
   const category = categories.data?.find((c) => c.id === state.categoryId);
+  const statusLabel = statuses.find((s) => s.value === state.status)?.label ?? 'All';
 
   return (
     <View style={{ gap: spacing.sm }} testID={testID}>
@@ -120,7 +121,16 @@ export function AgendaFilterBar({
           clearButtonMode="while-editing"
         />
       </View>
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: spacing.sm }}>
+      <View style={styles.chipRow}>
+        {showStatusRow ? (
+          <Chip
+            testID={`${testID}-status`}
+            icon="filter-outline"
+            label={`Status: ${statusLabel}`}
+            selected={state.status !== 'all'}
+            onPress={() => setPicker('status')}
+          />
+        ) : null}
         <Chip
           testID={`${testID}-priority`}
           icon="flag"
@@ -143,25 +153,20 @@ export function AgendaFilterBar({
           label={`Sort: ${sorts.find((s) => s.value === state.sort)?.label ?? state.sort}`}
           onPress={() => setPicker('sort')}
         />
-      </ScrollView>
-      {showStatusRow ? (
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: spacing.sm }}>
-          {statuses.map((s) => (
-            <Chip
-              key={s.value}
-              testID={`${testID}-status-${s.value}`}
-              label={s.label}
-              selected={state.status === s.value}
-              onPress={() => onStatus(s.value)}
-            />
-          ))}
-        </ScrollView>
-      ) : null}
+      </View>
       {typeof matchCount === 'number' ? (
         <AppText variant="caption" muted>
           {matchCount} match{matchCount === 1 ? '' : 'es'}
         </AppText>
       ) : null}
+      <OptionsModal<StatusFilter>
+        visible={picker === 'status'}
+        title="Filter by status"
+        value={state.status}
+        options={statuses}
+        onChange={onStatus}
+        onClose={() => setPicker(null)}
+      />
       <OptionsModal<SortKey> visible={picker === 'sort'} title="Sort by" value={state.sort} options={sorts} onChange={onSort} onClose={() => setPicker(null)} />
       <OptionsModal<Priority | null>
         visible={picker === 'priority'}
@@ -186,4 +191,5 @@ export function AgendaFilterBar({
 const styles = StyleSheet.create({
   search: { justifyContent: 'center' },
   searchIcon: { position: 'absolute', left: 12, zIndex: 1 },
+  chipRow: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm },
 });

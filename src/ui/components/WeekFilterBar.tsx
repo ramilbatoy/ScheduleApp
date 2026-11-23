@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { ScrollView, StyleSheet, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 
 import { PRIORITIES, type Priority } from '@/domain/models';
 import type { ListFilter, StatusFilter } from '@/domain/services/agendaService';
@@ -62,9 +62,11 @@ type Props = {
   onFolder: (v: WeekFolderFilter) => void;
   matchCount?: number;
   testID?: string;
+  /** Hide the search field (Day already has date context). */
+  hideSearch?: boolean;
 };
 
-/** Compact dropdown filters for the Week planner (status / priority / category / folder). */
+/** Compact dropdown filters for Week / Day planners (status / priority / category / folder). */
 export function WeekFilterBar({
   state,
   onText,
@@ -74,6 +76,7 @@ export function WeekFilterBar({
   onFolder,
   matchCount,
   testID = 'week-filter',
+  hideSearch = false,
 }: Props) {
   const p = useTheme();
   const [picker, setPicker] = useState<null | 'status' | 'priority' | 'category' | 'folder'>(null);
@@ -88,20 +91,22 @@ export function WeekFilterBar({
 
   return (
     <View style={{ gap: spacing.sm }} testID={testID}>
-      <View style={styles.search}>
-        <View style={styles.searchIcon}>
-          <Icon name="search" size={18} color={p.textSecondary} />
+      {!hideSearch ? (
+        <View style={styles.search}>
+          <View style={styles.searchIcon}>
+            <Icon name="search" size={18} color={p.textSecondary} />
+          </View>
+          <Input
+            testID={`${testID}-search`}
+            value={state.text}
+            onChangeText={onText}
+            placeholder="Search titles, notes"
+            style={{ paddingLeft: 40 }}
+            clearButtonMode="while-editing"
+          />
         </View>
-        <Input
-          testID={`${testID}-search`}
-          value={state.text}
-          onChangeText={onText}
-          placeholder="Search titles, notes"
-          style={{ paddingLeft: 40 }}
-          clearButtonMode="while-editing"
-        />
-      </View>
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: spacing.sm }}>
+      ) : null}
+      <View style={styles.chipRow}>
         <Chip
           testID={`${testID}-status`}
           icon="filter-outline"
@@ -133,7 +138,7 @@ export function WeekFilterBar({
           selected={state.folder !== null}
           onPress={() => setPicker('folder')}
         />
-      </ScrollView>
+      </View>
       {typeof matchCount === 'number' ? (
         <AppText variant="caption" muted>
           {matchCount} match{matchCount === 1 ? '' : 'es'}
@@ -184,4 +189,5 @@ export function WeekFilterBar({
 const styles = StyleSheet.create({
   search: { justifyContent: 'center' },
   searchIcon: { position: 'absolute', left: 12, zIndex: 1 },
+  chipRow: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm },
 });
