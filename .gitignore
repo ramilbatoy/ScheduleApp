@@ -44,3 +44,5 @@ example
 
 # local APK builds (artifacts live outside git)
 *.apk
+# Phone sideload copies stay on disk under Finalinstall/ and are not committed.
+Finalinstall/*.apk
