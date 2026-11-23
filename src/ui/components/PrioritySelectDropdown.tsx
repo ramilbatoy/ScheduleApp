@@ -15,12 +15,14 @@ type Props = {
   folderId: string | null;
   folderPriority?: Priority | null;
   onChange: (next: { priority: Priority; priorityExplicit: boolean }) => void;
+  /** Hide the helper caption under the trigger (Quick Add compact row). */
+  compact?: boolean;
   testID?: string;
 };
 
 /**
- * Compact priority picker for task/event forms.
- * Explicit task priority always wins; inherit is offered when a folder is set.
+ * Compact priority picker. Levels only — no "Inherit folder" option.
+ * When `priorityExplicit` is false and a folder is set, the trigger shows e.g. "High (Auto)".
  */
 export function PrioritySelectDropdown({
   value,
@@ -28,6 +30,7 @@ export function PrioritySelectDropdown({
   folderId,
   folderPriority,
   onChange,
+  compact,
   testID = 'priority-select',
 }: Props) {
   const p = useTheme();
@@ -35,11 +38,11 @@ export function PrioritySelectDropdown({
   const inheriting = !priorityExplicit && !!folderId;
   const effective = inheriting && folderPriority ? folderPriority : value;
   const triggerLabel = inheriting
-    ? `Priority: ${PRIORITY_LABEL[effective]} · folder`
-    : `Priority: ${PRIORITY_LABEL[effective]}`;
+    ? `${PRIORITY_LABEL[effective]} (Auto)`
+    : PRIORITY_LABEL[effective];
 
-  function pick(next: { priority: Priority; priorityExplicit: boolean }) {
-    onChange(next);
+  function pick(priority: Priority) {
+    onChange({ priority, priorityExplicit: true });
     setOpen(false);
   }
 
@@ -48,7 +51,7 @@ export function PrioritySelectDropdown({
       <Pressable
         testID={`${testID}-trigger`}
         accessibilityRole="button"
-        accessibilityLabel={triggerLabel}
+        accessibilityLabel={inheriting ? `Priority: ${PRIORITY_LABEL[effective]} Auto` : `Priority: ${PRIORITY_LABEL[effective]}`}
         accessibilityState={{ expanded: open }}
         onPress={() => setOpen(true)}
         style={[styles.trigger, { backgroundColor: p.surface, borderColor: p.border }]}>
@@ -58,40 +61,29 @@ export function PrioritySelectDropdown({
         </AppText>
         <Icon name="chevron-down" size={18} color={p.textSecondary} />
       </Pressable>
-      {inheriting ? (
-        <AppText variant="caption" muted testID={`${testID}-inherited`}>
-          Inherited from the folder. Pick a level to set it on this item.
-        </AppText>
-      ) : (
-        <AppText variant="caption" muted>
-          Set on this item. It will not change when the folder priority changes.
-        </AppText>
-      )}
+      {!compact ? (
+        inheriting ? (
+          <AppText variant="caption" muted testID={`${testID}-inherited`}>
+            Auto from folder. Pick a level to set it on this item.
+          </AppText>
+        ) : (
+          <AppText variant="caption" muted>
+            Set on this item. It will not change when the folder priority changes.
+          </AppText>
+        )
+      ) : null}
 
       <Modal transparent visible={open} animationType="fade" onRequestClose={() => setOpen(false)}>
         <View style={styles.fill}>
           <Pressable style={[styles.backdrop, { backgroundColor: p.overlay }]} onPress={() => setOpen(false)} accessibilityLabel="Close priority picker" />
           <View style={[styles.sheet, { backgroundColor: p.surface }]} accessibilityViewIsModal>
             <AppText variant="title">Priority</AppText>
+            {inheriting ? (
+              <AppText variant="caption" muted>
+                Currently {PRIORITY_LABEL[effective]} (Auto) from the folder.
+              </AppText>
+            ) : null}
             <ScrollView style={{ maxHeight: 360 }} contentContainerStyle={{ gap: 4 }}>
-              {folderId ? (
-                <Pressable
-                  testID={`${testID}-inherit`}
-                  accessibilityRole="button"
-                  onPress={() =>
-                    pick({
-                      priority: folderPriority ?? value,
-                      priorityExplicit: false,
-                    })
-                  }
-                  style={[styles.option, inheriting && { backgroundColor: p.primarySoft }]}>
-                  <Icon name="folder-outline" size={18} color={p.textSecondary} />
-                  <AppText color={inheriting ? p.primary : p.text}>
-                    Inherit from folder
-                    {folderPriority ? ` (${PRIORITY_LABEL[folderPriority]})` : ''}
-                  </AppText>
-                </Pressable>
-              ) : null}
               {PRIORITIES.map((pr) => {
                 const selected = !inheriting && value === pr;
                 return (
@@ -99,7 +91,7 @@ export function PrioritySelectDropdown({
                     key={pr}
                     testID={`${testID}-${pr}`}
                     accessibilityRole="button"
-                    onPress={() => pick({ priority: pr, priorityExplicit: true })}
+                    onPress={() => pick(pr)}
                     style={[styles.option, selected && { backgroundColor: p.primarySoft }]}>
                     <View style={[styles.dot, { backgroundColor: p.priority[pr] }]} />
                     <AppText color={selected ? p.primary : p.text}>{PRIORITY_LABEL[pr]}</AppText>

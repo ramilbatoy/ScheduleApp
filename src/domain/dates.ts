@@ -98,6 +98,12 @@ export function formatTime(time: TimeOfDay | null): string {
   return `${hour}:${String(m).padStart(2, '0')} ${suffix}`;
 }
 
+/** Current local wall clock as `HH:mm` (minutes not snapped). Used to seed empty time pickers. */
+export function nowTimeOfDay(clock: Clock = systemClock): TimeOfDay {
+  const d = clock.now();
+  return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
+}
+
 export function formatDateKey(key: DateKey, pattern = 'EEE, MMM d'): string {
   return format(fromDateKey(key), pattern);
 }

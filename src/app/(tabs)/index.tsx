@@ -1,4 +1,3 @@
-import { router } from 'expo-router';
 import { useEffect, useMemo, useState } from 'react';
 import { RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
 
@@ -20,7 +19,7 @@ import {
 import { PlannerDayGroups } from '@/ui/components/PlannerFolderGroups';
 import { ReadyScreen } from '@/ui/components/ReadyScreen';
 import { StatusFilterDropdown } from '@/ui/components/StatusFilterDropdown';
-import { AppText, Button, Card, EmptyState, ErrorState, LoadingState, SectionHeader, Segmented } from '@/ui/components/primitives';
+import { AppText, Button, Card, ErrorState, LoadingState, SectionHeader, Segmented } from '@/ui/components/primitives';
 import { QuickAddButton } from '@/ui/components/QuickAddButton';
 import { useAction, useQuery, useTheme } from '@/ui/hooks';
 import { radius, spacing } from '@/ui/theme';
@@ -111,15 +110,14 @@ function TodayDashboard({
   const dayGroups = groupDayByFolder(filteredTasks, { today: systemToday, now, overall, emptyFolders });
   const progress = dayProgressFromAgenda(items);
 
+  const dayEmpty =
+    !!dayQ.data && items.length === 0 && pastOverdue.length === 0 && emptyFolders.length === 0;
+
   return (
     <View style={{ gap: spacing.md }} testID="dashboard-today">
       <View style={{ paddingTop: spacing.sm }}>
-        <AppText variant="label" muted>
-          {formatDateKey(selectedDate, 'EEEE').toUpperCase()}
-          {selectedDate === systemToday ? ' · TODAY' : ''}
-        </AppText>
         <AppText variant="display" testID="today-heading">
-          {formatDateKey(selectedDate, 'MMMM d, yyyy')}
+          {selectedDate === systemToday ? 'Today' : formatDateKey(selectedDate, 'EEEE, MMMM d')}
         </AppText>
       </View>
 
@@ -136,7 +134,7 @@ function TodayDashboard({
       {dayQ.error ? <ErrorState message={dayQ.error} onRetry={dayQ.reload} /> : null}
       {!dayQ.data && !dayQ.error ? <LoadingState /> : null}
 
-      {dayQ.data ? (
+      {dayQ.data && !dayEmpty ? (
         <>
           {pastOverdue.length > 0 ? (
             <SectionHeader
@@ -161,43 +159,36 @@ function TodayDashboard({
             </AppText>
           ) : null}
 
-          <SectionHeader title="Schedule" count={filteredEvents.length} />
-          {filteredEvents.length ? (
-            <List items={filteredEvents} testPrefix="event" />
-          ) : (
-            <AppText muted>{items.some((a) => a.task.kind === 'event') ? 'No events match this filter.' : 'No events this day.'}</AppText>
-          )}
+          {filteredEvents.length > 0 || items.some((a) => a.task.kind === 'event') ? (
+            <>
+              <SectionHeader title="Schedule" count={filteredEvents.length} />
+              {filteredEvents.length ? (
+                <List items={filteredEvents} testPrefix="event" />
+              ) : (
+                <AppText muted>No events match this filter.</AppText>
+              )}
+            </>
+          ) : null}
 
-          <SectionHeader title="Tasks" count={filteredTasks.length} />
-          {items.some((a) => a.task.kind === 'task') || emptyFolders.length ? (
-            <PlannerDayGroups
-              groups={dayGroups}
-              today={systemToday}
-              rangeLabel={selectedDate === systemToday ? 'Today' : formatDateKey(selectedDate, 'MMM d')}
-              testID="dash-today-groups"
-              emptyText={items.some((a) => a.task.kind === 'task') ? 'No tasks match this filter.' : 'No tasks this day.'}
-              showTaskDate={(a) => a.occurrence.date < systemToday}
-            />
-          ) : items.some((a) => a.task.kind === 'event') ? (
-            <AppText muted>No tasks this day.</AppText>
-          ) : (
-            <EmptyState
-              icon="checkbox-outline"
-              title={selectedDate === systemToday ? 'Nothing planned for today' : `Nothing planned for ${formatDateKey(selectedDate, 'MMM d')}`}
-              message="Use the + button to add a task or event."
-              action={
-                <Button
-                  label="Add a task"
-                  tone="secondary"
-                  icon="add"
-                  testID="today-empty-add"
-                  onPress={() => router.push({ pathname: '/quick-add', params: { date: selectedDate } })}
+          {items.some((a) => a.task.kind === 'task') || emptyFolders.length || filteredTasks.length ? (
+            <>
+              <SectionHeader title="Tasks" count={filteredTasks.length} />
+              {items.some((a) => a.task.kind === 'task') || emptyFolders.length ? (
+                <PlannerDayGroups
+                  groups={dayGroups}
+                  today={systemToday}
+                  rangeLabel={selectedDate === systemToday ? 'Today' : formatDateKey(selectedDate, 'MMM d')}
+                  testID="dash-today-groups"
+                  emptyText={items.some((a) => a.task.kind === 'task') ? 'No tasks match this filter.' : 'No tasks this day.'}
+                  showTaskDate={(a) => a.occurrence.date < systemToday}
                 />
-              }
-            />
-          )}
+              ) : (
+                <AppText muted>No tasks match this filter.</AppText>
+              )}
+            </>
+          ) : null}
 
-          <ProgressCard completed={progress.completed} total={progress.total} carried={progress.carried} />
+          {progress.total > 0 ? <ProgressCard completed={progress.completed} total={progress.total} carried={progress.carried} /> : null}
         </>
       ) : null}
     </View>

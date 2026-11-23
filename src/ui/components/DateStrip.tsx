@@ -122,7 +122,7 @@ export function DateStrip({ selected, today, summaries, onSelect, testID = 'date
           label="Today"
           compact
           tone="ghost"
-          icon="locate-outline"
+          icon="today-outline"
           onPress={() => onSelect(today)}
           style={styles.todayBtn}
         />

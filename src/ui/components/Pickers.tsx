@@ -2,7 +2,7 @@ import { addMonths, format } from 'date-fns';
 import { useEffect, useState } from 'react';
 import { Modal, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 
-import { fromDateKey, toDateKey } from '@/domain/dates';
+import { fromDateKey, nowTimeOfDay, toDateKey } from '@/domain/dates';
 import type { DateKey, TimeOfDay } from '@/domain/models';
 
 import { useTheme } from '../hooks';
@@ -102,14 +102,11 @@ export function TimePickerModal({
   const [m, setM] = useState(0);
   useEffect(() => {
     if (!visible) return;
-    if (value) {
-      const [hh, mm] = value.split(':').map(Number);
-      setH(hh);
-      setM(mm);
-    } else {
-      setH(9);
-      setM(0);
-    }
+    // Seed empty pickers with the current local time; never overwrite an existing/user-chosen value.
+    const seed = value ?? nowTimeOfDay();
+    const [hh, mm] = seed.split(':').map(Number);
+    setH(hh);
+    setM(mm);
   }, [visible, value]);
   const minuteOptions = MINUTES.includes(m) ? MINUTES : [...MINUTES, m].sort((a, b) => a - b);
   return (

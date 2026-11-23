@@ -12,6 +12,7 @@ import { FolderForm } from '../components/FolderForm';
 import { FolderSelectDropdown } from '../components/FolderSelectDropdown';
 import { DatePickerModal, OptionsModal, TimePickerModal } from '../components/Pickers';
 import { PrioritySelectDropdown } from '../components/PrioritySelectDropdown';
+import { ReminderAlertModal } from '../components/ReminderAlertModal';
 import { AppText, Button, Card, ErrorState, Field, Input, LoadingState, Segmented, SelectButton, SwitchRow } from '../components/primitives';
 import { RecurrenceEditor } from '../components/RecurrenceEditor';
 import { SubtaskEditor } from '../components/SubtaskList';
@@ -123,6 +124,8 @@ function Form({
   const [saving, setSaving] = useState(false);
   const [picker, setPicker] = useState<null | 'date' | 'start' | 'end' | 'deadlineDate' | 'deadlineTime' | 'category' | 'reminder' | 'deadlineReminder'>(null);
   const [makingFolder, setMakingFolder] = useState(false);
+  /** True once the user picks an explicit priority (or editing an already-explicit item). */
+  const [priorityTouched, setPriorityTouched] = useState(editing ? initial.priorityExplicit !== false : false);
   const categories = useQuery((s) => s.categories.list(), []);
   const folders = useQuery((s) => s.folders.list(), []);
   const subtasks = useQuery(
@@ -207,7 +210,7 @@ function Form({
             onChange={(kind) => set({ kind, ...(kind === 'task' ? { allDay: false } : {}) })}
             options={[
               { value: 'task', label: 'Task' },
-              { value: 'event', label: 'Event / schedule' },
+              { value: 'event', label: 'Event' },
             ]}
           />
         ) : null}
@@ -228,11 +231,20 @@ function Form({
           </AppText>
         ) : null}
 
-        <Field label={recurring && !occurrenceOnly && scope === 'series' ? 'Series starts' : isEvent ? 'Date' : 'Assigned date'}>
-          <SelectButton testID="input-date" icon="calendar-outline" placeholder="Pick a date" value={formatDateKey(v.date, 'EEE, MMM d, yyyy')} onPress={() => setPicker('date')} />
+        <Field
+          label={recurring && !occurrenceOnly && scope === 'series' ? 'Series starts' : 'Start Date/Time'}
+          hint={isEvent ? undefined : 'Assigned day for this item. End Date/Time below stays independent.'}>
+          <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: spacing.md, alignItems: 'center' }}>
+            <View style={{ flexGrow: 1, flexBasis: 180, minWidth: 160 }}>
+              <SelectButton testID="input-date" icon="calendar-outline" placeholder="Pick a date" value={formatDateKey(v.date, 'EEE, MMM d, yyyy')} onPress={() => setPicker('date')} />
+            </View>
+            {isEvent ? (
+              <View style={{ flexGrow: 1, flexBasis: 140, minWidth: 120 }}>
+                <SwitchRow testID="toggle-all-day" label="All-day" value={v.allDay} onChange={(allDay) => set({ allDay, ...(allDay ? { startTime: null, endTime: null } : {}) })} />
+              </View>
+            ) : null}
+          </View>
         </Field>
-
-        {isEvent ? <SwitchRow testID="toggle-all-day" label="All-day" value={v.allDay} onChange={(allDay) => set({ allDay, ...(allDay ? { startTime: null, endTime: null } : {}) })} /> : null}
 
         {!v.allDay ? (
           <View style={{ flexDirection: 'row', gap: spacing.md }}>
@@ -250,6 +262,19 @@ function Form({
         ) : null}
 
         <View style={{ gap: spacing.lg, opacity: occurrenceOnly ? 0.5 : 1 }} pointerEvents={occurrenceOnly ? 'none' : 'auto'}>
+          <Field label="End Date/Time" hint="Independent of the start date. Shows as overdue once passed.">
+            <View style={{ flexDirection: 'row', gap: spacing.md }}>
+              <View style={{ flex: 3 }}>
+                <SelectButton testID="input-deadline-date" icon="hourglass-outline" placeholder="No end date" value={deadlineDate ? formatDateKey(deadlineDate, 'MMM d, yyyy') : null} onPress={() => setPicker('deadlineDate')} onClear={() => set({ deadlineAt: null, deadlineReminderOffsetMinutes: null })} />
+              </View>
+              {deadlineDate ? (
+                <View style={{ flex: 2 }}>
+                  <SelectButton testID="input-deadline-time" icon="time-outline" placeholder="Time" value={deadlineTime ? formatTime(deadlineTime) : null} onPress={() => setPicker('deadlineTime')} />
+                </View>
+              ) : null}
+            </View>
+          </Field>
+
           <Field label="Folder" hint="A project. Categories stay separate, and a task can have both.">
             <FolderSelectDropdown
               testID="input-folder"
@@ -258,9 +283,19 @@ function Form({
               includeArchivedId={v.folderId ?? null}
               onChange={(folderId) => {
                 if (!folderId) {
+                  // Clearing folder while inheriting → default medium; keep explicit if set.
                   set({
                     folderId: null,
-                    ...(inheriting ? { priorityExplicit: true, priority: folder?.priority ?? v.priority } : {}),
+                    ...(inheriting ? { priorityExplicit: true, priority: 'medium' } : {}),
+                  });
+                  return;
+                }
+                const nextFolder = folders.data?.find((f) => f.id === folderId);
+                if (!priorityTouched || inheriting) {
+                  set({
+                    folderId,
+                    priorityExplicit: false,
+                    priority: nextFolder?.priority ?? v.priority,
                   });
                   return;
                 }
@@ -277,25 +312,15 @@ function Form({
               priorityExplicit={v.priorityExplicit !== false}
               folderId={v.folderId ?? null}
               folderPriority={folder?.priority ?? null}
-              onChange={(next) => set(next)}
+              onChange={(next) => {
+                setPriorityTouched(true);
+                set(next);
+              }}
             />
           </Field>
 
           <Field label="Category">
             <SelectButton testID="input-category" icon="pricetag-outline" placeholder="No category" value={category?.name ?? null} onPress={() => setPicker('category')} onClear={() => set({ categoryId: null })} />
-          </Field>
-
-          <Field label="Deadline" hint="Independent of the assigned date. Shows as overdue once passed.">
-            <View style={{ flexDirection: 'row', gap: spacing.md }}>
-              <View style={{ flex: 3 }}>
-                <SelectButton testID="input-deadline-date" icon="hourglass-outline" placeholder="No deadline" value={deadlineDate ? formatDateKey(deadlineDate, 'MMM d, yyyy') : null} onPress={() => setPicker('deadlineDate')} onClear={() => set({ deadlineAt: null, deadlineReminderOffsetMinutes: null })} />
-              </View>
-              {deadlineDate ? (
-                <View style={{ flex: 2 }}>
-                  <SelectButton testID="input-deadline-time" icon="time-outline" placeholder="Time" value={deadlineTime ? formatTime(deadlineTime) : null} onPress={() => setPicker('deadlineTime')} />
-                </View>
-              ) : null}
-            </View>
           </Field>
 
           <Field
@@ -305,8 +330,8 @@ function Form({
           </Field>
 
           {v.deadlineAt ? (
-            <Field label="Deadline reminder">
-              <SelectButton testID="input-deadline-reminder" icon="alarm-outline" placeholder="No deadline reminder" value={v.deadlineReminderOffsetMinutes !== null ? describeOffset(v.deadlineReminderOffsetMinutes) : null} onPress={() => setPicker('deadlineReminder')} onClear={() => set({ deadlineReminderOffsetMinutes: null })} />
+            <Field label="End reminder">
+              <SelectButton testID="input-deadline-reminder" icon="alarm-outline" placeholder="No end reminder" value={v.deadlineReminderOffsetMinutes !== null ? describeOffset(v.deadlineReminderOffsetMinutes) : null} onPress={() => setPicker('deadlineReminder')} onClear={() => set({ deadlineReminderOffsetMinutes: null })} />
             </Field>
           ) : null}
 
@@ -351,14 +376,14 @@ function Form({
         visible={picker === 'deadlineDate'}
         value={deadlineDate}
         today={today}
-        title="Deadline date"
+        title="End date"
         onChange={(d) => set({ deadlineAt: combineDateTime(d, deadlineTime ?? '17:00').toISOString() })}
         onClose={() => setPicker(null)}
       />
       <TimePickerModal
         visible={picker === 'deadlineTime'}
         value={deadlineTime}
-        title="Deadline time"
+        title="End Date/Time"
         onChange={(t) => deadlineDate && set({ deadlineAt: combineDateTime(deadlineDate, t).toISOString() })}
         onClose={() => setPicker(null)}
       />
@@ -367,7 +392,12 @@ function Form({
         onClose={() => setMakingFolder(false)}
         onSaved={(created) => {
           folders.reload();
-          set({ folderId: created.id });
+          // New folder on an untouched priority → auto-inherit.
+          if (!priorityTouched || inheriting) {
+            set({ folderId: created.id, priorityExplicit: false, priority: created.priority });
+          } else {
+            set({ folderId: created.id });
+          }
         }}
       />
       <OptionsModal<string | null>
@@ -378,21 +408,27 @@ function Form({
         onChange={(categoryId) => set({ categoryId })}
         onClose={() => setPicker(null)}
       />
-      <OptionsModal<number | null>
+      <ReminderAlertModal
         visible={picker === 'reminder'}
-        title={v.startTime ? 'Remind me before start' : 'Remind me on the day'}
+        title="Alert"
+        kind="start"
         value={v.reminderOffsetMinutes}
-        options={[{ value: null, label: 'No reminder' }, ...START_OFFSETS.map((m) => ({ value: m, label: describeOffset(m) }))]}
+        offsets={START_OFFSETS}
+        defaultOnOffset={settings.defaultReminderOffsetMinutes ?? 10}
         onChange={(reminderOffsetMinutes) => set({ reminderOffsetMinutes })}
         onClose={() => setPicker(null)}
+        testID="reminder-alert"
       />
-      <OptionsModal<number | null>
+      <ReminderAlertModal
         visible={picker === 'deadlineReminder'}
-        title="Remind me before the deadline"
+        title="End alert"
+        kind="deadline"
         value={v.deadlineReminderOffsetMinutes}
-        options={[{ value: null, label: 'No deadline reminder' }, ...DEADLINE_OFFSETS.map((m) => ({ value: m, label: describeOffset(m) }))]}
+        offsets={DEADLINE_OFFSETS}
+        defaultOnOffset={60}
         onChange={(deadlineReminderOffsetMinutes) => set({ deadlineReminderOffsetMinutes })}
         onClose={() => setPicker(null)}
+        testID="deadline-reminder-alert"
       />
     </KeyboardAvoidingView>
   );

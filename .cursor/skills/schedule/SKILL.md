@@ -116,17 +116,16 @@ Update this section whenever a phase finishes, a PR merges, or acceptance status
 | Nested buttons after header and folders | Merged to main (2026-11-23) | https://github.com/ramilbatoy/ScheduleApp/pull/17 — AgendaRow folder chip + Projects reorder; no nested web `<button>`; **238** tests |
 | Folder-first Today / Week / Month | Merged to main (2026-11-23) | https://github.com/ramilbatoy/ScheduleApp/pull/18 — `plannerGroups` + `PlannerFolderGroups`; Tasks individual + optional Group by Folder; **241** tests |
 | Main audit + sideload APK | Merged to main (2026-11-23) | https://github.com/ramilbatoy/ScheduleApp/pull/19 — audit clean (**241** tests, typecheck). APK: `~/Desktop/git/ScheduleApp/Finalinstall/NeoOrganizer-1.0.0-release.apk` (~98 MB, `assembleRelease`, debug keystore, `com.dayplanner.app` 1.0.0). `Finalinstall/*.apk` gitignored |
-| Today tab minimal redesign | Open PR (2026-11-23) | Date strip + status dropdown + selected-date progress; removed Today stats / near-due / weekly goals. **245** tests. Also `ReadyScreen` gates Calendar/Settings/Today so web bootstrap cannot throw `useServices` before DB open. PR: https://github.com/ramilbatoy/ScheduleApp/pull/21 (branch `cursor/today-tab-date-strip-3f02`) |
-| Drawer / forms / Week / Settings polish | Open PR (2026-11-23) | Default drawer Tasks·Folders·About; brand→Today; searchable folder + priority dropdowns; Week folder cards + compact filters (no weekly-goals list); Settings hides Branding/Navigation; About creator + version; `collapseFoldersByDefault` ON. **247** tests. PR: https://github.com/ramilbatoy/ScheduleApp/pull/22 (branch `cursor/drawer-forms-week-settings-2031`) |
-| NeoOrganizer 1.1.0 upgrade APK | Open PR (2026-11-24 Asia/Manila) | Same package `com.dayplanner.app`, `versionName` 1.1.0 / `versionCode` 2, launcher **NeoOrganizer** + `Finalinstall/Neo.jpeg` adaptive icons. APK: `~/Desktop/git/ScheduleApp/Finalinstall/1.1.0/NeoOrganizer-1.1.0-release.apk` (~98 MB, `assembleRelease`, **same debug keystore** as 1.0.0 — SHA-1 `5E:8F:16:06:…:F6:25`). Versioned Finalinstall layout + README; APKs gitignored. Branch `cursor/neoorganizer-1.1.0-upgrade-83b2` |
+| Today tab minimal redesign | Merged to main (2026-11-23) | https://github.com/ramilbatoy/ScheduleApp/pull/21 — date strip + status dropdown + selected-date progress; ReadyScreen bootstrap gate; **245** tests |
+| Drawer / forms / Week / Settings polish | Merged to main (2026-11-23) | https://github.com/ramilbatoy/ScheduleApp/pull/22 — drawer defaults, searchable folder + priority dropdowns, Week folder cards, Settings polish; **247** tests |
+| NeoOrganizer 1.1.0 upgrade APK | Merged to main (2026-11-24 Asia/Manila) | https://github.com/ramilbatoy/ScheduleApp/pull/23 — `versionName` 1.1.0 / `versionCode` 2, launcher NeoOrganizer, Finalinstall/1.1.0 APK |
+| Quick Add / Edit forms / Reminder / Today polish | Open PR (2026-11-24 Asia/Manila) | Folder+priority compact row (no Inherit option; Auto indicator); current-time picker seed; Event / Start·End Date/Time labels; Alert reminder modal; Today heading + today-outline + clean empty. **248** tests. Branch `cursor/quick-add-forms-today-abc5`. Report: `/cursor/stores/self/docs/quick-add-forms-today-report.md` |
 
 ### In progress / remaining
 
 | Item | Status | Notes |
 | --- | --- | --- |
-| Today tab PR #21 | Open | Merge after review; then bump Accomplishments to Merged |
-| Drawer/forms/Week/Settings PR | Open | Merge after review; then bump Accomplishments to Merged |
-| NeoOrganizer 1.1.0 upgrade APK PR | Open | Merge after review; device install-over-1.0.0 smoke recommended |
+| Quick Add / forms / Today PR | Open | Merge after review; then bump Accomplishments to Merged |
 | Device re-verify | Optional | Physical phone smoke: install-over Finalinstall 1.1.0 APK (data keep), alarms, clipping |
 | Production signing | Optional | Replace debug-keystore release with Play/EAS credentials when publishing |
 | Project templates | Optional | Spec mentioned Website Launch / etc.; not required for core folders |

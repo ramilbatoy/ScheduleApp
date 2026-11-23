@@ -1,6 +1,13 @@
-import { addDaysKey } from '@/domain/dates';
+import { addDaysKey, fixedClock, nowTimeOfDay } from '@/domain/dates';
 import type { Agenda, Occurrence, Task } from '@/domain/models';
 import { DATE_STRIP_RADIUS, dateStripWindow, dayProgressFromAgenda, shiftSelectedDate } from '@/ui/components/DateStrip';
+
+describe('nowTimeOfDay', () => {
+  it('returns the clock local HH:mm without overwriting semantics for seeded pickers', () => {
+    expect(nowTimeOfDay(fixedClock('2026-03-10T14:07:30'))).toBe('14:07');
+    expect(nowTimeOfDay(fixedClock('2026-03-10T09:00:00'))).toBe('09:00');
+  });
+});
 
 describe('dateStripWindow', () => {
   it('returns a fixed civil-date window centered on the selected day', () => {

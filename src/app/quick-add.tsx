@@ -4,11 +4,12 @@ import { KeyboardAvoidingView, Platform, Pressable, StyleSheet, View } from 'rea
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { addDaysKey, formatDateKey, formatTime, todayKey } from '@/domain/dates';
-import { PRIORITIES, type DateKey, type ItemKind, type Priority, type TimeOfDay } from '@/domain/models';
+import type { DateKey, ItemKind, Priority, TimeOfDay } from '@/domain/models';
 import { parseQuickAdd } from '@/domain/quickParse';
 import { useAppStore, useServices, useSettings } from '@/state/appStore';
-import { PRIORITY_LABEL } from '@/ui/components/AgendaRow';
 import { DatePickerModal, TimePickerModal } from '@/ui/components/Pickers';
+import { FolderSelectDropdown } from '@/ui/components/FolderSelectDropdown';
+import { PrioritySelectDropdown } from '@/ui/components/PrioritySelectDropdown';
 import { AppText, Badge, Button, Chip, Input, Segmented } from '@/ui/components/primitives';
 import { errorMessage, useQuery, useTheme, useToast } from '@/ui/hooks';
 import { goBackOrDashboard, useSafeAndroidBack } from '@/ui/navigation';
@@ -31,6 +32,7 @@ export default function QuickAddScreen() {
   const [text, setText] = useState('');
   const [date, setDate] = useState<DateKey | null>(null);
   const [time, setTime] = useState<TimeOfDay | null>(null);
+  /** Explicit priority from the dropdown; null means inherit folder (or default medium). */
   const [priority, setPriority] = useState<Priority | null>(null);
   const [folderId, setFolderId] = useState<string | null>(typeof params.folderId === 'string' ? params.folderId : null);
   const [picker, setPicker] = useState<null | 'date' | 'time'>(null);
@@ -40,7 +42,8 @@ export default function QuickAddScreen() {
   const parsed = useMemo(() => parseQuickAdd(text, today), [text, today]);
   const effectiveDate = date ?? parsed.date ?? params.date ?? today;
   const effectiveTime = time ?? parsed.time;
-  const chosenPriority = priority ?? parsed.priority;
+  const nlPriority = parsed.priority;
+  const chosenPriority = priority ?? nlPriority;
   const selectedFolder = folders.data?.find((f) => f.id === folderId) ?? null;
   const inheriting = !!selectedFolder && chosenPriority == null;
   const effectivePriority = chosenPriority ?? selectedFolder?.priority ?? 'medium';
@@ -48,6 +51,7 @@ export default function QuickAddScreen() {
     ? (categories.data?.find((c) => c.name.toLowerCase() === parsed.categoryName!.toLowerCase()) ?? null)
     : null;
   const title = parsed.title || text.trim();
+  const showFolders = !!(folders.data && folders.data.some((f) => f.status !== 'archived'));
 
   async function add() {
     if (!title) return;
@@ -94,6 +98,14 @@ export default function QuickAddScreen() {
     router.replace({ pathname: '/item/edit', params: { kind, date: effectiveDate, title } });
   }
 
+  function onFolderChange(nextId: string | null) {
+    setFolderId(nextId);
+    // Clearing folder while inheriting → default (no explicit pick). Explicit picks stay.
+    if (!nextId && priority == null && nlPriority == null) {
+      // leave priority null → medium default on save with priorityExplicit true
+    }
+  }
+
   return (
     <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
       <Pressable style={[styles.backdrop, { backgroundColor: p.overlay }]} onPress={goBackOrDashboard} accessibilityLabel="Close quick add" />
@@ -137,33 +149,35 @@ export default function QuickAddScreen() {
           <Chip testID="quick-time" label={effectiveTime ? formatTime(effectiveTime) : 'Add time'} icon="time-outline" selected={!!effectiveTime} onPress={() => setPicker('time')} />
           {category ? <Chip label={category.name} color={category.color} selected /> : null}
         </View>
-        {folders.data && folders.data.some((f) => f.status !== 'archived') ? (
-          <View style={styles.wrap}>
-            <Chip label="No folder" icon="folder-outline" selected={!folderId} onPress={() => setFolderId(null)} />
-            {folders.data
-              .filter((f) => f.status !== 'archived')
-              .map((f) => (
-                <Chip key={f.id} label={f.name} color={f.color} selected={folderId === f.id} onPress={() => setFolderId(f.id)} />
-              ))}
-          </View>
-        ) : null}
-        {kind === 'task' ? (
-          <View style={styles.wrap}>
-            {selectedFolder ? (
-              <Chip label="Inherit folder" icon="folder-outline" selected={inheriting} onPress={() => setPriority(null)} />
+
+        {showFolders || kind === 'task' ? (
+          <View style={styles.folderPriorityRow} testID="quick-folder-priority">
+            {showFolders ? (
+              <View style={styles.folderPriorityCell}>
+                <FolderSelectDropdown
+                  testID="quick-folder"
+                  folders={folders.data ?? []}
+                  value={folderId}
+                  onChange={onFolderChange}
+                />
+              </View>
             ) : null}
-            {PRIORITIES.map((pr) => (
-              <Chip
-                key={pr}
-                label={PRIORITY_LABEL[pr]}
-                icon="flag"
-                color={p.priority[pr]}
-                selected={chosenPriority === pr}
-                onPress={() => setPriority(chosenPriority === pr && selectedFolder ? null : pr)}
-              />
-            ))}
+            {kind === 'task' ? (
+              <View style={styles.folderPriorityCell}>
+                <PrioritySelectDropdown
+                  testID="quick-priority"
+                  compact
+                  value={effectivePriority}
+                  priorityExplicit={!inheriting}
+                  folderId={folderId}
+                  folderPriority={selectedFolder?.priority ?? null}
+                  onChange={({ priority: next }) => setPriority(next)}
+                />
+              </View>
+            ) : null}
           </View>
         ) : null}
+
         {error ? <AppText color={p.error}>{error}</AppText> : null}
         <View style={{ flexDirection: 'row', gap: spacing.md }}>
           <Button label="More options" tone="secondary" icon="options-outline" onPress={moreOptions} style={{ flex: 1 }} />
@@ -181,4 +195,6 @@ const styles = StyleSheet.create({
   sheet: { borderTopLeftRadius: radius.xl, borderTopRightRadius: radius.xl, padding: spacing.lg, gap: spacing.md, width: '100%', maxWidth: 640, alignSelf: 'center' },
   grabber: { width: 40, height: 4, borderRadius: 2, alignSelf: 'center' },
   wrap: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm },
+  folderPriorityRow: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm },
+  folderPriorityCell: { flexGrow: 1, flexBasis: 160, minWidth: 140 },
 });
