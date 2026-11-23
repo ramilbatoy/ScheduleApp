@@ -8,7 +8,7 @@ import { useTheme } from '@/ui/hooks';
 type IconName = ComponentProps<typeof Ionicons>['name'];
 
 const TABS: { name: string; title: string; icon: IconName; iconActive: IconName }[] = [
-  { name: 'index', title: 'Today', icon: 'sunny-outline', iconActive: 'sunny' },
+  { name: 'index', title: 'Day', icon: 'sunny-outline', iconActive: 'sunny' },
   { name: 'calendar', title: 'Calendar', icon: 'calendar-outline', iconActive: 'calendar' },
   { name: 'tasks', title: 'Tasks', icon: 'checkbox-outline', iconActive: 'checkbox' },
   { name: 'stats', title: 'Statistics', icon: 'stats-chart-outline', iconActive: 'stats-chart' },

@@ -1,4 +1,5 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useNavigation } from 'expo-router';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
 
 import { formatDateKey, todayKey } from '@/domain/dates';
@@ -116,7 +117,7 @@ function TodayDashboard({
   return (
     <View style={{ gap: spacing.md }} testID="dashboard-today">
       <View style={{ paddingTop: spacing.sm }}>
-        <AppText variant="display" testID="today-heading">
+        <AppText variant="display" testID="today-heading" style={{ fontSize: 20, lineHeight: 26 }}>
           {selectedDate === systemToday ? 'Today' : formatDateKey(selectedDate, 'EEEE, MMMM d')}
         </AppText>
       </View>
@@ -181,6 +182,7 @@ function TodayDashboard({
                   testID="dash-today-groups"
                   emptyText={items.some((a) => a.task.kind === 'task') ? 'No tasks match this filter.' : 'No tasks this day.'}
                   showTaskDate={(a) => a.occurrence.date < systemToday}
+                  hideUnassignedHeader
                 />
               ) : (
                 <AppText muted>No tasks match this filter.</AppText>
@@ -207,6 +209,7 @@ export default function TodayScreen() {
 function TodayScreenReady() {
   const p = useTheme();
   const services = useServices();
+  const navigation = useNavigation();
   const invalidate = useAppStore((s) => s.invalidate);
   const today = todayKey(services.clock);
   const [mode, setMode] = useState<DashMode>('today');
@@ -215,6 +218,19 @@ function TodayScreenReady() {
   const [weekNavigated, setWeekNavigated] = useState(false);
   const [monthAnchor, setMonthAnchor] = useState<DateKey>(today);
   const [refreshing, setRefreshing] = useState(false);
+
+  const jumpToToday = useCallback(() => {
+    const d = todayKey(services.clock);
+    setMode('today');
+    setSelectedDate(d);
+  }, [services.clock]);
+
+  // Bottom Day tab (route id `index`): show Day mode focused on the current local date.
+  useEffect(() => {
+    // Tab navigators emit `tabPress`; the root stack NavigationProp typing does not list it.
+    const tabNav = navigation as unknown as { addListener: (event: 'tabPress', cb: () => void) => () => void };
+    return tabNav.addListener('tabPress', jumpToToday);
+  }, [navigation, jumpToToday]);
 
   // Open Week on the current week unless the user already used prev/next this session.
   useEffect(() => {
@@ -246,7 +262,7 @@ function TodayScreenReady() {
           value={mode}
           onChange={setMode}
           options={[
-            { value: 'today', label: 'Today' },
+            { value: 'today', label: 'Day' },
             { value: 'week', label: 'Week' },
             { value: 'month', label: 'Month' },
           ]}

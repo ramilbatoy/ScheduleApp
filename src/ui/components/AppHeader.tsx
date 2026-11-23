@@ -70,7 +70,7 @@ export function HeaderBrand({
   return (
     <Pressable
       accessibilityRole="button"
-      accessibilityLabel={`${APP_HEADER_NAME}, go to Today`}
+      accessibilityLabel={`${APP_HEADER_NAME}, go to Day`}
       onPress={onPress}
       testID={`${testID}-press`}
       hitSlop={4}

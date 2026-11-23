@@ -12,7 +12,7 @@ import { AppText, Icon, type IconName } from './primitives';
 import { radius, spacing } from '../theme';
 
 const LINKS: { id: NavItemId; label: string; icon: IconName; href: '/' | '/calendar' | '/tasks' | '/projects' | '/stats' | '/categories' | '/theme-settings' | '/settings' | '/about' }[] = [
-  { id: 'today', label: 'Today', icon: 'sunny-outline', href: '/' },
+  { id: 'today', label: 'Day', icon: 'sunny-outline', href: '/' },
   { id: 'calendar', label: 'Calendar', icon: 'calendar-outline', href: '/calendar' },
   { id: 'tasks', label: 'Tasks', icon: 'checkbox-outline', href: '/tasks' },
   { id: 'projects', label: 'Folders', icon: 'folder-outline', href: '/projects' },

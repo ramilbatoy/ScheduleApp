@@ -125,6 +125,8 @@ export function PlannerDayGroups({
   testID,
   emptyText,
   showTaskDate,
+  /** Day tab: hide the Unassigned label + count; still list the tasks. */
+  hideUnassignedHeader = false,
 }: {
   groups: DayFolderGroups;
   today: DateKey;
@@ -132,6 +134,7 @@ export function PlannerDayGroups({
   testID: string;
   emptyText: string;
   showTaskDate?: (a: Agenda) => boolean;
+  hideUnassignedHeader?: boolean;
 }) {
   if (!groups.folders.length && !groups.unassigned.length) return <AppText muted>{emptyText}</AppText>;
   return (
@@ -152,14 +155,16 @@ export function PlannerDayGroups({
           )}
         </FolderGroupCard>
       ))}
-      <View style={{ gap: spacing.sm }} testID={`${testID}-unassigned`}>
-        <SectionHeader title="Unassigned" count={groups.unassigned.length} />
-        {groups.unassigned.length ? (
-          <TaskList items={groups.unassigned} testPrefix={`${testID}-loose`} showDate={showTaskDate} />
-        ) : (
-          <AppText muted>No unassigned tasks.</AppText>
-        )}
-      </View>
+      {groups.unassigned.length || !hideUnassignedHeader ? (
+        <View style={{ gap: spacing.sm }} testID={`${testID}-unassigned`}>
+          {hideUnassignedHeader ? null : <SectionHeader title="Unassigned" count={groups.unassigned.length} />}
+          {groups.unassigned.length ? (
+            <TaskList items={groups.unassigned} testPrefix={`${testID}-loose`} showDate={showTaskDate} />
+          ) : hideUnassignedHeader ? null : (
+            <AppText muted>No unassigned tasks.</AppText>
+          )}
+        </View>
+      ) : null}
     </View>
   );
 }
