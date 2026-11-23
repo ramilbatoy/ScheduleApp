@@ -82,7 +82,7 @@ Use this skill for **any** work on `ramilbatoy/ScheduleApp` (DayPlanner): featur
 - Header branding: default text **NeoOrganizer**; optional local logo bytes in `app_settings` (not the Android launcher icon)
 - Folders: explicit task priority always wins; otherwise inherit folder priority. Folder target date is a project deadline and never rewrites occurrence dates. Progress is computed. Backup format 2 includes folders and `navigation` prefs; device notification prefs are not overwritten
 - Folder-first display: Today / Week / Month group assigned tasks under folders (expand/collapse); unassigned stay individual. Tasks screen defaults to individual list + optional Group by Folder. Occurrence dates stay authoritative
-- Drawer: AppHeader hamburger, bottom tabs stay. Settings → Navigation can hide or reorder shortcuts without making screens unreachable
+- Drawer: AppHeader hamburger, bottom tabs stay. Default shortcuts Tasks / Folders / About (other ids remain reachable via tabs/routes). Brand text/logo in AppHeader navigates to Today and closes the drawer; hamburger stays separate
 - Timed items apply Settings default reminder offset; OS alarms use `alarmClock` when exact-alarm granted else `bestEffort`
 - Android button/chip/segment labels: `includeFontPadding: false` + vertical padding; EmptyState labels use `flexShrink: 0` + `textBreakStrategy: simple` (Phase 5 clipping fix)
 - Web: never nest `<button>` (Pressable / Paper `accessibilityRole="button"`). Outer cards that wrap chips use non-button parents
@@ -117,7 +117,7 @@ Update this section whenever a phase finishes, a PR merges, or acceptance status
 | Folder-first Today / Week / Month | Merged to main (2026-11-23) | https://github.com/ramilbatoy/ScheduleApp/pull/18 — `plannerGroups` + `PlannerFolderGroups`; Tasks individual + optional Group by Folder; **241** tests |
 | Main audit + sideload APK | Merged to main (2026-11-23) | https://github.com/ramilbatoy/ScheduleApp/pull/19 — audit clean (**241** tests, typecheck). APK: `~/Desktop/git/ScheduleApp/Finalinstall/NeoOrganizer-1.0.0-release.apk` (~98 MB, `assembleRelease`, debug keystore, `com.dayplanner.app` 1.0.0). `Finalinstall/*.apk` gitignored |
 | Today tab minimal redesign | Open PR (2026-11-23) | Date strip + status dropdown + selected-date progress; removed Today stats / near-due / weekly goals. **245** tests. Also `ReadyScreen` gates Calendar/Settings/Today so web bootstrap cannot throw `useServices` before DB open. PR: https://github.com/ramilbatoy/ScheduleApp/pull/21 (branch `cursor/today-tab-date-strip-3f02`) |
-| Drawer / forms / Week / Settings polish | Open PR (2026-11-23) | Default drawer Tasks·Folders·About; brand→Today; searchable folder + priority dropdowns; Week folder cards + compact filters (no weekly-goals list); Settings hides Branding/Navigation; About creator + version; `collapseFoldersByDefault` ON. **247** tests. Branch `cursor/drawer-forms-week-settings-2031` |
+| Drawer / forms / Week / Settings polish | Open PR (2026-11-23) | Default drawer Tasks·Folders·About; brand→Today; searchable folder + priority dropdowns; Week folder cards + compact filters (no weekly-goals list); Settings hides Branding/Navigation; About creator + version; `collapseFoldersByDefault` ON. **247** tests. PR: https://github.com/ramilbatoy/ScheduleApp/pull/22 (branch `cursor/drawer-forms-week-settings-2031`) |
 
 ### In progress / remaining
 
