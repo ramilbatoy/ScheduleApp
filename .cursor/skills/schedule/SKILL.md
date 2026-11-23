@@ -117,12 +117,14 @@ Update this section whenever a phase finishes, a PR merges, or acceptance status
 | Folder-first Today / Week / Month | Merged to main (2026-11-23) | https://github.com/ramilbatoy/ScheduleApp/pull/18 — `plannerGroups` + `PlannerFolderGroups`; Tasks individual + optional Group by Folder; **241** tests |
 | Main audit + sideload APK | Merged to main (2026-11-23) | https://github.com/ramilbatoy/ScheduleApp/pull/19 — audit clean (**241** tests, typecheck). APK: `~/Desktop/git/ScheduleApp/Finalinstall/NeoOrganizer-1.0.0-release.apk` (~98 MB, `assembleRelease`, debug keystore, `com.dayplanner.app` 1.0.0). `Finalinstall/*.apk` gitignored |
 | Today tab minimal redesign | Open PR (2026-11-23) | Date strip + status dropdown + selected-date progress; removed Today stats / near-due / weekly goals. **245** tests. Also `ReadyScreen` gates Calendar/Settings/Today so web bootstrap cannot throw `useServices` before DB open. PR: https://github.com/ramilbatoy/ScheduleApp/pull/21 (branch `cursor/today-tab-date-strip-3f02`) |
+| Drawer / forms / Week / Settings polish | Open PR (2026-11-23) | Default drawer Tasks·Folders·About; brand→Today; searchable folder + priority dropdowns; Week folder cards + compact filters (no weekly-goals list); Settings hides Branding/Navigation; About creator + version; `collapseFoldersByDefault` ON. **247** tests. Branch `cursor/drawer-forms-week-settings-2031` |
 
 ### In progress / remaining
 
 | Item | Status | Notes |
 | --- | --- | --- |
 | Today tab PR #21 | Open | Merge after review; then bump Accomplishments to Merged |
+| Drawer/forms/Week/Settings PR | Open | Merge after review; then bump Accomplishments to Merged |
 | Device re-verify | Optional | Physical phone smoke: install Finalinstall APK, alarms, clipping |
 | Production signing | Optional | Replace debug-keystore release with Play/EAS credentials when publishing |
 | Project templates | Optional | Spec mentioned Website Launch / etc.; not required for core folders |
@@ -138,7 +140,9 @@ Update this section whenever a phase finishes, a PR merges, or acceptance status
 - Nested subtasks are per-occurrence (not series template); new recurring instances start with an empty checklist
 - “Overdue since” is derived from stored dates (original occurrence date, assigned day, deadline local date, carry-forward and late reschedule history). There is no separate overdue timestamp
 - Folder progress counts occurrences on or before today. Future recurring instances and events are excluded from the percent
-- Week view still shows Weekly goals by urgency (individual rows). Today no longer includes near-due / weekly goals / stats summary
+- Week is folder-card first (compact status/priority/category/folder filters). Weekly goals list removed from Week. Today still has no near-due / weekly goals / stats summary beyond selected-day progress
+- Settings no longer shows App Branding or Navigation editors; branding bytes and drawer prefs still persist. Defaults for new installs: drawer Tasks / Folders / About; `collapseFoldersByDefault` true
+- Existing installs keep a previously saved drawer order until that setting is rewritten
 - `npm run lint` has no committed ESLint config; first `expo lint` can fail on pre-existing files
 - Header branding is separate from the Android launcher. Custom logo is PNG/JPEG/WebP bytes in `app_settings` (max ~1.5 MB). Invalid/missing → NeoOrganizer
 - Folder target dates and folder priorities never rewrite task dates or explicit task priorities

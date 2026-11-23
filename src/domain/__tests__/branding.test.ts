@@ -42,12 +42,15 @@ describe.each(DRIVERS)('branding settings (%s)', (_name, open) => {
   it('stores logo bytes in the database and keeps them offline of any file URI', async () => {
     expect((await app.settings.get()).branding).toEqual({ mode: 'name', logo: null });
     expect((await app.settings.get()).showEmptyFoldersOnTasks).toBe(false);
+    expect((await app.settings.get()).collapseFoldersByDefault).toBe(true);
     const logo = logoFromBase64(png);
     await app.settings.set('branding', { mode: 'logo', logo });
     await app.settings.set('showEmptyFoldersOnTasks', true);
+    await app.settings.set('collapseFoldersByDefault', false);
     const saved = await app.settings.get();
     expect(saved.branding).toEqual({ mode: 'logo', logo });
     expect(saved.showEmptyFoldersOnTasks).toBe(true);
+    expect(saved.collapseFoldersByDefault).toBe(false);
     expect(JSON.stringify(saved.branding)).not.toMatch(/file:|content:|blob:/);
 
     const named = await app.settings.set('branding', { mode: 'name', logo });
@@ -56,8 +59,9 @@ describe.each(DRIVERS)('branding settings (%s)', (_name, open) => {
 
     const file = await app.backup.export();
     const validated = app.backup.validate(JSON.stringify(file));
-    expect(validated.warnings.join('\n')).not.toMatch(/branding|show_empty_folders/);
+    expect(validated.warnings.join('\n')).not.toMatch(/branding|show_empty_folders|collapse_folders/);
     expect(validated.backup.data.app_settings?.some((row) => row.id === 'branding')).toBe(true);
     expect(validated.backup.data.app_settings?.some((row) => row.id === 'show_empty_folders_on_tasks')).toBe(true);
+    expect(validated.backup.data.app_settings?.some((row) => row.id === 'collapse_folders_by_default')).toBe(true);
   });
 });

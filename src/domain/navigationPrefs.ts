@@ -22,10 +22,11 @@ export interface NavigationPrefs {
 
 /**
  * Shortcuts shown until the user customizes the drawer.
- * Categories, Theme, and Backup stay in the full id list so they can be shown again.
+ * Today, Calendar, Statistics, Settings, Categories, Theme, and Backup stay in the
+ * full id list so they can be shown again; they are just off the default menu.
  * The Projects row is the Folders screen (`/projects`); there is no second route.
  */
-export const DEFAULT_DRAWER_ORDER: NavItemId[] = ['today', 'calendar', 'tasks', 'projects', 'statistics', 'settings', 'about'];
+export const DEFAULT_DRAWER_ORDER: NavItemId[] = ['tasks', 'projects', 'about'];
 
 export const DEFAULT_NAVIGATION: NavigationPrefs = {
   drawerEnabled: true,

@@ -31,6 +31,7 @@ const KNOWN_SETTING_KEYS = new Set([
   'navigation',
   'branding',
   'show_empty_folders_on_tasks',
+  'collapse_folders_by_default',
 ]);
 
 export interface BackupFile {

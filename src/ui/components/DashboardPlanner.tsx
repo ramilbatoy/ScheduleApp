@@ -3,24 +3,22 @@ import { router } from 'expo-router';
 import { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 
-import { addDaysKey, formatDateKey, fromDateKey, todayKey, toDateKey } from '@/domain/dates';
+import { addDaysKey, formatDateKey, fromDateKey, toDateKey } from '@/domain/dates';
 import type { Agenda, DateKey } from '@/domain/models';
 import { groupAgendaByDate, isSameMonth } from '@/domain/monthTable';
 import {
-  agendaPriority,
   filterAgendaItems,
   projectOverdueOntoToday,
-  weeklyGoalItems,
   type ListFilter,
 } from '@/domain/services/agendaService';
-import { groupDayByFolder, groupWeekByFolder, type WeekFolderGroups } from '@/domain/plannerGroups';
+import { groupDayByFolder, groupWeekByFolder } from '@/domain/plannerGroups';
 import { selectEmptyFoldersForTasks } from '@/domain/taskListFolders';
-import { AgendaRow } from '@/ui/components/AgendaRow';
 import { AgendaFilterBar, useAgendaFilterState } from '@/ui/components/AgendaFilterBar';
 import { DatePickerModal } from '@/ui/components/Pickers';
 import { MonthTaskGrid } from '@/ui/components/MonthTaskGrid';
 import { PlannerDayGroups, PlannerWeekGroups } from '@/ui/components/PlannerFolderGroups';
-import { AppText, Button, Card, ErrorState, IconButton, LoadingState, SectionHeader } from '@/ui/components/primitives';
+import { useWeekFilterState, WeekFilterBar } from '@/ui/components/WeekFilterBar';
+import { AppText, Button, Card, ErrorState, IconButton, LoadingState } from '@/ui/components/primitives';
 import { useQuery, useTheme } from '@/ui/hooks';
 import { useServices, useSettings } from '@/state/appStore';
 import { radius, spacing } from '@/ui/theme';
@@ -53,53 +51,6 @@ export function shiftMonthAnchor(anchor: DateKey, dir: 1 | -1): DateKey {
 
 function applyPlannerFilter(items: Agenda[], filter: ListFilter, today: DateKey, now: Date): Agenda[] {
   return filterAgendaItems(items, filter, today, now);
-}
-
-/** This week's pending tasks ranked Urgent → High → Medium → Low. */
-export function WeeklyGoalsSection({
-  anchor,
-  testID = 'weekly-goals',
-}: {
-  anchor: DateKey;
-  testID?: string;
-}) {
-  const p = useTheme();
-  const services = useServices();
-  const today = todayKey(services.clock);
-  const [start, end] = mondayWeekRange(anchor);
-  const items = useQuery((s) => s.agenda.range(start, end), [start, end]);
-  const overdue = useQuery((s) => s.agenda.pendingOverdueBeforeToday(), []);
-  const goals = items.data ? weeklyGoalItems(items.data, overdue.data ?? [], start, end, today) : [];
-
-  return (
-    <View style={{ gap: spacing.sm }} testID={testID}>
-      <SectionHeader title="Weekly goals by urgency" count={goals.length} />
-      <AppText variant="caption" muted>
-        {formatDateKey(start, 'MMM d')} – {formatDateKey(end, start.slice(5, 7) === end.slice(5, 7) ? 'd' : 'MMM d')} · Urgent first
-      </AppText>
-      {items.error ? <ErrorState message={items.error} onRetry={items.reload} /> : null}
-      {!items.data && !items.error ? <LoadingState /> : null}
-      {items.data && !goals.length ? <AppText muted>No open goals this week.</AppText> : null}
-      {goals.length ? (
-        <View style={{ gap: spacing.sm }}>
-          {goals.map((a, i) => (
-            <AgendaRow key={a.occurrence.id} a={a} showDate testID={`${testID}-${i}`} />
-          ))}
-        </View>
-      ) : null}
-      {goals.length && !goals.some((a) => agendaPriority(a) === 'urgent' || agendaPriority(a) === 'high') ? (
-        <AppText variant="caption" color={p.textSecondary}>
-          Nothing marked urgent or high yet.
-        </AppText>
-      ) : null}
-    </View>
-  );
-}
-
-function weekDayTasks(groups: WeekFolderGroups, date: DateKey): Agenda[] {
-  const inFolders = groups.folders.flatMap((g) => g.days.find((d) => d.date === date)?.tasks ?? []);
-  const loose = groups.unassignedByDay.find((d) => d.date === date)?.tasks ?? [];
-  return [...inFolders, ...loose];
 }
 
 function usePlannerFolderContext(today: DateKey, filter: { text: string; status?: ListFilter['status']; hasPriority: boolean; hasCategory: boolean }) {
@@ -135,13 +86,13 @@ export function DashboardWeekView({
   const thisWeekStart = mondayWeekRange(today)[0];
   const items = useQuery((s) => s.agenda.range(start, end), [start, end]);
   const overdue = useQuery((s) => s.agenda.pendingOverdueBeforeToday(), []);
-  const filterCtl = useAgendaFilterState({ sort: 'date', status: 'all' });
+  const filterCtl = useWeekFilterState({ status: 'all' });
   const now = services.clock.now();
   const folderCtx = usePlannerFolderContext(today, {
     text: filterCtl.state.text,
     status: filterCtl.state.status,
-    hasPriority: !!filterCtl.state.priority,
-    hasCategory: !!filterCtl.state.categoryId,
+    hasPriority: filterCtl.hasPriority,
+    hasCategory: filterCtl.hasCategory,
   });
   const overdueRaw = overdue.data ?? [];
   const filtered = items.data ? applyPlannerFilter(items.data, filterCtl.filter, today, now) : [];
@@ -153,12 +104,6 @@ export function DashboardWeekView({
     now,
     sort: filterCtl.filter.sort,
     ...folderCtx,
-  });
-  const allGrouped = groupWeekByFolder(days, [...(items.data ?? []), ...overdueRaw.filter((a) => a.occurrence.date < start)], {
-    today,
-    now,
-    sort: 'date',
-    overall: folderCtx.overall,
   });
   const title = `${formatDateKey(start, 'MMM d')} – ${formatDateKey(end, start.slice(5, 7) === end.slice(5, 7) ? 'd' : 'MMM d')}`;
 
@@ -174,49 +119,38 @@ export function DashboardWeekView({
       {start !== thisWeekStart ? (
         <Button label="This week" compact tone="ghost" icon="locate-outline" onPress={onJumpThisWeek} />
       ) : null}
-      <AgendaFilterBar
+      <WeekFilterBar
         testID="dash-week-filter"
         state={filterCtl.state}
         onText={filterCtl.setText}
         onStatus={filterCtl.setStatus}
         onPriority={filterCtl.setPriority}
         onCategoryId={filterCtl.setCategoryId}
-        onSort={filterCtl.setSort}
+        onFolder={filterCtl.setFolder}
         matchCount={items.data ? filtered.length + earlier.length : undefined}
       />
-      <WeeklyGoalsSection anchor={anchor} testID="dash-week-goals" />
+      <View style={styles.weekStrip} testID="dash-week-days">
+        {days.map((d) => (
+          <View key={d} style={[styles.weekDayChip, { backgroundColor: d === today ? p.primarySoft : p.surfaceVariant }]} testID={`dash-week-${d}`}>
+            <AppText variant="caption" color={d === today ? p.primary : p.textSecondary} style={{ textAlign: 'center' }}>
+              {formatDateKey(d, 'EEE')}
+            </AppText>
+            <AppText variant="label" color={d === today ? p.primary : p.text} style={{ textAlign: 'center' }}>
+              {formatDateKey(d, 'd')}
+            </AppText>
+            <IconButton
+              icon="add-circle-outline"
+              label={`Add on ${formatDateKey(d, 'EEEE')}`}
+              color={p.primary}
+              size={18}
+              onPress={() => router.push({ pathname: '/quick-add', params: { date: d } })}
+              testID={`dash-week-add-${d}`}
+            />
+          </View>
+        ))}
+      </View>
       {items.error ? <ErrorState message={items.error} onRetry={items.reload} /> : null}
       {!items.data && !items.error ? <LoadingState /> : null}
-      {items.data ? (
-        <View style={{ gap: spacing.sm }} testID="dash-week-days">
-          {days.map((d) => {
-            const dayAll = weekDayTasks(allGrouped, d);
-            const shown = weekDayTasks(grouped, d);
-            const done = dayAll.filter((a) => a.occurrence.status === 'completed').length;
-            return (
-              <View key={d} style={styles.weekHeader} testID={`dash-week-${d}`}>
-                <View style={{ flex: 1 }}>
-                  <AppText variant="heading" color={d === today ? p.primary : p.text}>
-                    {formatDateKey(d, 'EEE d')}
-                    {d === today ? ' · Today' : ''}
-                  </AppText>
-                  <AppText variant="caption" muted>
-                    {dayAll.length ? `${done}/${dayAll.length} done` : 'Free'}
-                    {shown.length !== dayAll.length ? ` · ${shown.length} shown` : ''}
-                  </AppText>
-                </View>
-                <IconButton
-                  icon="add-circle-outline"
-                  label={`Add on ${formatDateKey(d, 'EEEE')}`}
-                  color={p.primary}
-                  onPress={() => router.push({ pathname: '/quick-add', params: { date: d } })}
-                  testID={`dash-week-add-${d}`}
-                />
-              </View>
-            );
-          })}
-        </View>
-      ) : null}
       {items.data ? <PlannerWeekGroups groups={grouped} today={today} testID="dash-week-groups" /> : null}
     </View>
   );
@@ -336,6 +270,15 @@ export function DashboardMonthView({
 
 const styles = StyleSheet.create({
   nav: { flexDirection: 'row', alignItems: 'center' },
-  weekHeader: { flexDirection: 'row', alignItems: 'center', borderRadius: radius.md },
+  weekStrip: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.xs },
+  weekDayChip: {
+    flexGrow: 1,
+    flexBasis: 40,
+    minWidth: 40,
+    borderRadius: radius.md,
+    paddingVertical: spacing.xs,
+    alignItems: 'center',
+    gap: 2,
+  },
   goToRow: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm, alignItems: 'center' },
 });

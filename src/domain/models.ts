@@ -234,6 +234,8 @@ export interface AppSettings {
   branding: AppBranding;
   /** Tasks list only. Empty folders always remain on the Folders page. */
   showEmptyFoldersOnTasks: boolean;
+  /** Today / Week folder cards start collapsed when true. Manual expand still works. */
+  collapseFoldersByDefault: boolean;
 }
 
 export const DEFAULT_SETTINGS: AppSettings = {
@@ -250,6 +252,7 @@ export const DEFAULT_SETTINGS: AppSettings = {
   navigation: DEFAULT_NAVIGATION,
   branding: DEFAULT_BRANDING,
   showEmptyFoldersOnTasks: false,
+  collapseFoldersByDefault: true,
 };
 
 /** An occurrence joined with its parent definition — what most screens render. */

@@ -240,6 +240,7 @@ const SETTING_KEYS: Record<keyof AppSettings, string> = {
   navigation: 'navigation',
   branding: 'branding',
   showEmptyFoldersOnTasks: 'show_empty_folders_on_tasks',
+  collapseFoldersByDefault: 'collapse_folders_by_default',
 };
 
 export class SettingsRepo {
@@ -282,6 +283,8 @@ export class SettingsRepo {
     settings.navigation = sanitizeNavigation(settings.navigation);
     settings.branding = sanitizeBranding(settings.branding);
     settings.showEmptyFoldersOnTasks = settings.showEmptyFoldersOnTasks === true;
+    // Missing / legacy → ON (folder cards start collapsed).
+    settings.collapseFoldersByDefault = settings.collapseFoldersByDefault !== false;
     return settings;
   }
 

@@ -93,7 +93,7 @@ describe('navigation prefs', () => {
     const prefs = sanitizeNavigation({ drawerEnabled: false, order: ['tasks', 'nope', 'tasks', 'projects'] });
     expect(prefs).toEqual({ drawerEnabled: false, order: ['tasks', 'projects'] });
     expect(sanitizeNavigation(null).drawerEnabled).toBe(true);
-    expect(sanitizeNavigation(null).order).toEqual(['today', 'calendar', 'tasks', 'projects', 'statistics', 'settings', 'about']);
+    expect(sanitizeNavigation(null).order).toEqual(['tasks', 'projects', 'about']);
     expect(sanitizeNavigation({ drawerEnabled: true, order: [] }).order).toEqual([]);
   });
 
