@@ -119,7 +119,7 @@ Update this section whenever a phase finishes, a PR merges, or acceptance status
 | Today tab minimal redesign | Merged to main (2026-11-23) | https://github.com/ramilbatoy/ScheduleApp/pull/21 — date strip + status dropdown + selected-date progress; ReadyScreen bootstrap gate; **245** tests |
 | Drawer / forms / Week / Settings polish | Merged to main (2026-11-23) | https://github.com/ramilbatoy/ScheduleApp/pull/22 — drawer defaults, searchable folder + priority dropdowns, Week folder cards, Settings polish; **247** tests |
 | NeoOrganizer 1.1.0 upgrade APK | Merged to main (2026-11-24 Asia/Manila) | https://github.com/ramilbatoy/ScheduleApp/pull/23 — `versionName` 1.1.0 / `versionCode` 2, launcher NeoOrganizer, Finalinstall/1.1.0 APK |
-| Quick Add / Edit forms / Reminder / Today polish | Open PR (2026-11-24 Asia/Manila) | Folder+priority compact row (no Inherit option; Auto indicator); current-time picker seed; Event / Start·End Date/Time labels; Alert reminder modal; Today heading + today-outline + clean empty. **248** tests. Branch `cursor/quick-add-forms-today-abc5`. Report: `/cursor/stores/self/docs/quick-add-forms-today-report.md` |
+| Quick Add / Edit forms / Reminder / Today polish | Open PR (2026-11-24 Asia/Manila) | https://github.com/ramilbatoy/ScheduleApp/pull/24 — Folder+priority compact row (no Inherit option; Auto indicator); current-time picker seed; Event / Start·End Date/Time labels; Alert reminder modal; Today heading + today-outline + clean empty. **248** tests. Branch `cursor/quick-add-forms-today-abc5`. Report: `/cursor/stores/self/docs/quick-add-forms-today-report.md` |
 
 ### In progress / remaining
 
