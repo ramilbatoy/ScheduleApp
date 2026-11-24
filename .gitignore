@@ -42,9 +42,15 @@ example
 /ios
 /android
 
-# local APK builds (artifacts live on disk under Finalinstall/; not committed)
+# local APK / IPA builds (artifacts live on disk under Finalinstall/; not committed)
 *.apk
+*.ipa
 Finalinstall/**/*.apk
+Finalinstall/**/*.ipa
+Finalinstall/**/*.app/
+Finalinstall/**/*.xcarchive/
+Finalinstall/**/*.zip
 # Keep Neo.jpeg / README tracked; ignore other large binaries under Finalinstall if added
 !Finalinstall/README.md
+!Finalinstall/**/README.md
 !Finalinstall/Neo.jpeg

@@ -119,14 +119,16 @@ Update this section whenever a phase finishes, a PR merges, or acceptance status
 | Today tab minimal redesign | Merged to main (2026-11-23) | https://github.com/ramilbatoy/ScheduleApp/pull/21 — date strip + status dropdown + selected-date progress; ReadyScreen bootstrap gate; **245** tests |
 | Drawer / forms / Week / Settings polish | Merged to main (2026-11-23) | https://github.com/ramilbatoy/ScheduleApp/pull/22 — drawer defaults, searchable folder + priority dropdowns, Week folder cards, Settings polish; **247** tests |
 | NeoOrganizer 1.1.0 upgrade APK | Merged to main (2026-11-24 Asia/Manila) | https://github.com/ramilbatoy/ScheduleApp/pull/23 — `versionName` 1.1.0 / `versionCode` 2, launcher NeoOrganizer, Finalinstall/1.1.0 APK |
-| Quick Add / Edit forms / Reminder / Today polish | Open PR (2026-11-24 Asia/Manila) | https://github.com/ramilbatoy/ScheduleApp/pull/24 — Folder+priority compact row (no Inherit option; Auto indicator); current-time picker seed; Event / Start·End Date/Time labels; Alert reminder modal; Today heading + today-outline + clean empty. **248** tests. Branch `cursor/quick-add-forms-today-abc5`. Report: `/cursor/stores/self/docs/quick-add-forms-today-report.md` |
+| Quick Add / Edit forms / Reminder / Day polish | Merged to main (2026-11-24 Asia/Manila) | https://github.com/ramilbatoy/ScheduleApp/pull/24 — Quick Add folder+priority row (Auto inherit); current-time picker seed; Event / Start·End Date/Time; Alert reminder modal; Day tab rename + 20px heading; Day Priority/Category/Folder filters; Week/Month responsive filters; empty “Nothing is currently listed here.” **248** tests. Report: `/cursor/stores/self/docs/quick-add-forms-today-report.md` |
+| NeoOrganizer 1.2.0 sideload packages | Open PR (2026-11-24 Asia/Manila) | `versionName` 1.2.0 / `versionCode` 3; same package `com.dayplanner.app` + debug keystore SHA-1 `5E:8F:16:06:…:F6:25`. Android APK: `~/Desktop/git/ScheduleApp/Finalinstall/1.2.0/NeoOrganizer-1.2.0-release.apk`. iOS under `Finalinstall/1.2.0/ios/` (simulator `.app`, unsigned xcarchive/IPA; device IPA blocked — no Apple signing identities). Report: `/cursor/stores/self/docs/neoorganizer-1.2.0-build-report.md`. Branch `cursor/neoorganizer-1.2.0-sideload-08f7` |
 
 ### In progress / remaining
 
 | Item | Status | Notes |
 | --- | --- | --- |
-| Quick Add / forms / Today PR | Open | Merge after review; then bump Accomplishments to Merged |
-| Device re-verify | Optional | Physical phone smoke: install-over Finalinstall 1.1.0 APK (data keep), alarms, clipping |
+| NeoOrganizer 1.2.0 sideload PR | Open | Merge after review; device install-over-1.1.0 smoke recommended |
+| Device re-verify | Optional | Physical phone smoke: install-over Finalinstall 1.2.0 APK (data keep), alarms, clipping |
+| iOS signed IPA | Blocked | Needs Apple Developer team / certificates; see `Finalinstall/1.2.0/ios/README.md` |
 | Production signing | Optional | Replace debug-keystore release with Play/EAS credentials when publishing |
 | Project templates | Optional | Spec mentioned Website Launch / etc.; not required for core folders |
 | Calendar-tab month titles | Known gap | Dashboard Month uses folder markers; Calendar tab month may still show task titles |
@@ -141,7 +143,7 @@ Update this section whenever a phase finishes, a PR merges, or acceptance status
 - Nested subtasks are per-occurrence (not series template); new recurring instances start with an empty checklist
 - “Overdue since” is derived from stored dates (original occurrence date, assigned day, deadline local date, carry-forward and late reschedule history). There is no separate overdue timestamp
 - Folder progress counts occurrences on or before today. Future recurring instances and events are excluded from the percent
-- Week is folder-card first (compact status/priority/category/folder filters). Weekly goals list removed from Week. Today still has no near-due / weekly goals / stats summary beyond selected-day progress
+- Week/Day are folder-card first with compact status/priority/category/folder filter dropdowns; Month status is a dropdown. Weekly goals list removed from Week. Day heading shows Today or the selected date; bottom tab label is Day
 - Settings no longer shows App Branding or Navigation editors; branding bytes and drawer prefs still persist. Defaults for new installs: drawer Tasks / Folders / About; `collapseFoldersByDefault` true
 - Existing installs keep a previously saved drawer order until that setting is rewritten
 - `npm run lint` has no committed ESLint config; first `expo lint` can fail on pre-existing files
@@ -171,10 +173,12 @@ npx expo prebuild --platform android --no-install
 cd android && ./gradlew assembleDebug assembleRelease
 ```
 
-APK artifacts:  
-- Sideload (preferred, versioned): `~/Desktop/git/ScheduleApp/Finalinstall/<version>/NeoOrganizer-<version>-release.apk`  
+APK / iOS artifacts:  
+- Sideload Android (preferred, versioned): `~/Desktop/git/ScheduleApp/Finalinstall/<version>/NeoOrganizer-<version>-release.apk`  
+  - `…/Finalinstall/1.2.0/NeoOrganizer-1.2.0-release.apk`  
   - `…/Finalinstall/1.1.0/NeoOrganizer-1.1.0-release.apk`  
   - Legacy flat: `…/Finalinstall/NeoOrganizer-1.0.0-release.apk`  
+- iOS package (from 1.2.0): `~/Desktop/git/ScheduleApp/Finalinstall/<version>/ios/`  
 - Earlier Project store copies: `/cursor/stores/self/artifacts/dayplanner-1.0.0-debug.apk`, `dayplanner-1.0.0-release.apk`  
 Also under `/opt/cursor/artifacts/` on build VMs.
 
