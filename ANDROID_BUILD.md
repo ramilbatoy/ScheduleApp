@@ -32,8 +32,8 @@ cd android
 Copy artifacts out of the tree when needed (versioned Finalinstall convention):
 
 ```bash
-mkdir -p Finalinstall/1.2.0
-cp android/app/build/outputs/apk/release/app-release.apk   Finalinstall/1.2.0/NeoOrganizer-1.2.0-release.apk
+mkdir -p Finalinstall/1.3.0
+cp android/app/build/outputs/apk/release/app-release.apk   Finalinstall/1.3.0/NeoOrganizer-1.3.0-release.apk
 ```
 
 APKs under `Finalinstall/` are gitignored. See `Finalinstall/README.md`.

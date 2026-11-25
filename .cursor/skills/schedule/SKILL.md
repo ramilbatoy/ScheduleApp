@@ -123,13 +123,14 @@ Update this section whenever a phase finishes, a PR merges, or acceptance status
 | NeoOrganizer 1.2.0 sideload packages | Merged to main (2026-11-24 Asia/Manila) | https://github.com/ramilbatoy/ScheduleApp/pull/25 — `versionName` 1.2.0 / `versionCode` 3; same package `com.dayplanner.app` + debug keystore SHA-1 `5E:8F:16:06:…:F6:25`. Android APK: `~/Desktop/git/ScheduleApp/Finalinstall/1.2.0/NeoOrganizer-1.2.0-release.apk`. iOS under `Finalinstall/1.2.0/ios/` (simulator `.app`, unsigned xcarchive/IPA; device IPA needs Apple signing). Report: `/cursor/stores/self/docs/neoorganizer-1.2.0-build-report.md` |
 | Tasks + Projects minimalist filters | Merged to main (2026-11-25 Asia/Manila) | https://github.com/ramilbatoy/ScheduleApp/pull/26 — `/tasks` and `/projects` compact wrapping dropdowns (WeekFilterBar pattern); Group by Folder kept; **248** tests. Report: `/cursor/stores/self/docs/tasks-filters-minimal-report.md` |
 | Completed labels + UI polish | Merged to main (2026-11-25 Asia/Manila) | https://github.com/ramilbatoy/ScheduleApp/pull/27 — Done→Completed copy; Go to date month/year; folder icon opens details; display 18 / title 16 (brand 20); `/projects` under tabs with `tabBarButton` hide (not `href: null`); **248** tests. Report: `/cursor/stores/self/docs/completed-labels-ui-polish-report.md` |
-| Day folders + subtask deadline + Settings menus | Open PR (2026-11-25 Asia/Manila) | https://github.com/ramilbatoy/ScheduleApp/pull/28 — Day folder expand no longer overlaps (scoped `flex:1` to Week); schema v4 `task_subtasks.deadline_at`; Settings App Branding + Navigation restored; **248** tests. Report: `/cursor/stores/self/docs/day-folders-subtask-deadline-report.md` |
+| Day folders + subtask deadline + Settings menus | Merged to main (2026-11-25 Asia/Manila) | https://github.com/ramilbatoy/ScheduleApp/pull/28 — Day folder expand no longer overlaps (scoped `flex:1` to Week); schema v4 `task_subtasks.deadline_at`; Settings App Branding + Navigation restored; **248** tests. Report: `/cursor/stores/self/docs/day-folders-subtask-deadline-report.md` |
+| NeoOrganizer 1.3.0 upgrade APK | Open PR (2026-11-25 Asia/Manila) | `versionName` 1.3.0 / `versionCode` 4; same package `com.dayplanner.app` + debug keystore SHA-1 `5E:8F:16:06:…:F6:25`. Android APK: `~/Desktop/git/ScheduleApp/Finalinstall/1.3.0/NeoOrganizer-1.3.0-release.apk`. Report: `/cursor/stores/self/docs/neoorganizer-1.3.0-build-report.md` |
 
 ### In progress / remaining
 
 | Item | Status | Notes |
 | --- | --- | --- |
-| Device re-verify | Optional | Physical phone smoke: install-over Finalinstall 1.2.0 APK (data keep), alarms, clipping |
+| Device re-verify | Optional | Physical phone smoke: install-over Finalinstall 1.3.0 APK (data keep from 1.0–1.2), alarms, clipping |
 | iOS signed IPA | Blocked | Needs Apple Developer team / certificates; see `Finalinstall/1.2.0/ios/README.md` |
 | Production signing | Optional | Replace debug-keystore release with Play/EAS credentials when publishing |
 | Project templates | Optional | Spec mentioned Website Launch / etc.; not required for core folders |
@@ -184,6 +185,7 @@ cd android && ./gradlew assembleDebug assembleRelease
 
 APK / iOS artifacts:  
 - Sideload Android (preferred, versioned): `~/Desktop/git/ScheduleApp/Finalinstall/<version>/NeoOrganizer-<version>-release.apk`  
+  - `…/Finalinstall/1.3.0/NeoOrganizer-1.3.0-release.apk`  
   - `…/Finalinstall/1.2.0/NeoOrganizer-1.2.0-release.apk`  
   - `…/Finalinstall/1.1.0/NeoOrganizer-1.1.0-release.apk`  
   - Legacy flat: `…/Finalinstall/NeoOrganizer-1.0.0-release.apk`  
