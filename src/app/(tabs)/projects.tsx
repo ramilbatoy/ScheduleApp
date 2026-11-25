@@ -7,6 +7,7 @@ import { useServices } from '@/state/appStore';
 import { PRIORITY_LABEL } from '@/ui/components/AgendaRow';
 import { FolderForm } from '@/ui/components/FolderForm';
 import { OptionsModal } from '@/ui/components/Pickers';
+import { ReadyScreen } from '@/ui/components/ReadyScreen';
 import { AppText, Button, Card, Chip, EmptyState, ErrorState, Icon, Input, LoadingState, type IconName } from '@/ui/components/primitives';
 import { useQuery, useTheme } from '@/ui/hooks';
 import { useSafeAndroidBack } from '@/ui/navigation';
@@ -47,6 +48,14 @@ function targetLabel(card: FolderCard): string | null {
 }
 
 export default function ProjectsScreen() {
+  return (
+    <ReadyScreen testID="projects-boot">
+      <ProjectsScreenReady />
+    </ReadyScreen>
+  );
+}
+
+function ProjectsScreenReady() {
   const p = useTheme();
   const services = useServices();
   useSafeAndroidBack();

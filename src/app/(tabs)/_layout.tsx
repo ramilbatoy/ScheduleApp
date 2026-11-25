@@ -40,8 +40,19 @@ export default function TabLayout() {
           }}
         />
       ))}
-      {/* Drawer / Settings reach Folders here so the bottom tabs stay visible. */}
-      <Tabs.Screen name="projects" options={{ title: 'Folders', href: null }} />
+      {/*
+        Folders stays in the tabs navigator so the bottom bar remains, but is not a tab item.
+        Do NOT use href: null — Expo Router maps that to options.hidden and TabVisibilityRedirect
+        bounces /projects back to the initial Day tab.
+      */}
+      <Tabs.Screen
+        name="projects"
+        options={{
+          title: 'Folders',
+          tabBarButton: () => null,
+          tabBarItemStyle: { display: 'none', width: 0, height: 0, overflow: 'hidden' },
+        }}
+      />
     </Tabs>
   );
 }

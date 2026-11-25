@@ -146,7 +146,7 @@ Update this section whenever a phase finishes, a PR merges, or acceptance status
 - Folder progress counts occurrences on or before today. Future recurring instances and events are excluded from the percent
 - Week/Day are folder-card first with compact status/priority/category/folder filter dropdowns; Month status is a dropdown. Weekly goals list removed from Week. Day heading shows Today or the selected date; bottom tab label is Day
 - Tasks (`/tasks`) filters use one wrapping dropdown row (kind/status/priority/category/folder/folder-target/sort) plus Group by Folder toggle; no horizontal status/kind chip strips
-- Projects / Folders (`/projects`) lives under the tabs layout (`href: null`) so the bottom tab bar stays visible; filters use Status + Sort wrapping dropdowns (no horizontal chip strips)
+- Projects / Folders (`/projects`) lives under the tabs layout with `tabBarButton: () => null` (not `href: null` — that sets `hidden` and redirects away); filters use Status + Sort wrapping dropdowns
 - User-facing status wording is **Completed** / **completed** (not Done/done); stored status values remain `completed`
 - Typography: `display` 18, `title` 16; AppHeader NeoOrganizer brand stays 20 via `BRAND_TITLE`
 - DatePickerModal Go to date exposes month + year pickers in addition to the day grid
