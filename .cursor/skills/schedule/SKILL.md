@@ -120,13 +120,13 @@ Update this section whenever a phase finishes, a PR merges, or acceptance status
 | Drawer / forms / Week / Settings polish | Merged to main (2026-11-23) | https://github.com/ramilbatoy/ScheduleApp/pull/22 — drawer defaults, searchable folder + priority dropdowns, Week folder cards, Settings polish; **247** tests |
 | NeoOrganizer 1.1.0 upgrade APK | Merged to main (2026-11-24 Asia/Manila) | https://github.com/ramilbatoy/ScheduleApp/pull/23 — `versionName` 1.1.0 / `versionCode` 2, launcher NeoOrganizer, Finalinstall/1.1.0 APK |
 | Quick Add / Edit forms / Reminder / Day polish | Merged to main (2026-11-24 Asia/Manila) | https://github.com/ramilbatoy/ScheduleApp/pull/24 — Quick Add folder+priority row (Auto inherit); current-time picker seed; Event / Start·End Date/Time; Alert reminder modal; Day tab rename + 20px heading; Day Priority/Category/Folder filters; Week/Month responsive filters; empty “Nothing is currently listed here.” **248** tests. Report: `/cursor/stores/self/docs/quick-add-forms-today-report.md` |
-| NeoOrganizer 1.2.0 sideload packages | Open PR (2026-11-24 Asia/Manila) | https://github.com/ramilbatoy/ScheduleApp/pull/25 — `versionName` 1.2.0 / `versionCode` 3; same package `com.dayplanner.app` + debug keystore SHA-1 `5E:8F:16:06:…:F6:25`. Android APK: `~/Desktop/git/ScheduleApp/Finalinstall/1.2.0/NeoOrganizer-1.2.0-release.apk`. iOS under `Finalinstall/1.2.0/ios/` (simulator `.app`, unsigned xcarchive/IPA; device IPA blocked — no Apple signing identities). Report: `/cursor/stores/self/docs/neoorganizer-1.2.0-build-report.md`. Branch `cursor/neoorganizer-1.2.0-sideload-08f7` |
+| NeoOrganizer 1.2.0 sideload packages | Merged to main (2026-11-24 Asia/Manila) | https://github.com/ramilbatoy/ScheduleApp/pull/25 — `versionName` 1.2.0 / `versionCode` 3; same package `com.dayplanner.app` + debug keystore SHA-1 `5E:8F:16:06:…:F6:25`. Android APK: `~/Desktop/git/ScheduleApp/Finalinstall/1.2.0/NeoOrganizer-1.2.0-release.apk`. iOS under `Finalinstall/1.2.0/ios/` (simulator `.app`, unsigned xcarchive/IPA; device IPA needs Apple signing). Report: `/cursor/stores/self/docs/neoorganizer-1.2.0-build-report.md` |
+| Tasks page minimalist filters | Open PR (2026-11-25 Asia/Manila) | https://github.com/ramilbatoy/ScheduleApp/pull/26 — `/tasks` status/kind/priority/category/folder/target/sort as wrapping dropdowns (WeekFilterBar pattern); Group by Folder kept; **248** tests. Report: `/cursor/stores/self/docs/tasks-filters-minimal-report.md` |
 
 ### In progress / remaining
 
 | Item | Status | Notes |
 | --- | --- | --- |
-| NeoOrganizer 1.2.0 sideload PR | Open | Merge after review; device install-over-1.1.0 smoke recommended |
 | Device re-verify | Optional | Physical phone smoke: install-over Finalinstall 1.2.0 APK (data keep), alarms, clipping |
 | iOS signed IPA | Blocked | Needs Apple Developer team / certificates; see `Finalinstall/1.2.0/ios/README.md` |
 | Production signing | Optional | Replace debug-keystore release with Play/EAS credentials when publishing |
@@ -144,6 +144,7 @@ Update this section whenever a phase finishes, a PR merges, or acceptance status
 - “Overdue since” is derived from stored dates (original occurrence date, assigned day, deadline local date, carry-forward and late reschedule history). There is no separate overdue timestamp
 - Folder progress counts occurrences on or before today. Future recurring instances and events are excluded from the percent
 - Week/Day are folder-card first with compact status/priority/category/folder filter dropdowns; Month status is a dropdown. Weekly goals list removed from Week. Day heading shows Today or the selected date; bottom tab label is Day
+- Tasks (`/tasks`) filters use one wrapping dropdown row (kind/status/priority/category/folder/folder-target/sort) plus Group by Folder toggle; no horizontal status/kind chip strips
 - Settings no longer shows App Branding or Navigation editors; branding bytes and drawer prefs still persist. Defaults for new installs: drawer Tasks / Folders / About; `collapseFoldersByDefault` true
 - Existing installs keep a previously saved drawer order until that setting is rewritten
 - `npm run lint` has no committed ESLint config; first `expo lint` can fail on pre-existing files
