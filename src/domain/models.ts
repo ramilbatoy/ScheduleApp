@@ -242,6 +242,10 @@ export interface AppSettings {
   showFolderPriority: boolean;
   /** Folder create/edit shows Target date only when this is on. Default hidden. */
   showFolderTargetDate: boolean;
+  /** Folder list (`/projects`) default layout. */
+  defaultFolderListView: 'grid' | 'list';
+  /** Folder detail shows the inline Quick Add section when true. Default hidden; floating + still works. */
+  showFolderQuickAdd: boolean;
 }
 
 export const DEFAULT_SETTINGS: AppSettings = {
@@ -261,6 +265,8 @@ export const DEFAULT_SETTINGS: AppSettings = {
   collapseFoldersByDefault: true,
   showFolderPriority: false,
   showFolderTargetDate: false,
+  defaultFolderListView: 'grid',
+  showFolderQuickAdd: false,
 };
 
 /** An occurrence joined with its parent definition — what most screens render. */

@@ -1,12 +1,14 @@
 import { useState } from 'react';
-import { StyleSheet, View } from 'react-native';
+import { View } from 'react-native';
 
 import { PRIORITIES, type Priority } from '@/domain/models';
 import type { ListFilter, StatusFilter } from '@/domain/services/agendaService';
 import { PRIORITY_LABEL } from '@/ui/components/AgendaRow';
+import { CompactFilterToolbar } from '@/ui/components/CompactFilterToolbar';
 import { OptionsModal } from '@/ui/components/Pickers';
 import { DAY_STATUS_OPTIONS } from '@/ui/components/StatusFilterDropdown';
-import { AppText, Chip, Icon, Input } from '@/ui/components/primitives';
+import { type ListLayout } from '@/ui/components/ViewLayoutToggle';
+import { AppText } from '@/ui/components/primitives';
 import { useQuery, useTheme } from '@/ui/hooks';
 import { spacing } from '@/ui/theme';
 
@@ -62,11 +64,14 @@ type Props = {
   onFolder: (v: WeekFolderFilter) => void;
   matchCount?: number;
   testID?: string;
-  /** Hide the search field (Day already has date context). */
+  /** Hide the search field (legacy; search is always a popup now). */
   hideSearch?: boolean;
+  layout?: ListLayout;
+  onLayoutChange?: (next: ListLayout) => void;
+  searchPlaceholder?: string;
 };
 
-/** Compact dropdown filters for Week / Day planners (status / priority / category / folder). */
+/** Compact filter dropdown + search popup for Week / Day planners. */
 export function WeekFilterBar({
   state,
   onText,
@@ -76,9 +81,13 @@ export function WeekFilterBar({
   onFolder,
   matchCount,
   testID = 'week-filter',
-  hideSearch = false,
+  layout,
+  onLayoutChange,
+  searchPlaceholder = 'Search: task, events, or folder',
 }: Props) {
   const p = useTheme();
+  const [filtersOpen, setFiltersOpen] = useState(false);
+  const [searchOpen, setSearchOpen] = useState(false);
   const [picker, setPicker] = useState<null | 'status' | 'priority' | 'category' | 'folder'>(null);
   const categories = useQuery((s) => s.categories.list(), []);
   const folders = useQuery((s) => s.folders.list(), []);
@@ -89,56 +98,54 @@ export function WeekFilterBar({
   const folderLabel =
     state.folder === 'unassigned' ? 'Unassigned' : folder ? folder.name : state.folder ? 'Folder' : 'Any folder';
 
+  function openPicker(next: 'status' | 'priority' | 'category' | 'folder') {
+    setFiltersOpen(false);
+    setPicker(next);
+  }
+
+  function closePicker() {
+    setPicker(null);
+    setFiltersOpen(true);
+  }
+
   return (
-    <View style={{ gap: spacing.sm }} testID={testID}>
-      {!hideSearch ? (
-        <View style={styles.search}>
-          <View style={styles.searchIcon}>
-            <Icon name="search" size={18} color={p.textSecondary} />
-          </View>
-          <Input
-            testID={`${testID}-search`}
-            value={state.text}
-            onChangeText={onText}
-            placeholder="Search titles, notes"
-            style={{ paddingLeft: 40 }}
-            clearButtonMode="while-editing"
-          />
-        </View>
-      ) : null}
-      <View style={styles.chipRow}>
-        <Chip
-          testID={`${testID}-status`}
-          icon="filter-outline"
-          label={`Status: ${statusLabel}`}
-          selected={state.status !== 'all'}
-          onPress={() => setPicker('status')}
-        />
-        <Chip
-          testID={`${testID}-priority`}
-          icon="flag"
-          label={state.priority ? PRIORITY_LABEL[state.priority] : 'Priority'}
-          color={state.priority ? p.priority[state.priority] : undefined}
-          selected={!!state.priority}
-          onPress={() => setPicker('priority')}
-        />
-        <Chip
-          testID={`${testID}-category`}
-          label={category?.name ?? 'Category'}
-          icon={category ? undefined : 'pricetag-outline'}
-          color={category?.color}
-          selected={!!category}
-          onPress={() => setPicker('category')}
-        />
-        <Chip
-          testID={`${testID}-folder`}
-          icon="folder-outline"
-          label={folderLabel}
-          color={folder?.color}
-          selected={state.folder !== null}
-          onPress={() => setPicker('folder')}
-        />
-      </View>
+    <View style={{ gap: spacing.sm }}>
+      <CompactFilterToolbar
+        testID={testID}
+        searchValue={state.text}
+        searchOpen={searchOpen}
+        onSearchOpenChange={setSearchOpen}
+        onSearchChange={onText}
+        searchPlaceholder={searchPlaceholder}
+        filtersOpen={filtersOpen}
+        onFiltersOpenChange={setFiltersOpen}
+        layout={layout}
+        onLayoutChange={onLayoutChange}
+        filterRows={[
+          { testID: `${testID}-status`, icon: 'filter-outline', label: 'Status', value: statusLabel, onPress: () => openPicker('status') },
+          {
+            testID: `${testID}-priority`,
+            icon: 'flag',
+            label: 'Priority',
+            value: state.priority ? PRIORITY_LABEL[state.priority] : 'Any',
+            onPress: () => openPicker('priority'),
+          },
+          {
+            testID: `${testID}-category`,
+            icon: 'pricetag-outline',
+            label: 'Category',
+            value: category?.name ?? 'Any',
+            onPress: () => openPicker('category'),
+          },
+          {
+            testID: `${testID}-folder`,
+            icon: 'folder-outline',
+            label: 'Folder',
+            value: folderLabel,
+            onPress: () => openPicker('folder'),
+          },
+        ]}
+      />
       {typeof matchCount === 'number' ? (
         <AppText variant="caption" muted>
           {matchCount} match{matchCount === 1 ? '' : 'es'}
@@ -150,7 +157,7 @@ export function WeekFilterBar({
         value={state.status}
         options={DAY_STATUS_OPTIONS}
         onChange={onStatus}
-        onClose={() => setPicker(null)}
+        onClose={closePicker}
       />
       <OptionsModal<Priority | null>
         visible={picker === 'priority'}
@@ -158,7 +165,7 @@ export function WeekFilterBar({
         value={state.priority}
         options={[{ value: null, label: 'Any priority' }, ...PRIORITIES.map((x) => ({ value: x, label: PRIORITY_LABEL[x], color: p.priority[x] }))]}
         onChange={onPriority}
-        onClose={() => setPicker(null)}
+        onClose={closePicker}
       />
       <OptionsModal<string | null>
         visible={picker === 'category'}
@@ -166,7 +173,7 @@ export function WeekFilterBar({
         value={state.categoryId}
         options={[{ value: null, label: 'Any category' }, ...(categories.data ?? []).map((c) => ({ value: c.id, label: c.name, color: c.color }))]}
         onChange={onCategoryId}
-        onClose={() => setPicker(null)}
+        onClose={closePicker}
       />
       <OptionsModal<WeekFolderFilter>
         visible={picker === 'folder'}
@@ -180,14 +187,8 @@ export function WeekFilterBar({
             .map((f) => ({ value: f.id as WeekFolderFilter, label: f.name, color: f.color })),
         ]}
         onChange={onFolder}
-        onClose={() => setPicker(null)}
+        onClose={closePicker}
       />
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  search: { justifyContent: 'center' },
-  searchIcon: { position: 'absolute', left: 12, zIndex: 1 },
-  chipRow: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm },
-});

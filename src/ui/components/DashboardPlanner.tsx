@@ -1,7 +1,7 @@
 import { addDays, addMonths, endOfWeek, format, startOfWeek } from 'date-fns';
 import { router } from 'expo-router';
 import { useState } from 'react';
-import { StyleSheet, View } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
 
 import { addDaysKey, formatDateKey, fromDateKey, toDateKey } from '@/domain/dates';
 import type { Agenda, DateKey } from '@/domain/models';
@@ -18,6 +18,7 @@ import { DatePickerModal } from '@/ui/components/Pickers';
 import { MonthTaskGrid } from '@/ui/components/MonthTaskGrid';
 import { PlannerDayGroups, PlannerWeekGroups } from '@/ui/components/PlannerFolderGroups';
 import { useWeekFilterState, WeekFilterBar } from '@/ui/components/WeekFilterBar';
+import { type ListLayout } from '@/ui/components/ViewLayoutToggle';
 import { AppText, Button, Card, ErrorState, IconButton, LoadingState } from '@/ui/components/primitives';
 import { useQuery, useTheme } from '@/ui/hooks';
 import { useServices, useSettings } from '@/state/appStore';
@@ -82,6 +83,7 @@ export function DashboardWeekView({
 }) {
   const p = useTheme();
   const services = useServices();
+  const [layout, setLayout] = useState<ListLayout>('grid');
   const [start, end] = mondayWeekRange(anchor);
   const thisWeekStart = mondayWeekRange(today)[0];
   const items = useQuery((s) => s.agenda.range(start, end), [start, end]);
@@ -117,7 +119,15 @@ export function DashboardWeekView({
         <IconButton icon="chevron-forward" label="Next week" onPress={() => onShiftWeek(1)} testID="dash-week-next" />
       </View>
       {start !== thisWeekStart ? (
-        <Button label="This week" compact tone="ghost" icon="locate-outline" onPress={onJumpThisWeek} />
+        <Button
+          testID="dash-week-this"
+          label="This week"
+          compact
+          tone="ghost"
+          icon="today-outline"
+          onPress={onJumpThisWeek}
+          style={styles.thisWeekBtn}
+        />
       ) : null}
       <WeekFilterBar
         testID="dash-week-filter"
@@ -128,30 +138,36 @@ export function DashboardWeekView({
         onCategoryId={filterCtl.setCategoryId}
         onFolder={filterCtl.setFolder}
         matchCount={items.data ? filtered.length + earlier.length : undefined}
+        layout={layout}
+        onLayoutChange={setLayout}
       />
       <View style={styles.weekStrip} testID="dash-week-days">
         {days.map((d) => (
-          <View key={d} style={[styles.weekDayChip, { backgroundColor: d === today ? p.primarySoft : p.surfaceVariant }]} testID={`dash-week-${d}`}>
+          <Pressable
+            key={d}
+            accessibilityRole="button"
+            accessibilityLabel={`Add on ${formatDateKey(d, 'EEEE')}`}
+            onPress={() => router.push({ pathname: '/quick-add', params: { date: d } })}
+            style={({ pressed }) => [
+              styles.weekDayChip,
+              { backgroundColor: d === today ? p.primarySoft : p.surfaceVariant, opacity: pressed ? 0.85 : 1 },
+            ]}
+            testID={`dash-week-${d}`}>
             <AppText variant="caption" color={d === today ? p.primary : p.textSecondary} style={{ textAlign: 'center' }}>
               {formatDateKey(d, 'EEE')}
             </AppText>
             <AppText variant="label" color={d === today ? p.primary : p.text} style={{ textAlign: 'center' }}>
               {formatDateKey(d, 'd')}
             </AppText>
-            <IconButton
-              icon="add-circle-outline"
-              label={`Add on ${formatDateKey(d, 'EEEE')}`}
-              color={p.primary}
-              size={18}
-              onPress={() => router.push({ pathname: '/quick-add', params: { date: d } })}
-              testID={`dash-week-add-${d}`}
-            />
-          </View>
+            <View style={styles.dotSlot}>
+              {d === today ? <View style={[styles.dot, { backgroundColor: p.primary }]} testID={`dash-week-dot-${d}`} /> : null}
+            </View>
+          </Pressable>
         ))}
       </View>
       {items.error ? <ErrorState message={items.error} onRetry={items.reload} /> : null}
       {!items.data && !items.error ? <LoadingState /> : null}
-      {items.data ? <PlannerWeekGroups groups={grouped} today={today} testID="dash-week-groups" /> : null}
+      {items.data ? <PlannerWeekGroups groups={grouped} today={today} layout={layout} testID="dash-week-groups" /> : null}
     </View>
   );
 }
@@ -171,6 +187,7 @@ export function DashboardMonthView({
 }) {
   const services = useServices();
   const [goToOpen, setGoToOpen] = useState(false);
+  const [layout, setLayout] = useState<ListLayout>('grid');
   const monthStart = `${anchor.slice(0, 7)}-01` as DateKey;
   const monthEnd = toDateKey(addDays(addMonths(fromDateKey(monthStart), 1), -1));
   const gridFirst = toDateKey(startOfWeek(fromDateKey(monthStart), { weekStartsOn: 0 }));
@@ -196,24 +213,21 @@ export function DashboardMonthView({
     <View style={{ gap: spacing.md }} testID="dashboard-month">
       <View style={styles.nav}>
         <IconButton icon="chevron-back" label="Previous month" onPress={() => onShiftMonth(-1)} testID="dash-month-prev" />
-        <AppText variant="title" style={{ flex: 1, textAlign: 'center' }} testID="dash-month-title">
-          {format(fromDateKey(anchor), 'MMMM yyyy')}
-        </AppText>
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel="Go to date"
+          onPress={() => setGoToOpen(true)}
+          testID="dash-month-title"
+          style={({ pressed }) => [{ flex: 1, opacity: pressed ? 0.75 : 1 }]}>
+          <AppText variant="title" style={{ textAlign: 'center' }}>
+            {format(fromDateKey(anchor), 'MMMM yyyy')}
+          </AppText>
+        </Pressable>
         <IconButton icon="chevron-forward" label="Next month" onPress={() => onShiftMonth(1)} testID="dash-month-next" />
       </View>
-      <View style={styles.goToRow}>
-        <Button
-          label="Go to date"
-          compact
-          tone="secondary"
-          icon="calendar-outline"
-          onPress={() => setGoToOpen(true)}
-          testID="dash-month-goto"
-        />
-        {!isSameMonth(anchor, today) ? (
-          <Button label="This month" compact tone="ghost" icon="locate-outline" onPress={onJumpThisMonth} testID="dash-month-this" />
-        ) : null}
-      </View>
+      {!isSameMonth(anchor, today) ? (
+        <Button label="This month" compact tone="ghost" icon="today-outline" onPress={onJumpThisMonth} testID="dash-month-this" style={styles.thisWeekBtn} />
+      ) : null}
       <AgendaFilterBar
         testID="dash-month-filter"
         state={filterCtl.state}
@@ -223,6 +237,8 @@ export function DashboardMonthView({
         onCategoryId={filterCtl.setCategoryId}
         onSort={filterCtl.setSort}
         matchCount={range.data ? filteredRange.length : undefined}
+        layout={layout}
+        onLayoutChange={setLayout}
       />
       {range.error ? <ErrorState message={range.error} onRetry={range.reload} /> : null}
       {!range.data && !range.error ? <LoadingState /> : null}
@@ -251,11 +267,12 @@ export function DashboardMonthView({
           today={today}
           rangeLabel="This day"
           testID="dash-month-groups"
-          emptyText={day.data.length ? 'No matches for this day.' : 'Nothing scheduled. Tap + to add.'}
+          emptyText={day.data.length ? 'No matches for this day.' : 'Nothing scheduled.'}
           showTaskDate={(a) => a.occurrence.date !== anchor}
+          hideUnassignedHeader
+          layout={layout}
         />
       ) : null}
-      <Button label="Add to this day" icon="add" tone="secondary" onPress={() => router.push({ pathname: '/quick-add', params: { date: anchor } })} />
       <DatePickerModal
         visible={goToOpen}
         value={anchor}
@@ -280,5 +297,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 2,
   },
-  goToRow: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm, alignItems: 'center' },
+  thisWeekBtn: { alignSelf: 'center' },
+  dotSlot: { height: 6, justifyContent: 'center', alignItems: 'center' },
+  dot: { width: 5, height: 5, borderRadius: 2.5 },
 });

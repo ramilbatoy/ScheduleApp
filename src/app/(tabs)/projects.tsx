@@ -1,14 +1,15 @@
 import { router } from 'expo-router';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 
 import type { FolderCard, FolderListFilter, FolderSortKey } from '@/domain/folderProgress';
-import { useServices } from '@/state/appStore';
+import { useServices, useSettings } from '@/state/appStore';
 import { PRIORITY_LABEL } from '@/ui/components/AgendaRow';
 import { FolderForm } from '@/ui/components/FolderForm';
 import { OptionsModal } from '@/ui/components/Pickers';
 import { ReadyScreen } from '@/ui/components/ReadyScreen';
 import { SearchFieldPopup } from '@/ui/components/SearchFieldPopup';
+import { ViewLayoutToggle, type ListLayout } from '@/ui/components/ViewLayoutToggle';
 import { AppText, Button, Card, Chip, EmptyState, ErrorState, Icon, IconButton, LoadingState, type IconName } from '@/ui/components/primitives';
 import { useQuery, useTheme } from '@/ui/hooks';
 import { useSafeAndroidBack } from '@/ui/navigation';
@@ -59,18 +60,23 @@ export default function ProjectsScreen() {
 function ProjectsScreenReady() {
   const p = useTheme();
   const services = useServices();
+  const settings = useSettings();
   useSafeAndroidBack();
   const [text, setText] = useState('');
   const [searchOpen, setSearchOpen] = useState(false);
   const [filter, setFilter] = useState<FolderListFilter>('all');
   const [sort, setSort] = useState<FolderSortKey>('name');
   const [creating, setCreating] = useState(false);
-  const [layout, setLayout] = useState<'list' | 'grid'>('list');
+  const [layout, setLayout] = useState<ListLayout>(settings.defaultFolderListView);
   const [picker, setPicker] = useState<null | 'filter' | 'sort'>(null);
   const all = useQuery((s) => s.folders.cards(), []);
   const shown = useQuery((s) => s.folders.cards({ text, filter, sort }), [text, filter, sort]);
   const filterLabel = FILTERS.find((f) => f.value === filter)?.label ?? 'All';
   const sortLabel = SORTS.find((s) => s.value === sort)?.label ?? 'Name';
+
+  useEffect(() => {
+    setLayout(settings.defaultFolderListView);
+  }, [settings.defaultFolderListView]);
 
   const counts = {
     active: (all.data ?? []).filter((c) => c.status === 'active').length,
@@ -98,31 +104,30 @@ function ProjectsScreenReady() {
           <AppText variant="display" style={{ flexShrink: 1 }} numberOfLines={1} testID="projects-title">
             Folder
           </AppText>
-          <IconButton testID="projects-search-open" icon="search" label="Search folders" onPress={() => setSearchOpen(true)} />
-          <Chip
-            testID="projects-filter"
-            icon="filter-outline"
-            label={filterLabel}
-            selected={filter !== 'all'}
-            onPress={() => setPicker('filter')}
-          />
-          <Chip
-            testID="projects-sort"
-            icon="swap-vertical"
-            label={sortLabel}
-            selected={sort !== 'name'}
-            onPress={() => setPicker('sort')}
-          />
-          <IconButton
-            testID="projects-layout"
-            icon={layout === 'list' ? 'grid-outline' : 'list-outline'}
-            label={layout === 'list' ? 'Show grid' : 'Show list'}
-            onPress={() => setLayout((v) => (v === 'list' ? 'grid' : 'list'))}
-          />
+          <View style={styles.titleControls}>
+            <IconButton testID="projects-search-open" icon="search" label="Search folders" onPress={() => setSearchOpen(true)} />
+            <Chip
+              testID="projects-filter"
+              icon="filter-outline"
+              label={filterLabel}
+              selected={filter !== 'all'}
+              onPress={() => setPicker('filter')}
+            />
+            <Chip
+              testID="projects-sort"
+              icon="swap-vertical"
+              label={sortLabel}
+              selected={sort !== 'name'}
+              onPress={() => setPicker('sort')}
+            />
+          </View>
         </View>
-        <AppText variant="caption" muted testID="projects-overview">
-          {counts.active} active · {counts.overdue} overdue · {counts.completed} completed
-        </AppText>
+        <View style={styles.overviewRow}>
+          <AppText variant="caption" muted style={{ flex: 1 }} testID="projects-overview">
+            {counts.active} active · {counts.overdue} overdue · {counts.completed} completed
+          </AppText>
+          <ViewLayoutToggle testID="projects-layout" layout={layout} onChange={setLayout} />
+        </View>
         {shown.error ? <ErrorState message={shown.error} onRetry={shown.reload} /> : null}
         {!shown.data && !shown.error ? <LoadingState /> : null}
         {shown.data && shown.data.length === 0 ? (
@@ -236,7 +241,9 @@ function ProjectsScreenReady() {
 }
 
 const styles = StyleSheet.create({
-  titleRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs, flexWrap: 'wrap' },
+  titleRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, justifyContent: 'space-between' },
+  titleControls: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs, flexWrap: 'wrap', justifyContent: 'flex-end', flexShrink: 1 },
+  overviewRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
   track: { height: 6, borderRadius: radius.sm, overflow: 'hidden' },
   grid: { flexDirection: 'row', flexWrap: 'wrap', marginHorizontal: -6 },
   gridCell: { width: '50%', paddingHorizontal: 6, paddingBottom: 12 },

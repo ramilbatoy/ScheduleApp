@@ -9,6 +9,7 @@ import { useAppStore } from '@/state/appStore';
 import { AgendaRow, PRIORITY_LABEL } from '@/ui/components/AgendaRow';
 import { FolderTaskCard } from '@/ui/components/FolderTaskCard';
 import { OptionsModal, Sheet } from '@/ui/components/Pickers';
+import { ViewLayoutToggle } from '@/ui/components/ViewLayoutToggle';
 import { AppText, EmptyState, ErrorState, IconButton, ListRow, LoadingState, SwitchRow } from '@/ui/components/primitives';
 import { QuickAddButton } from '@/ui/components/QuickAddButton';
 import { SearchFieldPopup } from '@/ui/components/SearchFieldPopup';
@@ -49,7 +50,7 @@ export function ItemBrowseScreen({ kind, title }: { kind: ItemKind; title: strin
   const [folderAssignment, setFolderAssignment] = useState<FolderAssignmentFilter>('any');
   const [sort, setSort] = useState<SortKey>('date');
   const [groupByFolder, setGroupByFolder] = useState(false);
-  const [layout, setLayout] = useState<'list' | 'grid'>('list');
+  const [layout, setLayout] = useState<'list' | 'grid'>('grid');
   const [picker, setPicker] = useState<Picker | null>(null);
   const categories = useQuery((s) => s.categories.list(), []);
   const folders = useQuery((s) => s.folders.cards(), []);
@@ -115,12 +116,7 @@ export function ItemBrowseScreen({ kind, title }: { kind: ItemKind; title: strin
         </AppText>
         <IconButton testID={`${kind}-search-open`} icon="search" label="Search" onPress={() => setSearchOpen(true)} />
         <IconButton testID={`${kind}-options`} icon="ellipsis-horizontal" label="Options" onPress={() => setOptionsOpen(true)} />
-        <IconButton
-          testID={`${kind}-layout`}
-          icon={layout === 'list' ? 'grid-outline' : 'list-outline'}
-          label={layout === 'list' ? 'Show grid' : 'Show list'}
-          onPress={() => setLayout((v) => (v === 'list' ? 'grid' : 'list'))}
-        />
+        <ViewLayoutToggle testID={`${kind}-layout`} layout={layout} onChange={setLayout} />
       </View>
       {list.data ? (
         <AppText variant="caption" muted>

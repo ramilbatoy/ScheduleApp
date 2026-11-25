@@ -1,5 +1,5 @@
 import { useState, type ReactNode } from 'react';
-import { Pressable, StyleSheet, useWindowDimensions, View } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
 import { router } from 'expo-router';
 
 import { formatDateKey } from '@/domain/dates';
@@ -165,6 +165,7 @@ export function PlannerDayGroups({
   showTaskDate,
   /** Day tab: hide the Unassigned label + count; still list the tasks. */
   hideUnassignedHeader = false,
+  layout = 'list',
 }: {
   groups: DayFolderGroups;
   today: DateKey;
@@ -173,26 +174,32 @@ export function PlannerDayGroups({
   emptyText: string;
   showTaskDate?: (a: Agenda) => boolean;
   hideUnassignedHeader?: boolean;
+  layout?: 'grid' | 'list';
 }) {
   if (!groups.folders.length && !groups.unassigned.length) return <AppText muted>{emptyText}</AppText>;
+  const folderWrap = layout === 'grid' ? styles.dayGrid : undefined;
+  const folderCell = layout === 'grid' ? styles.dayGridCell : undefined;
   return (
     <View style={{ gap: spacing.md }} testID={testID}>
-      {groups.folders.map((group) => (
-        <FolderGroupCard
-          key={group.folder.id}
-          folder={group.folder}
-          today={today}
-          rangeLabel={rangeLabel}
-          range={group.range}
-          overall={group.overall}
-          testID={`${testID}-folder-${group.folder.id}`}>
-          {group.tasks.length ? (
-            <TaskList items={group.tasks} testPrefix={`${testID}-task-${group.folder.id}`} showDate={showTaskDate} />
-          ) : (
-            <AppText muted>No matching tasks.</AppText>
-          )}
-        </FolderGroupCard>
-      ))}
+      <View style={folderWrap}>
+        {groups.folders.map((group) => (
+          <View key={group.folder.id} style={folderCell}>
+            <FolderGroupCard
+              folder={group.folder}
+              today={today}
+              rangeLabel={rangeLabel}
+              range={group.range}
+              overall={group.overall}
+              testID={`${testID}-folder-${group.folder.id}`}>
+              {group.tasks.length ? (
+                <TaskList items={group.tasks} testPrefix={`${testID}-task-${group.folder.id}`} showDate={showTaskDate} />
+              ) : (
+                <AppText muted>No matching tasks.</AppText>
+              )}
+            </FolderGroupCard>
+          </View>
+        ))}
+      </View>
       {groups.unassigned.length || !hideUnassignedHeader ? (
         <View style={{ gap: spacing.sm }} testID={`${testID}-unassigned`}>
           {hideUnassignedHeader ? null : <SectionHeader title="Unassigned" count={groups.unassigned.length} />}
@@ -232,10 +239,19 @@ export function weekFolderColumns(width: number): 1 | 2 | 3 {
   return 1;
 }
 
-export function PlannerWeekGroups({ groups, today, testID }: { groups: WeekFolderGroups; today: DateKey; testID: string }) {
+export function PlannerWeekGroups({
+  groups,
+  today,
+  testID,
+  layout = 'grid',
+}: {
+  groups: WeekFolderGroups;
+  today: DateKey;
+  testID: string;
+  layout?: 'grid' | 'list';
+}) {
   const p = useTheme();
-  const { width } = useWindowDimensions();
-  const columns = weekFolderColumns(width);
+  const columns = layout === 'list' ? 1 : 2;
   const looseCount = groups.unassignedByDay.reduce((n, d) => n + d.tasks.length, 0);
   if (!groups.folders.length && !looseCount) return <AppText muted>Nothing is currently listed here.</AppText>;
   return (
@@ -246,8 +262,8 @@ export function PlannerWeekGroups({ groups, today, testID }: { groups: WeekFolde
             key={group.folder.id}
             style={{
               flexGrow: 1,
-              flexBasis: columns === 1 ? '100%' : columns === 2 ? '47%' : '30%',
-              maxWidth: columns === 1 ? '100%' : columns === 2 ? '49%' : '32%',
+              flexBasis: columns === 1 ? '100%' : '47%',
+              maxWidth: columns === 1 ? '100%' : '49%',
               minWidth: columns === 1 ? '100%' : 220,
             }}>
             <FolderGroupCard
@@ -256,7 +272,7 @@ export function PlannerWeekGroups({ groups, today, testID }: { groups: WeekFolde
               rangeLabel="This week"
               range={group.range}
               overall={group.overall}
-              stretch
+              stretch={layout === 'grid'}
               testID={`${testID}-folder-${group.folder.id}`}>
               <WeekFolderBody group={group} today={today} testID={`${testID}-folder-${group.folder.id}`} />
             </FolderGroupCard>
@@ -285,4 +301,6 @@ export function PlannerWeekGroups({ groups, today, testID }: { groups: WeekFolde
 
 const styles = StyleSheet.create({
   grid: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'stretch' },
+  dayGrid: { flexDirection: 'row', flexWrap: 'wrap', marginHorizontal: -6 },
+  dayGridCell: { width: '50%', paddingHorizontal: 6, paddingBottom: 12 },
 });

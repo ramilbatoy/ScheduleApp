@@ -20,6 +20,7 @@ import {
 import { PlannerDayGroups } from '@/ui/components/PlannerFolderGroups';
 import { ReadyScreen } from '@/ui/components/ReadyScreen';
 import { useWeekFilterState, WeekFilterBar } from '@/ui/components/WeekFilterBar';
+import { type ListLayout } from '@/ui/components/ViewLayoutToggle';
 import { AppText, Button, Card, ErrorState, Icon, LoadingState, SectionHeader, Segmented } from '@/ui/components/primitives';
 import { QuickAddButton } from '@/ui/components/QuickAddButton';
 import { useAction, useQuery, useTheme } from '@/ui/hooks';
@@ -112,6 +113,7 @@ function TodayDashboard({
   const stripEnd = stripDays[stripDays.length - 1]!;
   const summariesQ = useQuery((s) => s.agenda.summaries(stripStart, stripEnd), [stripStart, stripEnd]);
   const filterCtl = useWeekFilterState({ status: 'all' });
+  const [layout, setLayout] = useState<ListLayout>('grid');
   const now = services.clock.now();
   const items = dayQ.data ?? [];
   const overall = new Map((cards.data ?? []).map((c) => [c.id, c.progress]));
@@ -162,7 +164,9 @@ function TodayDashboard({
         onPriority={filterCtl.setPriority}
         onCategoryId={filterCtl.setCategoryId}
         onFolder={filterCtl.setFolder}
-        hideSearch
+        layout={layout}
+        onLayoutChange={setLayout}
+        searchPlaceholder="Search: task, events, or folder"
       />
 
       {dayQ.error ? <ErrorState message={dayQ.error} onRetry={dayQ.reload} /> : null}
@@ -213,6 +217,7 @@ function TodayDashboard({
                 emptyText={EMPTY_DAY_COPY}
                 showTaskDate={(a) => a.occurrence.date < systemToday}
                 hideUnassignedHeader
+                layout={layout}
               />
             </>
           ) : null}

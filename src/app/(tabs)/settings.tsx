@@ -211,6 +211,25 @@ function SettingsScreenReady() {
           Hiding a shortcut does not remove the screen. Day, Calendar, Tasks, and Events stay on the bottom tabs.
         </AppText>
       </Card>
+
+      <AppText variant="label" muted>
+        FOLDER LIST
+      </AppText>
+      <Card>
+        <AppText>Default folder list view</AppText>
+        <AppText variant="caption" muted>
+          Opens the Folder page in grid or list. You can still switch on the page.
+        </AppText>
+        <Segmented<'grid' | 'list'>
+          testID="default-folder-list-view"
+          value={settings.defaultFolderListView}
+          onChange={(v) => update('defaultFolderListView', v)}
+          options={[
+            { value: 'grid', label: 'Grid' },
+            { value: 'list', label: 'List' },
+          ]}
+        />
+      </Card>
     </>
   );
 
@@ -299,6 +318,14 @@ function SettingsScreenReady() {
           description="Folders with no tasks stay on the Folders page. Turn this on to list them on Tasks and on Today, Week, and Month when nothing in that view matches."
           value={settings.showEmptyFoldersOnTasks}
           onChange={(v) => update('showEmptyFoldersOnTasks', v)}
+        />
+        <Divider />
+        <SwitchRow
+          testID="toggle-folder-quick-add"
+          label="Show Quick Add on folder detail"
+          description="Shows the inline Quick Add section on a folder page. The floating + still adds a task to that folder either way."
+          value={settings.showFolderQuickAdd}
+          onChange={(v) => update('showFolderQuickAdd', v)}
         />
       </Card>
 

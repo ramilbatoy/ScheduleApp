@@ -1,11 +1,13 @@
 import { useState } from 'react';
-import { StyleSheet, View } from 'react-native';
+import { View } from 'react-native';
 
 import { PRIORITIES, type Priority } from '@/domain/models';
 import type { ListFilter, SortKey, StatusFilter } from '@/domain/services/agendaService';
 import { PRIORITY_LABEL } from '@/ui/components/AgendaRow';
+import { CompactFilterToolbar } from '@/ui/components/CompactFilterToolbar';
 import { OptionsModal } from '@/ui/components/Pickers';
-import { AppText, Chip, Icon, Input } from '@/ui/components/primitives';
+import { type ListLayout } from '@/ui/components/ViewLayoutToggle';
+import { AppText } from '@/ui/components/primitives';
 import { useQuery, useTheme } from '@/ui/hooks';
 import { spacing } from '@/ui/theme';
 
@@ -80,11 +82,12 @@ type Props = {
   matchCount?: number;
   testID?: string;
   searchPlaceholder?: string;
+  layout?: ListLayout;
+  onLayoutChange?: (next: ListLayout) => void;
 };
 
 /**
- * Search + status/priority/category/sort compact dropdowns.
- * Status is a single dropdown (not a permanent chip strip). Chips wrap on narrow widths.
+ * Search popup + status/priority/category/sort in one filters sheet.
  */
 export function AgendaFilterBar({
   state,
@@ -98,62 +101,78 @@ export function AgendaFilterBar({
   showStatusRow = true,
   matchCount,
   testID = 'agenda-filter',
-  searchPlaceholder = 'Search titles, notes',
+  searchPlaceholder = 'Search: task, events, or folder',
+  layout,
+  onLayoutChange,
 }: Props) {
   const p = useTheme();
+  const [filtersOpen, setFiltersOpen] = useState(false);
+  const [searchOpen, setSearchOpen] = useState(false);
   const [picker, setPicker] = useState<null | 'sort' | 'category' | 'priority' | 'status'>(null);
   const categories = useQuery((s) => s.categories.list(), []);
   const category = categories.data?.find((c) => c.id === state.categoryId);
   const statusLabel = statuses.find((s) => s.value === state.status)?.label ?? 'All';
 
+  function openPicker(next: 'sort' | 'category' | 'priority' | 'status') {
+    setFiltersOpen(false);
+    setPicker(next);
+  }
+
+  function closePicker() {
+    setPicker(null);
+    setFiltersOpen(true);
+  }
+
+  const filterRows = [
+    ...(showStatusRow
+      ? [
+          {
+            testID: `${testID}-status`,
+            icon: 'filter-outline' as const,
+            label: 'Status',
+            value: statusLabel,
+            onPress: () => openPicker('status'),
+          },
+        ]
+      : []),
+    {
+      testID: `${testID}-priority`,
+      icon: 'flag' as const,
+      label: 'Priority',
+      value: state.priority ? PRIORITY_LABEL[state.priority] : 'Any',
+      onPress: () => openPicker('priority'),
+    },
+    {
+      testID: `${testID}-category`,
+      icon: 'pricetag-outline' as const,
+      label: 'Category',
+      value: category?.name ?? 'Any',
+      onPress: () => openPicker('category'),
+    },
+    {
+      testID: `${testID}-sort`,
+      icon: 'swap-vertical' as const,
+      label: 'Sort',
+      value: sorts.find((s) => s.value === state.sort)?.label ?? state.sort,
+      onPress: () => openPicker('sort'),
+    },
+  ];
+
   return (
-    <View style={{ gap: spacing.sm }} testID={testID}>
-      <View style={styles.search}>
-        <View style={styles.searchIcon}>
-          <Icon name="search" size={18} color={p.textSecondary} />
-        </View>
-        <Input
-          testID={`${testID}-search`}
-          value={state.text}
-          onChangeText={onText}
-          placeholder={searchPlaceholder}
-          style={{ paddingLeft: 40 }}
-          clearButtonMode="while-editing"
-        />
-      </View>
-      <View style={styles.chipRow}>
-        {showStatusRow ? (
-          <Chip
-            testID={`${testID}-status`}
-            icon="filter-outline"
-            label={`Status: ${statusLabel}`}
-            selected={state.status !== 'all'}
-            onPress={() => setPicker('status')}
-          />
-        ) : null}
-        <Chip
-          testID={`${testID}-priority`}
-          icon="flag"
-          label={state.priority ? PRIORITY_LABEL[state.priority] : 'Priority'}
-          color={state.priority ? p.priority[state.priority] : undefined}
-          selected={!!state.priority}
-          onPress={() => setPicker('priority')}
-        />
-        <Chip
-          testID={`${testID}-category`}
-          label={category?.name ?? 'Category'}
-          icon={category ? undefined : 'pricetag-outline'}
-          color={category?.color}
-          selected={!!category}
-          onPress={() => setPicker('category')}
-        />
-        <Chip
-          testID={`${testID}-sort`}
-          icon="swap-vertical"
-          label={`Sort: ${sorts.find((s) => s.value === state.sort)?.label ?? state.sort}`}
-          onPress={() => setPicker('sort')}
-        />
-      </View>
+    <View style={{ gap: spacing.sm }}>
+      <CompactFilterToolbar
+        testID={testID}
+        searchValue={state.text}
+        searchOpen={searchOpen}
+        onSearchOpenChange={setSearchOpen}
+        onSearchChange={onText}
+        searchPlaceholder={searchPlaceholder}
+        filtersOpen={filtersOpen}
+        onFiltersOpenChange={setFiltersOpen}
+        layout={layout}
+        onLayoutChange={onLayoutChange}
+        filterRows={filterRows}
+      />
       {typeof matchCount === 'number' ? (
         <AppText variant="caption" muted>
           {matchCount} match{matchCount === 1 ? '' : 'es'}
@@ -165,16 +184,16 @@ export function AgendaFilterBar({
         value={state.status}
         options={statuses}
         onChange={onStatus}
-        onClose={() => setPicker(null)}
+        onClose={closePicker}
       />
-      <OptionsModal<SortKey> visible={picker === 'sort'} title="Sort by" value={state.sort} options={sorts} onChange={onSort} onClose={() => setPicker(null)} />
+      <OptionsModal<SortKey> visible={picker === 'sort'} title="Sort by" value={state.sort} options={sorts} onChange={onSort} onClose={closePicker} />
       <OptionsModal<Priority | null>
         visible={picker === 'priority'}
         title="Priority"
         value={state.priority}
         options={[{ value: null, label: 'Any priority' }, ...PRIORITIES.map((x) => ({ value: x, label: PRIORITY_LABEL[x], color: p.priority[x] }))]}
         onChange={onPriority}
-        onClose={() => setPicker(null)}
+        onClose={closePicker}
       />
       <OptionsModal<string | null>
         visible={picker === 'category'}
@@ -182,14 +201,8 @@ export function AgendaFilterBar({
         value={state.categoryId}
         options={[{ value: null, label: 'Any category' }, ...(categories.data ?? []).map((c) => ({ value: c.id, label: c.name, color: c.color }))]}
         onChange={onCategoryId}
-        onClose={() => setPicker(null)}
+        onClose={closePicker}
       />
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  search: { justifyContent: 'center' },
-  searchIcon: { position: 'absolute', left: 12, zIndex: 1 },
-  chipRow: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm },
-});

@@ -56,7 +56,6 @@ function Navigation() {
         />
         <Stack.Screen name="categories" options={{ title: 'Categories' }} />
         <Stack.Screen name="theme-settings" options={{ title: 'Theme' }} />
-        <Stack.Screen name="folder/[id]" options={{ title: 'Folder' }} />
         <Stack.Screen name="item/[id]" options={{ title: 'Details' }} />
       </Stack>
       <NavDrawer />

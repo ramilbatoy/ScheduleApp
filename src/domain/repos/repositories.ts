@@ -243,6 +243,8 @@ const SETTING_KEYS: Record<keyof AppSettings, string> = {
   collapseFoldersByDefault: 'collapse_folders_by_default',
   showFolderPriority: 'show_folder_priority',
   showFolderTargetDate: 'show_folder_target_date',
+  defaultFolderListView: 'default_folder_list_view',
+  showFolderQuickAdd: 'show_folder_quick_add',
 };
 
 export class SettingsRepo {
@@ -290,6 +292,8 @@ export class SettingsRepo {
     settings.collapseFoldersByDefault = settings.collapseFoldersByDefault !== false;
     settings.showFolderPriority = settings.showFolderPriority === true;
     settings.showFolderTargetDate = settings.showFolderTargetDate === true;
+    settings.defaultFolderListView = settings.defaultFolderListView === 'list' ? 'list' : 'grid';
+    settings.showFolderQuickAdd = settings.showFolderQuickAdd === true;
     return settings;
   }
 

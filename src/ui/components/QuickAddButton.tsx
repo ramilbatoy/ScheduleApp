@@ -6,15 +6,20 @@ import type { DateKey } from '@/domain/models';
 
 import { useTheme } from '../hooks';
 
-/** Floating quick-add; opens the quick-add sheet pre-set to `date`. */
-export function QuickAddButton({ date, kind }: { date?: DateKey; kind?: 'task' | 'event' }) {
+/** Floating quick-add; opens the quick-add sheet pre-set to `date` / `kind` / `folderId`. */
+export function QuickAddButton({ date, kind, folderId }: { date?: DateKey; kind?: 'task' | 'event'; folderId?: string }) {
   const p = useTheme();
   return (
     <Pressable
       testID="quick-add-fab"
       accessibilityRole="button"
       accessibilityLabel="Quick add"
-      onPress={() => router.push({ pathname: '/quick-add', params: { ...(date ? { date } : {}), ...(kind ? { kind } : {}) } })}
+      onPress={() =>
+        router.push({
+          pathname: '/quick-add',
+          params: { ...(date ? { date } : {}), ...(kind ? { kind } : {}), ...(folderId ? { folderId } : {}) },
+        })
+      }
       style={({ pressed }) => [
         styles.fab,
         {

@@ -19,6 +19,7 @@ const HIDDEN_TABS: { name: string; title: string }[] = [
   { name: 'stats', title: 'Statistics' },
   { name: 'settings', title: 'Settings' },
   { name: 'projects', title: 'Folders' },
+  { name: 'folder/[id]', title: 'Folder' },
 ];
 
 export default function TabLayout() {

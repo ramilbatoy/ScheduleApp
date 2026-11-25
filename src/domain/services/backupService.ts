@@ -34,6 +34,8 @@ const KNOWN_SETTING_KEYS = new Set([
   'collapse_folders_by_default',
   'show_folder_priority',
   'show_folder_target_date',
+  'default_folder_list_view',
+  'show_folder_quick_add',
 ]);
 
 export interface BackupFile {
