@@ -86,7 +86,7 @@ const INSTANT_COLUMNS: Record<string, string[]> = {
   recurring_rules: ['created_at', 'updated_at'],
   tasks: ['created_at', 'updated_at', 'deleted_at', 'deadline_at'],
   task_occurrences: ['created_at', 'updated_at', 'completed_at'],
-  task_subtasks: ['created_at', 'updated_at', 'completed_at', 'deleted_at'],
+  task_subtasks: ['created_at', 'updated_at', 'completed_at', 'deleted_at', 'deadline_at'],
   completion_history: ['created_at'],
 };
 

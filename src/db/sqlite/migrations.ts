@@ -165,6 +165,14 @@ export const SQLITE_MIGRATIONS: SqlMigration[] = [
       `CREATE INDEX ix_tasks_folder ON tasks(folder_id)`,
     ],
   },
+  {
+    version: 4,
+    name: '004_subtask_deadline',
+    statements: [
+      `ALTER TABLE task_subtasks ADD COLUMN deadline_at TEXT`,
+      `CREATE INDEX ix_subtasks_deadline ON task_subtasks(deadline_at)`,
+    ],
+  },
 ];
 
 export const LATEST_SCHEMA_VERSION = SQLITE_MIGRATIONS[SQLITE_MIGRATIONS.length - 1].version;

@@ -318,6 +318,7 @@ export const subtaskMapper = {
     sortOrder: Number(r.sort_order ?? 0),
     completed: b(r.completed),
     completedAt: s(r.completed_at),
+    deadlineAt: s(r.deadline_at),
     createdAt: String(r.created_at),
     updatedAt: String(r.updated_at),
     deletedAt: s(r.deleted_at),
@@ -331,6 +332,7 @@ export const subtaskMapper = {
     sort_order: x.sortOrder,
     completed: bi(x.completed),
     completed_at: x.completedAt,
+    deadline_at: x.deadlineAt,
     created_at: x.createdAt,
     updated_at: x.updatedAt,
     deleted_at: x.deletedAt,
@@ -345,6 +347,7 @@ export const subtaskPatch = makePatcher<Subtask>({
   sortOrder: ['sort_order'],
   completed: ['completed', bi],
   completedAt: ['completed_at'],
+  deadlineAt: ['deadline_at'],
   updatedAt: ['updated_at'],
   deletedAt: ['deleted_at'],
 });

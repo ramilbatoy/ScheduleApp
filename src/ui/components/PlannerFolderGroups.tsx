@@ -53,6 +53,8 @@ function FolderGroupCard({
   range,
   overall,
   testID,
+  /** Week grid cells need stretch height; Day/Month columns must size to content. */
+  stretch = false,
   children,
 }: {
   folder: Folder;
@@ -61,6 +63,7 @@ function FolderGroupCard({
   range: RangeSummary;
   overall: PlannerFolderGroup['overall'];
   testID: string;
+  stretch?: boolean;
   children: ReactNode;
 }) {
   const p = useTheme();
@@ -68,7 +71,7 @@ function FolderGroupCard({
   const [open, setOpen] = useState(!collapseByDefault);
   const target = targetPhrase(folder, today);
   return (
-    <Card testID={testID} style={{ gap: spacing.sm, flex: 1, minWidth: 0 }}>
+    <Card testID={testID} style={{ gap: spacing.sm, minWidth: 0, ...(stretch ? { flex: 1 } : null) }}>
       <View style={{ gap: spacing.sm }}>
         <View style={{ flexDirection: 'row', gap: spacing.md, alignItems: 'center' }}>
           <Pressable
@@ -223,6 +226,7 @@ export function PlannerWeekGroups({ groups, today, testID }: { groups: WeekFolde
               rangeLabel="This week"
               range={group.range}
               overall={group.overall}
+              stretch
               testID={`${testID}-folder-${group.folder.id}`}>
               <WeekFolderBody group={group} today={today} testID={`${testID}-folder-${group.folder.id}`} />
             </FolderGroupCard>

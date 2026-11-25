@@ -36,6 +36,15 @@ const IDB_UPGRADES: { version: number; apply: (db: IDBPDatabase) => void }[] = [
       }
     },
   },
+  {
+    // task_subtasks.deadline_at lives on row documents; fillStoredDefaults supplies null for older rows.
+    version: 4,
+    apply: (db) => {
+      for (const table of TABLES) {
+        if (!db.objectStoreNames.contains(table)) db.createObjectStore(table, { keyPath: 'id' });
+      }
+    },
+  },
 ];
 
 export const IDB_VERSION = IDB_UPGRADES[IDB_UPGRADES.length - 1].version;

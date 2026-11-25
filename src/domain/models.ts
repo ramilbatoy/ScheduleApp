@@ -203,6 +203,8 @@ export interface Subtask {
   sortOrder: number;
   completed: boolean;
   completedAt: string | null;
+  /** Optional due instant (ISO UTC). Independent of the parent task deadline. */
+  deadlineAt: string | null;
   createdAt: string;
   updatedAt: string;
   deletedAt: string | null;

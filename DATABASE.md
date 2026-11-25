@@ -109,10 +109,11 @@ Nested checklist under a **single occurrence** (not a separate agenda item). Tas
 | sort_order | INTEGER | siblings order |
 | completed | INTEGER | independent of parent occurrence |
 | completed_at | TEXT NULL | |
+| deadline_at | TEXT NULL | optional due instant (ISO UTC); independent of parent task deadline (schema v4) |
 | created_at / updated_at | TEXT | |
 | deleted_at | TEXT NULL | soft delete (cascades to descendants in app logic) |
 
-**Carry-forward / recurrence:** Subtasks are keyed by `occurrence_id`. Carry-forward patches the occurrence in place, so the checklist rides along. New recurring instances start with an empty checklist (no auto-copy). Subtasks never appear as their own agenda rows and do not auto-carry separately.
+**Carry-forward / recurrence:** Subtasks are keyed by `occurrence_id`. Carry-forward patches the occurrence in place, so the checklist (including `deadline_at`) rides along. New recurring instances start with an empty checklist (no auto-copy). Subtasks never appear as their own agenda rows and do not auto-carry separately.
 
 ### `reminders`
 

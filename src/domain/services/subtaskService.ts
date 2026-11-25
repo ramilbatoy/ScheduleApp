@@ -11,6 +11,22 @@ export interface SubtaskInput {
   title: string;
   notes?: string;
   parentSubtaskId?: string | null;
+  /** Optional ISO UTC deadline; omit or null for none. */
+  deadlineAt?: string | null;
+}
+
+export interface SubtaskUpdate {
+  title?: string;
+  notes?: string;
+  /** Set to an ISO UTC string, or null to clear. */
+  deadlineAt?: string | null;
+}
+
+function normalizeDeadline(raw: string | null | undefined): string | null {
+  if (raw === undefined || raw === null || raw === '') return null;
+  const d = new Date(raw);
+  if (Number.isNaN(d.getTime())) throw new ValidationError('Subtask deadline is invalid.');
+  return d.toISOString();
 }
 
 export function buildSubtaskTree(flat: Subtask[]): SubtaskNode[] {
@@ -130,6 +146,7 @@ export class SubtaskService {
         sortOrder,
         completed: false,
         completedAt: null,
+        deadlineAt: normalizeDeadline(input.deadlineAt),
         createdAt: now,
         updatedAt: now,
         deletedAt: null,
@@ -141,7 +158,7 @@ export class SubtaskService {
     return created;
   }
 
-  async update(id: string, patch: { title?: string; notes?: string }): Promise<Subtask> {
+  async update(id: string, patch: SubtaskUpdate): Promise<Subtask> {
     const updated = await this.db.transaction(async (tx) => {
       const repos = createRepos(tx);
       const now = nowIso(this.clock);
@@ -149,6 +166,7 @@ export class SubtaskService {
       const next: Partial<Subtask> = { updatedAt: now };
       if (patch.title !== undefined) next.title = validateTitle(patch.title);
       if (patch.notes !== undefined) next.notes = patch.notes.trim();
+      if (patch.deadlineAt !== undefined) next.deadlineAt = normalizeDeadline(patch.deadlineAt);
       await repos.subtasks.patch(id, next);
       return { ...current, ...next };
     });

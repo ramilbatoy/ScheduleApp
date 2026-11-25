@@ -167,6 +167,8 @@ export const SCHEMA: Record<string, TableDef> = {
       sort_order: i(),
       completed: i(),
       completed_at: t(true),
+      /** Optional due instant (ISO UTC); independent of the parent task deadline. */
+      deadline_at: t(true),
       created_at: t(),
       updated_at: t(),
       deleted_at: t(true),

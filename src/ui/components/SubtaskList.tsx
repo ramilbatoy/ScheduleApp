@@ -1,12 +1,17 @@
 import { useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 
+import { combineDateTime, formatDateKey, formatTime, toDateKey, todayKey } from '@/domain/dates';
 import type { SubtaskNode } from '@/domain/models';
 import { countSubtasks, flattenSubtaskTree } from '@/domain/services/subtaskService';
+import { useServices } from '@/state/appStore';
 import { confirm } from '@/ui/components/dialogs';
-import { AppText, Button, Icon, Input } from '@/ui/components/primitives';
+import { DatePickerModal, TimePickerModal } from '@/ui/components/Pickers';
+import { AppText, Button, Icon, Input, SelectButton } from '@/ui/components/primitives';
 import { useAction, useTheme } from '@/ui/hooks';
 import { radius, spacing, TOUCH } from '@/ui/theme';
+
+import { formatDeadline } from './AgendaRow';
 
 const INDENT = 18;
 
@@ -49,21 +54,37 @@ export function AgendaSubtasks({ nodes, testID }: { nodes: SubtaskNode[]; testID
             style={styles.miniCheck}>
             <Icon name={n.completed ? 'checkmark-circle' : 'ellipse-outline'} size={20} color={n.completed ? p.success : p.textSecondary} />
           </Pressable>
-          <AppText
-            variant="caption"
-            numberOfLines={2}
-            style={[{ flex: 1 }, n.completed && { textDecorationLine: 'line-through' }]}
-            color={n.completed ? p.textSecondary : p.text}>
-            {n.title}
-          </AppText>
+          <View style={{ flex: 1, gap: 1 }}>
+            <AppText
+              variant="caption"
+              numberOfLines={2}
+              style={n.completed ? { textDecorationLine: 'line-through' } : undefined}
+              color={n.completed ? p.textSecondary : p.text}>
+              {n.title}
+            </AppText>
+            {n.deadlineAt ? (
+              <AppText variant="caption" muted numberOfLines={1}>
+                Due {formatDeadline(n.deadlineAt)}
+              </AppText>
+            ) : null}
+          </View>
         </View>
       ))}
     </View>
   );
 }
 
+function deadlineParts(iso: string | null): { date: string | null; time: string | null } {
+  if (!iso) return { date: null, time: null };
+  const d = new Date(iso);
+  return {
+    date: toDateKey(d),
+    time: `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`,
+  };
+}
+
 /**
- * Full subtask editor for detail / edit screens: add, nest, tick, edit title/notes, delete.
+ * Full subtask editor for detail / edit screens: add, nest, tick, edit title/notes/deadline, delete.
  */
 export function SubtaskEditor({
   occurrenceId,
@@ -78,28 +99,42 @@ export function SubtaskEditor({
 }) {
   const p = useTheme();
   const run = useAction();
+  const services = useServices();
+  const today = todayKey(services.clock);
   const [draft, setDraft] = useState('');
+  const [draftDeadline, setDraftDeadline] = useState<string | null>(null);
   const [parentId, setParentId] = useState<string | null>(null);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editTitle, setEditTitle] = useState('');
   const [editNotes, setEditNotes] = useState('');
+  const [editDeadline, setEditDeadline] = useState<string | null>(null);
+  const [picker, setPicker] = useState<null | 'draftDate' | 'draftTime' | 'editDate' | 'editTime'>(null);
   const flat = flattenSubtaskTree(nodes);
   const { total, completed } = countSubtasks(nodes);
   const parentLabel = parentId ? flat.find((n) => n.id === parentId)?.title : null;
+  const draftParts = deadlineParts(draftDeadline);
+  const editParts = deadlineParts(editDeadline);
 
   async function add() {
     const title = draft.trim();
     if (!title) return;
-    const ok = await run((s) => s.subtasks.add(occurrenceId, { title, parentSubtaskId: parentId }), 'Subtask added');
+    const ok = await run(
+      (s) => s.subtasks.add(occurrenceId, { title, parentSubtaskId: parentId, deadlineAt: draftDeadline }),
+      'Subtask added',
+    );
     if (ok) {
       setDraft('');
+      setDraftDeadline(null);
       setParentId(null);
     }
   }
 
   async function saveEdit() {
     if (!editingId) return;
-    const ok = await run((s) => s.subtasks.update(editingId, { title: editTitle, notes: editNotes }), 'Subtask saved');
+    const ok = await run(
+      (s) => s.subtasks.update(editingId, { title: editTitle, notes: editNotes, deadlineAt: editDeadline }),
+      'Subtask saved',
+    );
     if (ok) setEditingId(null);
   }
 
@@ -145,6 +180,29 @@ export function SubtaskEditor({
             <View style={{ flex: 1, gap: spacing.sm, paddingVertical: spacing.sm }}>
               <Input testID={`${testID}-edit-title`} value={editTitle} onChangeText={setEditTitle} placeholder="Title" maxLength={200} />
               <Input testID={`${testID}-edit-notes`} value={editNotes} onChangeText={setEditNotes} placeholder="Details / notes" multiline />
+              <View style={{ flexDirection: 'row', gap: spacing.md }}>
+                <View style={{ flex: 3 }}>
+                  <SelectButton
+                    testID={`${testID}-edit-deadline-date`}
+                    icon="hourglass-outline"
+                    placeholder="No deadline"
+                    value={editParts.date ? formatDateKey(editParts.date, 'MMM d, yyyy') : null}
+                    onPress={() => setPicker('editDate')}
+                    onClear={() => setEditDeadline(null)}
+                  />
+                </View>
+                {editParts.date ? (
+                  <View style={{ flex: 2 }}>
+                    <SelectButton
+                      testID={`${testID}-edit-deadline-time`}
+                      icon="time-outline"
+                      placeholder="Time"
+                      value={editParts.time ? formatTime(editParts.time) : null}
+                      onPress={() => setPicker('editTime')}
+                    />
+                  </View>
+                ) : null}
+              </View>
               <View style={{ flexDirection: 'row', gap: spacing.sm }}>
                 <Button label="Cancel" tone="secondary" compact onPress={() => setEditingId(null)} style={{ flex: 1 }} />
                 <Button testID={`${testID}-save-edit`} label="Save" compact onPress={saveEdit} disabled={!editTitle.trim()} style={{ flex: 1 }} />
@@ -171,6 +229,11 @@ export function SubtaskEditor({
                     {n.notes}
                   </AppText>
                 ) : null}
+                {n.deadlineAt ? (
+                  <AppText variant="caption" color={p.textSecondary} testID={`${testID}-deadline-${n.id}`}>
+                    Due {formatDeadline(n.deadlineAt)}
+                  </AppText>
+                ) : null}
               </View>
               {!readOnly ? (
                 <View style={styles.rowActions}>
@@ -193,6 +256,7 @@ export function SubtaskEditor({
                       setEditingId(n.id);
                       setEditTitle(n.title);
                       setEditNotes(n.notes);
+                      setEditDeadline(n.deadlineAt);
                       setParentId(null);
                     }}
                     style={styles.iconHit}>
@@ -239,8 +303,62 @@ export function SubtaskEditor({
             />
             <Button testID={`${testID}-add`} label="Add" compact onPress={add} disabled={!draft.trim()} />
           </View>
+          <View style={{ flexDirection: 'row', gap: spacing.md }}>
+            <View style={{ flex: 3 }}>
+              <SelectButton
+                testID={`${testID}-new-deadline-date`}
+                icon="hourglass-outline"
+                placeholder="No deadline"
+                value={draftParts.date ? formatDateKey(draftParts.date, 'MMM d, yyyy') : null}
+                onPress={() => setPicker('draftDate')}
+                onClear={() => setDraftDeadline(null)}
+              />
+            </View>
+            {draftParts.date ? (
+              <View style={{ flex: 2 }}>
+                <SelectButton
+                  testID={`${testID}-new-deadline-time`}
+                  icon="time-outline"
+                  placeholder="Time"
+                  value={draftParts.time ? formatTime(draftParts.time) : null}
+                  onPress={() => setPicker('draftTime')}
+                />
+              </View>
+            ) : null}
+          </View>
         </View>
       ) : null}
+
+      <DatePickerModal
+        visible={picker === 'draftDate'}
+        value={draftParts.date}
+        today={today}
+        title="Subtask deadline"
+        onChange={(d) => setDraftDeadline(combineDateTime(d, draftParts.time ?? '17:00').toISOString())}
+        onClose={() => setPicker(null)}
+      />
+      <TimePickerModal
+        visible={picker === 'draftTime'}
+        value={draftParts.time}
+        title="Deadline time"
+        onChange={(t) => draftParts.date && setDraftDeadline(combineDateTime(draftParts.date, t).toISOString())}
+        onClose={() => setPicker(null)}
+      />
+      <DatePickerModal
+        visible={picker === 'editDate'}
+        value={editParts.date}
+        today={today}
+        title="Subtask deadline"
+        onChange={(d) => setEditDeadline(combineDateTime(d, editParts.time ?? '17:00').toISOString())}
+        onClose={() => setPicker(null)}
+      />
+      <TimePickerModal
+        visible={picker === 'editTime'}
+        value={editParts.time}
+        title="Deadline time"
+        onChange={(t) => editParts.date && setEditDeadline(combineDateTime(editParts.date, t).toISOString())}
+        onClose={() => setPicker(null)}
+      />
     </View>
   );
 }

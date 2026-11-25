@@ -66,11 +66,21 @@ describe.each(DRIVERS)('nested subtasks (%s)', (_name, open) => {
     await expect(app.subtasks.add(taskOcc.id, { title: 'too deep', parentSubtaskId: parentId })).rejects.toThrow(/nest/i);
   });
 
-  it('rides with carry-forward on the same occurrence and does not appear as a separate agenda row', async () => {
+  it('stores and updates an optional deadline, and carry-forward keeps it on the same occurrence', async () => {
     const occ = await app.tasks.create(item({ title: 'Pack', date: '2026-03-09' }));
-    const sub = await app.subtasks.add(occ.id, { title: 'Socks' });
-    await app.subtasks.toggleComplete(sub.id);
+    const due = '2026-03-12T17:00:00.000Z';
+    const sub = await app.subtasks.add(occ.id, { title: 'Socks', deadlineAt: due });
+    expect(sub.deadlineAt).toBe(due);
 
+    const cleared = await app.subtasks.update(sub.id, { deadlineAt: null });
+    expect(cleared.deadlineAt).toBeNull();
+
+    const changed = await app.subtasks.update(sub.id, { deadlineAt: '2026-03-15T09:30:00.000Z' });
+    expect(changed.deadlineAt).toBe('2026-03-15T09:30:00.000Z');
+
+    await expect(app.subtasks.update(sub.id, { deadlineAt: 'not-a-date' })).rejects.toBeInstanceOf(ValidationError);
+
+    await app.subtasks.toggleComplete(sub.id);
     const moved = await app.carryForward.run();
     expect(moved.moved).toBe(1);
 
@@ -78,11 +88,17 @@ describe.each(DRIVERS)('nested subtasks (%s)', (_name, open) => {
     expect(detail.occurrence.date).toBe('2026-03-10');
     expect(detail.occurrence.isCarriedForward).toBe(true);
     expect(flattenSubtaskTree(detail.subtasks)).toHaveLength(1);
-    expect(flattenSubtaskTree(detail.subtasks)[0]).toMatchObject({ id: sub.id, completed: true, title: 'Socks' });
+    expect(flattenSubtaskTree(detail.subtasks)[0]).toMatchObject({
+      id: sub.id,
+      completed: true,
+      title: 'Socks',
+      deadlineAt: '2026-03-15T09:30:00.000Z',
+    });
 
     const day = await app.agenda.day('2026-03-10');
     expect(day).toHaveLength(1);
     expect(day[0].subtasks[0].title).toBe('Socks');
+    expect(day[0].subtasks[0].deadlineAt).toBe('2026-03-15T09:30:00.000Z');
     expect(day.map((a) => a.task.title)).toEqual(['Pack']);
   });
 
