@@ -3,6 +3,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { Animated, BackHandler, Modal, PanResponder, Platform, Pressable, StyleSheet, useWindowDimensions, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { APP_HEADER_NAME } from '@/domain/branding';
 import { activeDrawerItem, type NavItemId } from '@/domain/navigationPrefs';
 import { useAppStore } from '@/state/appStore';
 import { useQuery, useTheme } from '@/ui/hooks';
@@ -21,7 +22,7 @@ const LINKS: { id: NavItemId; label: string; icon: IconName; href: '/' | '/calen
   { id: 'theme', label: 'Theme', icon: 'color-palette-outline', href: '/theme-settings' },
   { id: 'backup', label: 'Backup & Restore', icon: 'download-outline', href: '/settings' },
   { id: 'settings', label: 'Settings', icon: 'settings-outline', href: '/settings' },
-  { id: 'about', label: 'About NeoOrganizer', icon: 'information-circle-outline', href: '/about' },
+  { id: 'about', label: `About ${APP_HEADER_NAME}`, icon: 'information-circle-outline', href: '/about' },
 ];
 
 /** Left drawer. Tabs stay; this is an extra way to reach the same screens. */

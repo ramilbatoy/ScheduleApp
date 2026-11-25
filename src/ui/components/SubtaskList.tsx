@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { Pressable, StyleSheet, View } from 'react-native';
+import { useCallback, useEffect, useRef, useState, type ComponentRef, type RefObject } from 'react';
+import { Keyboard, Platform, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 
 import { combineDateTime, formatDateKey, formatTime, toDateKey, todayKey } from '@/domain/dates';
 import type { SubtaskNode } from '@/domain/models';
@@ -91,11 +91,14 @@ export function SubtaskEditor({
   nodes,
   readOnly,
   testID = 'subtasks',
+  scrollRef,
 }: {
   occurrenceId: string;
   nodes: SubtaskNode[];
   readOnly?: boolean;
   testID?: string;
+  /** Parent scroll view. Focusing the new-subtask field scrolls it above the keyboard. */
+  scrollRef?: RefObject<ComponentRef<typeof ScrollView> | null>;
 }) {
   const p = useTheme();
   const run = useAction();
@@ -111,6 +114,25 @@ export function SubtaskEditor({
   const [picker, setPicker] = useState<null | 'draftDate' | 'draftTime' | 'editDate' | 'editTime'>(null);
   const flat = flattenSubtaskTree(nodes);
   const { total, completed } = countSubtasks(nodes);
+  const composerRef = useRef<ComponentRef<typeof View>>(null);
+  const composerFocused = useRef(false);
+  const revealComposer = useCallback(() => {
+    const scroll = scrollRef?.current;
+    const anchor = composerRef.current;
+    if (!scroll || !anchor) return;
+    if (typeof scroll.scrollResponderScrollNativeHandleToKeyboard === 'function') {
+      scroll.scrollResponderScrollNativeHandleToKeyboard(anchor, 160, true);
+      return;
+    }
+    scroll.scrollToEnd({ animated: true });
+  }, [scrollRef]);
+  useEffect(() => {
+    const event = Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow';
+    const sub = Keyboard.addListener(event, () => {
+      if (composerFocused.current) revealComposer();
+    });
+    return () => sub.remove();
+  }, [revealComposer]);
   const parentLabel = parentId ? flat.find((n) => n.id === parentId)?.title : null;
   const draftParts = deadlineParts(draftDeadline);
   const editParts = deadlineParts(editDeadline);
@@ -278,7 +300,7 @@ export function SubtaskEditor({
       ))}
 
       {!readOnly ? (
-        <View style={[styles.addBlock, { borderTopColor: p.border }]}>
+        <View ref={composerRef} collapsable={false} style={[styles.addBlock, { borderTopColor: p.border }]}>
           {parentId ? (
             <View style={styles.nestBanner}>
               <AppText variant="caption" color={p.info} style={{ flex: 1 }}>
@@ -299,6 +321,13 @@ export function SubtaskEditor({
               placeholder={parentId ? 'Nested subtask title' : 'Add a subtask'}
               maxLength={200}
               onSubmitEditing={add}
+              onFocus={() => {
+                composerFocused.current = true;
+                setTimeout(revealComposer, Platform.OS === 'android' ? 280 : 80);
+              }}
+              onBlur={() => {
+                composerFocused.current = false;
+              }}
               style={{ flex: 1 }}
             />
             <Button testID={`${testID}-add`} label="Add" compact onPress={add} disabled={!draft.trim()} />

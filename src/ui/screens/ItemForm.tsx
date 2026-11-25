@@ -1,5 +1,5 @@
 import { router, Stack } from 'expo-router';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState, type ComponentRef } from 'react';
 import { KeyboardAvoidingView, Platform, ScrollView, View } from 'react-native';
 
 import { combineDateTime, formatDateKey, formatTime, toDateKey, todayKey } from '@/domain/dates';
@@ -114,6 +114,7 @@ function Form({
   const p = useTheme();
   const services = useServices();
   const settings = useSettings();
+  const scrollRef = useRef<ComponentRef<typeof ScrollView>>(null);
   const invalidate = useAppStore((s) => s.invalidate);
   const toast = useToast((s) => s.show);
   useSafeAndroidBack(!embedded);
@@ -189,14 +190,18 @@ function Form({
   }
 
   return (
-    <KeyboardAvoidingView style={{ flex: 1, backgroundColor: p.background }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+    <KeyboardAvoidingView style={{ flex: 1, backgroundColor: p.background }} behavior="padding" keyboardVerticalOffset={Platform.OS === 'ios' ? 64 : 0}>
       {embedded ? null : <Stack.Screen options={{ title }} />}
       {embedded ? (
         <AppText variant="title" style={{ paddingHorizontal: spacing.lg, paddingTop: spacing.md }}>
           {title}
         </AppText>
       ) : null}
-      <ScrollView contentContainerStyle={{ padding: spacing.lg, gap: spacing.lg, paddingBottom: 140 }} keyboardShouldPersistTaps="handled">
+      <ScrollView
+        ref={scrollRef}
+        automaticallyAdjustKeyboardInsets
+        contentContainerStyle={{ padding: spacing.lg, gap: spacing.lg, paddingBottom: 160 }}
+        keyboardShouldPersistTaps="handled">
         {occurrenceOnly ? (
           <Card style={{ backgroundColor: p.infoSoft, borderColor: p.infoSoft }}>
             <AppText color={p.info}>Changes to title, notes, date and time apply to this occurrence only. Other fields belong to the series.</AppText>
@@ -224,7 +229,7 @@ function Form({
         </Field>
 
         {editing && occurrenceId && !isEvent ? (
-          <SubtaskEditor occurrenceId={occurrenceId} nodes={subtasks.data ?? []} testID="edit-subtasks" />
+          <SubtaskEditor occurrenceId={occurrenceId} nodes={subtasks.data ?? []} testID="edit-subtasks" scrollRef={scrollRef} />
         ) : !editing && !isEvent ? (
           <AppText variant="caption" muted>
             After you save, open the task to add nested subtasks with their own checkboxes and notes.

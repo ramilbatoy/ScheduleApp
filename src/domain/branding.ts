@@ -1,5 +1,5 @@
-/** Header wordmark. Not the Android launcher name. */
-export const APP_HEADER_NAME = 'NeoOrganizer';
+/** Header wordmark and launcher display name. Package id stays `com.dayplanner.app`. */
+export const APP_HEADER_NAME = 'NeoPlanner';
 
 export const LOGO_MIMES = ['image/png', 'image/jpeg', 'image/webp'] as const;
 export type LogoMime = (typeof LOGO_MIMES)[number];

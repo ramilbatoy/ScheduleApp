@@ -1,6 +1,7 @@
 import { router, Stack, useLocalSearchParams } from 'expo-router';
-import { useState } from 'react';
-import { ScrollView, View } from 'react-native';
+import { useRef, useState, type ComponentRef } from 'react';
+import { KeyboardAvoidingView, Platform, ScrollView, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { formatDateKey, formatTime, todayKey } from '@/domain/dates';
 import type { HistoryEntry } from '@/domain/models';
@@ -48,6 +49,8 @@ export default function ItemDetailScreen() {
   const services = useServices();
   const run = useAction();
   const [reschedule, setReschedule] = useState(false);
+  const scrollRef = useRef<ComponentRef<typeof ScrollView>>(null);
+  const insets = useSafeAreaInsets();
   useSafeAndroidBack();
   const detail = useQuery((s) => s.tasks.getDetail(id), [id]);
   const reminders = useQuery((s) => (detail.data ? s.reminders.forTask(detail.data.task.id) : Promise.resolve([])), [detail.data?.task.id]);
@@ -102,7 +105,16 @@ export default function ItemDetailScreen() {
   return (
     <>
       <Stack.Screen options={{ title: d.task.kind === 'event' ? 'Event' : 'Task' }} />
-      <ScrollView style={{ backgroundColor: p.background }} contentContainerStyle={{ padding: spacing.lg, gap: spacing.lg, paddingBottom: 80 }}>
+      <KeyboardAvoidingView
+        style={{ flex: 1, backgroundColor: p.background }}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'padding'}
+        keyboardVerticalOffset={Platform.OS === 'ios' ? insets.top + 56 : 0}>
+      <ScrollView
+        ref={scrollRef}
+        style={{ backgroundColor: p.background }}
+        keyboardShouldPersistTaps="handled"
+        automaticallyAdjustKeyboardInsets
+        contentContainerStyle={{ padding: spacing.lg, gap: spacing.lg, paddingBottom: 160 }}>
         <View style={{ gap: spacing.sm }}>
           <AppText variant="title" testID="detail-title" style={o.status === 'completed' ? { textDecorationLine: 'line-through' } : undefined}>
             {displayTitle(d)}
@@ -181,7 +193,7 @@ export default function ItemDetailScreen() {
           </Card>
         ) : null}
 
-        {d.task.kind === 'task' ? <SubtaskEditor occurrenceId={o.id} nodes={d.subtasks} testID="detail-subtasks" /> : null}
+        {d.task.kind === 'task' ? <SubtaskEditor occurrenceId={o.id} nodes={d.subtasks} testID="detail-subtasks" scrollRef={scrollRef} /> : null}
 
         {reminders.data && reminders.data.length > 0 ? (
           <Card>
@@ -218,6 +230,7 @@ export default function ItemDetailScreen() {
           ))}
         </Card>
       </ScrollView>
+      </KeyboardAvoidingView>
       <DatePickerModal
         visible={reschedule}
         value={o.date}

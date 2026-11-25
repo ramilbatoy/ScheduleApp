@@ -43,14 +43,23 @@ describe.each(DRIVERS)('branding settings (%s)', (_name, open) => {
     expect((await app.settings.get()).branding).toEqual({ mode: 'name', logo: null });
     expect((await app.settings.get()).showEmptyFoldersOnTasks).toBe(false);
     expect((await app.settings.get()).collapseFoldersByDefault).toBe(true);
+    expect((await app.settings.get()).showFolderPriority).toBe(false);
+    expect((await app.settings.get()).showFolderTargetDate).toBe(false);
+    expect((await app.settings.get()).navigation.order).toEqual(['projects', 'statistics', 'settings', 'about']);
     const logo = logoFromBase64(png);
     await app.settings.set('branding', { mode: 'logo', logo });
     await app.settings.set('showEmptyFoldersOnTasks', true);
     await app.settings.set('collapseFoldersByDefault', false);
+    await app.settings.set('showFolderPriority', true);
+    await app.settings.set('showFolderTargetDate', true);
+    await app.settings.set('navigation', { drawerEnabled: true, order: ['tasks', 'projects', 'about'] });
     const saved = await app.settings.get();
     expect(saved.branding).toEqual({ mode: 'logo', logo });
     expect(saved.showEmptyFoldersOnTasks).toBe(true);
     expect(saved.collapseFoldersByDefault).toBe(false);
+    expect(saved.showFolderPriority).toBe(true);
+    expect(saved.showFolderTargetDate).toBe(true);
+    expect(saved.navigation.order).toEqual(['projects', 'statistics', 'settings', 'about']);
     expect(JSON.stringify(saved.branding)).not.toMatch(/file:|content:|blob:/);
 
     const named = await app.settings.set('branding', { mode: 'name', logo });
@@ -59,9 +68,11 @@ describe.each(DRIVERS)('branding settings (%s)', (_name, open) => {
 
     const file = await app.backup.export();
     const validated = app.backup.validate(JSON.stringify(file));
-    expect(validated.warnings.join('\n')).not.toMatch(/branding|show_empty_folders|collapse_folders/);
+    expect(validated.warnings.join('\n')).not.toMatch(/branding|show_empty_folders|collapse_folders|show_folder_priority|show_folder_target/);
     expect(validated.backup.data.app_settings?.some((row) => row.id === 'branding')).toBe(true);
     expect(validated.backup.data.app_settings?.some((row) => row.id === 'show_empty_folders_on_tasks')).toBe(true);
     expect(validated.backup.data.app_settings?.some((row) => row.id === 'collapse_folders_by_default')).toBe(true);
+    expect(validated.backup.data.app_settings?.some((row) => row.id === 'show_folder_priority')).toBe(true);
+    expect(validated.backup.data.app_settings?.some((row) => row.id === 'show_folder_target_date')).toBe(true);
   });
 });

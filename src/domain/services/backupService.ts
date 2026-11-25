@@ -32,6 +32,8 @@ const KNOWN_SETTING_KEYS = new Set([
   'branding',
   'show_empty_folders_on_tasks',
   'collapse_folders_by_default',
+  'show_folder_priority',
+  'show_folder_target_date',
 ]);
 
 export interface BackupFile {
@@ -169,7 +171,7 @@ export class BackupService {
       throw new ValidationError('This file is not valid JSON.');
     }
     if (!isObject(parsed) || parsed.app !== BACKUP_APP_ID) {
-      throw new ValidationError('This file is not a DayPlanner backup.');
+      throw new ValidationError('This file is not a NeoPlanner backup.');
     }
     if (typeof parsed.formatVersion !== 'number' || typeof parsed.schemaVersion !== 'number') {
       throw new ValidationError('The backup is missing its version information.');

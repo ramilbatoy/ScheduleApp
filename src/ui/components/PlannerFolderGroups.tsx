@@ -25,27 +25,7 @@ function targetPhrase(folder: Folder, today: DateKey): string | null {
   return null;
 }
 
-function SummaryLines({ rangeLabel, range, overall, testID }: { rangeLabel: string; range: RangeSummary; overall: PlannerFolderGroup['overall']; testID: string }) {
-  const p = useTheme();
-  const overdue = range.overdue ? ` · ${range.overdue} overdue` : '';
-  return (
-    <View style={{ gap: 2 }}>
-      <AppText variant="caption" testID={`${testID}-range`}>
-        {rangeLabel} {range.completed}/{range.scheduled}
-      </AppText>
-      <AppText variant="caption" muted>
-        {range.scheduled} scheduled · {range.completed} completed · {range.pending} pending
-        {overdue}
-      </AppText>
-      {overall ? (
-        <AppText variant="caption" color={p.primary} testID={`${testID}-overall`}>
-          Overall {overall.completed}/{overall.total}
-        </AppText>
-      ) : null}
-    </View>
-  );
-}
-
+/** Same chrome as the Folders list: icon, counts, bar, priority and target. Expand shows tasks and their subtasks. */
 function FolderGroupCard({
   folder,
   today,
@@ -53,7 +33,7 @@ function FolderGroupCard({
   range,
   overall,
   testID,
-  /** Week grid cells need stretch height; Day/Month columns must size to content. */
+  /** Week grid cells need stretch height; Day/Month columns must size to content so the next card is not covered. */
   stretch = false,
   children,
 }: {
@@ -70,8 +50,21 @@ function FolderGroupCard({
   const collapseByDefault = useSettings().collapseFoldersByDefault;
   const [open, setOpen] = useState(!collapseByDefault);
   const target = targetPhrase(folder, today);
+  const pct = range.scheduled > 0 ? Math.round((range.completed / range.scheduled) * 100) : (overall?.percent ?? 0);
+  const toggle = () => setOpen((v) => !v);
+  const statusLabel = folder.status === 'completed' ? 'Completed' : folder.status === 'archived' ? 'Archived' : null;
+  const pending = range.pending ? ` · ${range.pending} pending` : '';
+  const overdue = range.overdue ? ` · ${range.overdue} overdue` : '';
   return (
-    <Card testID={testID} style={{ gap: spacing.sm, minWidth: 0, ...(stretch ? { flex: 1 } : null) }}>
+    <Card
+      testID={testID}
+      style={{
+        gap: spacing.sm,
+        minWidth: 0,
+        alignSelf: 'stretch',
+        backgroundColor: folder.status === 'completed' ? (p.scheme === 'dark' ? '#3A414B' : '#E4E6EB') : p.surface,
+        ...(stretch ? { flex: 1 } : null),
+      }}>
       <View style={{ gap: spacing.sm }}>
         <View style={{ flexDirection: 'row', gap: spacing.md, alignItems: 'center' }}>
           <Pressable
@@ -80,25 +73,35 @@ function FolderGroupCard({
             onPress={() => router.push({ pathname: '/folder/[id]', params: { id: folder.id } })}
             testID={`${testID}-open`}
             hitSlop={4}
-            style={{ width: 44, height: 44, borderRadius: radius.md, backgroundColor: `${folder.color}22`, alignItems: 'center', justifyContent: 'center' }}>
+            style={{ width: 40, height: 40, borderRadius: radius.md, backgroundColor: `${folder.color}22`, alignItems: 'center', justifyContent: 'center' }}>
             <Icon name={folder.icon as IconName} color={folder.color} />
           </Pressable>
           <Pressable
             accessibilityRole="button"
             accessibilityState={{ expanded: open }}
             accessibilityLabel={`${open ? 'Collapse' : 'Expand'} ${folder.name}`}
-            onPress={() => setOpen((v) => !v)}
+            onPress={toggle}
             testID={`${testID}-toggle`}
-            style={{ flex: 1, flexDirection: 'row', gap: spacing.md, alignItems: 'center' }}>
-            <View style={{ flex: 1, gap: 2 }}>
-              <AppText variant="title" numberOfLines={1}>
-                {folder.name}
+            style={{ flex: 1, gap: 2 }}>
+            <AppText variant="title" numberOfLines={1}>
+              {folder.name}
+            </AppText>
+            <AppText variant="caption" muted testID={`${testID}-range`}>
+              {rangeLabel} {range.completed}/{range.scheduled} completed · {pct}%{pending}{overdue}
+            </AppText>
+            {overall ? (
+              <AppText variant="caption" color={p.primary} testID={`${testID}-overall`}>
+                Overall {overall.completed}/{overall.total}
               </AppText>
-              <AppText variant="caption" color={target?.includes('overdue') ? p.overdue : p.priority[folder.priority]}>
-                {PRIORITY_LABEL[folder.priority]}
-                {target ? ` · ${target}` : ''}
-              </AppText>
-            </View>
+            ) : null}
+          </Pressable>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityState={{ expanded: open }}
+            accessibilityLabel={`${open ? 'Collapse' : 'Expand'} ${folder.name}`}
+            onPress={toggle}
+            hitSlop={8}
+            style={{ width: 32, height: 32, alignItems: 'center', justifyContent: 'center' }}>
             <Icon name={open ? 'chevron-up' : 'chevron-down'} color={p.textSecondary} />
           </Pressable>
         </View>
@@ -106,9 +109,36 @@ function FolderGroupCard({
           accessibilityRole="button"
           accessibilityState={{ expanded: open }}
           accessibilityLabel={`${open ? 'Collapse' : 'Expand'} ${folder.name} summary`}
-          onPress={() => setOpen((v) => !v)}
+          onPress={toggle}
           testID={`${testID}-summary`}>
-          <SummaryLines rangeLabel={rangeLabel} range={range} overall={overall} testID={testID} />
+          <View style={{ height: 6, borderRadius: radius.sm, backgroundColor: p.surfaceVariant, overflow: 'hidden' }}>
+            <View style={{ width: `${pct}%`, height: 6, backgroundColor: folder.color, borderRadius: radius.sm }} />
+          </View>
+        </Pressable>
+        <Pressable
+          accessibilityRole="button"
+          accessibilityState={{ expanded: open }}
+          accessibilityLabel={`${open ? 'Collapse' : 'Expand'} ${folder.name} details`}
+          onPress={toggle}>
+          <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm }}>
+            <AppText variant="caption" color={p.priority[folder.priority]}>
+              {PRIORITY_LABEL[folder.priority]}
+            </AppText>
+            {target ? (
+              <AppText variant="caption" color={target.includes('overdue') ? p.overdue : p.textSecondary}>
+                {target}
+              </AppText>
+            ) : (
+              <AppText variant="caption" muted>
+                No target
+              </AppText>
+            )}
+            {statusLabel ? (
+              <AppText variant="caption" muted>
+                {statusLabel}
+              </AppText>
+            ) : null}
+          </View>
         </Pressable>
       </View>
       {open ? <View style={{ gap: spacing.sm }}>{children}</View> : null}

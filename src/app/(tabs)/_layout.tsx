@@ -11,8 +11,14 @@ const TABS: { name: string; title: string; icon: IconName; iconActive: IconName 
   { name: 'index', title: 'Day', icon: 'sunny-outline', iconActive: 'sunny' },
   { name: 'calendar', title: 'Calendar', icon: 'calendar-outline', iconActive: 'calendar' },
   { name: 'tasks', title: 'Tasks', icon: 'checkbox-outline', iconActive: 'checkbox' },
-  { name: 'stats', title: 'Statistics', icon: 'stats-chart-outline', iconActive: 'stats-chart' },
-  { name: 'settings', title: 'Settings', icon: 'settings-outline', iconActive: 'settings' },
+  { name: 'events', title: 'Events', icon: 'ticket-outline', iconActive: 'ticket' },
+];
+
+/** Reachable from the drawer. Kept in the tabs navigator so the bar stays, but not shown as tabs. */
+const HIDDEN_TABS: { name: string; title: string }[] = [
+  { name: 'stats', title: 'Statistics' },
+  { name: 'settings', title: 'Settings' },
+  { name: 'projects', title: 'Folders' },
 ];
 
 export default function TabLayout() {
@@ -41,18 +47,22 @@ export default function TabLayout() {
         />
       ))}
       {/*
-        Folders stays in the tabs navigator so the bottom bar remains, but is not a tab item.
+        Statistics, Settings, and Folders stay in the tabs navigator so the bottom bar remains,
+        but they are not tab items. Reach them from the drawer (Folders, Statistics, Settings).
         Do NOT use href: null — Expo Router maps that to options.hidden and TabVisibilityRedirect
-        bounces /projects back to the initial Day tab.
+        bounces the route back to the initial Day tab.
       */}
-      <Tabs.Screen
-        name="projects"
-        options={{
-          title: 'Folders',
-          tabBarButton: () => null,
-          tabBarItemStyle: { display: 'none', width: 0, height: 0, overflow: 'hidden' },
-        }}
-      />
+      {HIDDEN_TABS.map((t) => (
+        <Tabs.Screen
+          key={t.name}
+          name={t.name}
+          options={{
+            title: t.title,
+            tabBarButton: () => null,
+            tabBarItemStyle: { display: 'none', width: 0, height: 0, overflow: 'hidden' },
+          }}
+        />
+      ))}
     </Tabs>
   );
 }

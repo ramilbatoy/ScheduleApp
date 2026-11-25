@@ -22,11 +22,22 @@ export interface NavigationPrefs {
 
 /**
  * Shortcuts shown until the user customizes the drawer.
- * Today, Calendar, Statistics, Settings, Categories, Theme, and Backup stay in the
- * full id list so they can be shown again; they are just off the default menu.
+ * Day, Calendar, Tasks, and Events stay on the bottom tabs.
+ * Statistics and Settings are drawer items, not tabs.
  * The Projects row is the Folders screen (`/projects`); there is no second route.
  */
-export const DEFAULT_DRAWER_ORDER: NavItemId[] = ['tasks', 'projects', 'about'];
+export const DEFAULT_DRAWER_ORDER: NavItemId[] = ['projects', 'statistics', 'settings', 'about'];
+
+/** Factory order before the NeoPlanner drawer. An exact saved copy of this list upgrades on read. */
+const RETIRED_DRAWER_ORDER: NavItemId[] = ['tasks', 'projects', 'about'];
+
+/** Replace the retired factory menu. Any other saved order, including a custom one, stays. */
+export function upgradeDrawerOrder(order: readonly NavItemId[]): NavItemId[] {
+  if (order.length === RETIRED_DRAWER_ORDER.length && order.every((id, i) => id === RETIRED_DRAWER_ORDER[i])) {
+    return [...DEFAULT_DRAWER_ORDER];
+  }
+  return [...order];
+}
 
 export const DEFAULT_NAVIGATION: NavigationPrefs = {
   drawerEnabled: true,

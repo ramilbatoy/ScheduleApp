@@ -6,9 +6,9 @@ import { formatDateKey, todayKey } from '@/domain/dates';
 import { PRIORITIES, type DateKey, type Folder, type Priority } from '@/domain/models';
 import type { FolderInput } from '@/domain/services/folderService';
 import { FOLDER_COLORS, FOLDER_ICONS } from '@/domain/services/folderService';
-import { useServices } from '@/state/appStore';
+import { useAppStore, useServices } from '@/state/appStore';
 import { PRIORITY_LABEL } from '@/ui/components/AgendaRow';
-import { DatePickerModal } from '@/ui/components/Pickers';
+import { DatePickerModal, Sheet } from '@/ui/components/Pickers';
 import { AppText, Button, Chip, Field, Icon, Input, type IconName } from '@/ui/components/primitives';
 import { errorMessage, useTheme } from '@/ui/hooks';
 import { radius, spacing } from '@/ui/theme';
@@ -45,6 +45,8 @@ function FolderFormBody({
   const p = useTheme();
   const insets = useSafeAreaInsets();
   const services = useServices();
+  const showPriority = useAppStore((s) => s.settings?.showFolderPriority === true);
+  const showTarget = useAppStore((s) => s.settings?.showFolderTargetDate === true);
   const today = todayKey(services.clock);
   const [value, setValue] = useState<FolderInput>(() =>
     folder
@@ -54,6 +56,7 @@ function FolderFormBody({
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [pickingDate, setPickingDate] = useState(false);
+  const [picker, setPicker] = useState<null | 'color' | 'icon'>(null);
 
   async function save() {
     setSaving(true);
@@ -82,39 +85,41 @@ function FolderFormBody({
             <Input testID="folder-description" value={value.description ?? ''} onChangeText={(description) => setValue((v) => ({ ...v, description }))} placeholder="Optional" multiline maxLength={500} />
           </Field>
           <Field label="Color">
-            <View style={styles.wrap}>
-              {FOLDER_COLORS.map((color) => (
-                <Pressable
-                  key={color}
-                  accessibilityRole="button"
-                  accessibilityLabel={`Color ${color}`}
-                  onPress={() => setValue((v) => ({ ...v, color }))}
-                  style={[styles.swatch, { backgroundColor: color }, value.color === color && { borderColor: p.text, borderWidth: 2 }]}
-                />
-              ))}
-            </View>
+            <Pressable
+              testID="folder-color"
+              accessibilityRole="button"
+              accessibilityLabel="Choose color"
+              onPress={() => setPicker('color')}
+              style={[styles.choice, { borderColor: p.border, backgroundColor: p.surface }]}>
+              <View style={[styles.swatch, { backgroundColor: value.color }]} />
+              <AppText style={{ flex: 1 }}>{value.color}</AppText>
+              <AppText color={p.primary}>Choose</AppText>
+            </Pressable>
           </Field>
           <Field label="Icon">
-            <View style={styles.wrap}>
-              {FOLDER_ICONS.map((icon) => (
-                <Pressable
-                  key={icon}
-                  accessibilityRole="button"
-                  accessibilityLabel={icon}
-                  onPress={() => setValue((v) => ({ ...v, icon }))}
-                  style={[styles.iconPick, { backgroundColor: value.icon === icon ? p.primarySoft : p.surfaceVariant }]}>
-                  <Icon name={icon as IconName} color={value.icon === icon ? p.primary : p.textSecondary} />
-                </Pressable>
-              ))}
-            </View>
+            <Pressable
+              testID="folder-icon"
+              accessibilityRole="button"
+              accessibilityLabel="Choose icon"
+              onPress={() => setPicker('icon')}
+              style={[styles.choice, { borderColor: p.border, backgroundColor: p.surface }]}>
+              <View style={[styles.iconPick, { backgroundColor: `${value.color}22` }]}>
+                <Icon name={value.icon as IconName} color={value.color} />
+              </View>
+              <AppText style={{ flex: 1 }}>Icon</AppText>
+              <AppText color={p.primary}>Choose</AppText>
+            </Pressable>
           </Field>
-          <Field label="Priority" hint="Tasks without their own priority use this.">
-            <View style={styles.wrap}>
-              {PRIORITIES.map((pr) => (
-                <Chip key={pr} label={PRIORITY_LABEL[pr]} color={p.priority[pr]} selected={value.priority === pr} onPress={() => setValue((v) => ({ ...v, priority: pr as Priority }))} />
-              ))}
-            </View>
-          </Field>
+          {showPriority ? (
+            <Field label="Priority" hint="Tasks without their own priority use this.">
+              <View style={styles.wrap}>
+                {PRIORITIES.map((pr) => (
+                  <Chip key={pr} label={PRIORITY_LABEL[pr]} color={p.priority[pr]} selected={value.priority === pr} onPress={() => setValue((v) => ({ ...v, priority: pr as Priority }))} />
+                ))}
+              </View>
+            </Field>
+          ) : null}
+          {showTarget ? (
           <Field label="Target date" hint="A project deadline. It does not move task dates.">
             <View style={styles.wrap}>
               <Chip
@@ -127,6 +132,7 @@ function FolderFormBody({
               {value.targetDate ? <Chip label="Clear" onPress={() => setValue((v) => ({ ...v, targetDate: null }))} /> : null}
             </View>
           </Field>
+          ) : null}
           {error ? <AppText color={p.error}>{error}</AppText> : null}
         </ScrollView>
         <View style={{ flexDirection: 'row', gap: spacing.md }}>
@@ -134,6 +140,39 @@ function FolderFormBody({
           <Button testID="folder-save" label={folder ? 'Save' : 'Create'} onPress={save} loading={saving} disabled={!value.name.trim()} style={{ flex: 1 }} />
         </View>
       </View>
+      <Sheet visible={picker === 'color'} title="Color" onClose={() => setPicker(null)}>
+        <View style={styles.wrap}>
+          {FOLDER_COLORS.map((color) => (
+            <Pressable
+              key={color}
+              accessibilityRole="button"
+              accessibilityLabel={`Color ${color}`}
+              onPress={() => {
+                setValue((v) => ({ ...v, color }));
+                setPicker(null);
+              }}
+              style={[styles.swatch, { backgroundColor: color }, value.color === color && { borderColor: p.text, borderWidth: 2 }]}
+            />
+          ))}
+        </View>
+      </Sheet>
+      <Sheet visible={picker === 'icon'} title="Icon" onClose={() => setPicker(null)}>
+        <View style={styles.wrap}>
+          {FOLDER_ICONS.map((icon) => (
+            <Pressable
+              key={icon}
+              accessibilityRole="button"
+              accessibilityLabel={icon}
+              onPress={() => {
+                setValue((v) => ({ ...v, icon }));
+                setPicker(null);
+              }}
+              style={[styles.iconPick, { backgroundColor: value.icon === icon ? p.primarySoft : p.surfaceVariant }]}>
+              <Icon name={icon as IconName} color={value.icon === icon ? p.primary : p.textSecondary} />
+            </Pressable>
+          ))}
+        </View>
+      </Sheet>
       <DatePickerModal
         visible={pickingDate}
         value={value.targetDate ?? null}
@@ -150,6 +189,7 @@ const styles = StyleSheet.create({
   backdrop: { flex: 1 },
   sheet: { borderTopLeftRadius: radius.xl, borderTopRightRadius: radius.xl, padding: spacing.lg, gap: spacing.md, width: '100%', maxWidth: 560, alignSelf: 'center' },
   wrap: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm },
+  choice: { minHeight: 48, borderWidth: StyleSheet.hairlineWidth, borderRadius: radius.md, paddingHorizontal: spacing.md, flexDirection: 'row', alignItems: 'center', gap: spacing.md },
   swatch: { width: 28, height: 28, borderRadius: 14 },
   iconPick: { width: 40, height: 40, borderRadius: radius.md, alignItems: 'center', justifyContent: 'center' },
 });

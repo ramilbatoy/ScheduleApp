@@ -46,7 +46,7 @@ adb install -r dayplanner-1.0.0-debug.apk
 adb install -r dayplanner-1.0.0-release.apk
 ```
 
-Package id: `com.dayplanner.app` · Launcher display name: **NeoOrganizer**
+Package id: `com.dayplanner.app` · Launcher display name: **NeoPlanner**
 
 ### Dev client (optional)
 
@@ -83,7 +83,7 @@ In **Settings → Reminders**, grant notification permission and optionally **Pr
 
 ## Offline smoke checklist
 
-1. Airplane mode on; open DayPlanner
+1. Airplane mode on; open NeoPlanner
 2. Quick-add a timed event/task; confirm it appears on Today
 3. With notifications allowed, create a timed item with a reminder offset; confirm a pending OS notification appears (`adb shell dumpsys notification` / Settings → Apps → DayPlanner → Notifications / scheduled)
 4. Kill the process; relaunch — data still present (SQLite)

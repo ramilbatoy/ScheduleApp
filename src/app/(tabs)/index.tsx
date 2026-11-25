@@ -1,6 +1,6 @@
 import { useNavigation } from 'expo-router';
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
+import { Pressable, RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
 
 import { formatDateKey, todayKey } from '@/domain/dates';
 import type { Agenda, DateKey } from '@/domain/models';
@@ -20,7 +20,7 @@ import {
 import { PlannerDayGroups } from '@/ui/components/PlannerFolderGroups';
 import { ReadyScreen } from '@/ui/components/ReadyScreen';
 import { useWeekFilterState, WeekFilterBar } from '@/ui/components/WeekFilterBar';
-import { AppText, Button, Card, ErrorState, LoadingState, SectionHeader, Segmented } from '@/ui/components/primitives';
+import { AppText, Button, Card, ErrorState, Icon, LoadingState, SectionHeader, Segmented } from '@/ui/components/primitives';
 import { QuickAddButton } from '@/ui/components/QuickAddButton';
 import { useAction, useQuery, useTheme } from '@/ui/hooks';
 import { radius, spacing } from '@/ui/theme';
@@ -31,35 +31,54 @@ type DashMode = 'today' | 'week' | 'month';
 
 function ProgressCard({ completed, total, carried }: { completed: number; total: number; carried: number }) {
   const p = useTheme();
+  const [open, setOpen] = useState(false);
   const pct = total ? Math.round((completed / total) * 100) : 0;
+  const remaining = Math.max(0, total - completed);
   return (
-    <Card testID="progress-card">
-      <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-end' }}>
-        <View>
-          <AppText variant="label" muted>
-            DAILY PROGRESS
+    <Card testID="progress-card" style={{ gap: spacing.sm }}>
+      <Pressable
+        testID="progress-toggle"
+        accessibilityRole="button"
+        accessibilityState={{ expanded: open }}
+        accessibilityLabel={`${open ? 'Collapse' : 'Expand'} daily progress`}
+        onPress={() => setOpen((v) => !v)}
+        style={{ gap: spacing.sm }}>
+        <View style={{ flexDirection: 'row', gap: spacing.md, alignItems: 'center' }}>
+          <View style={{ width: 40, height: 40, borderRadius: radius.md, backgroundColor: p.primarySoft, alignItems: 'center', justifyContent: 'center' }}>
+            <Icon name="sunny-outline" color={p.primary} />
+          </View>
+          <View style={{ flex: 1, gap: 2 }}>
+            <AppText variant="title" numberOfLines={1}>
+              Daily progress
+            </AppText>
+            <AppText variant="caption" muted>
+              {completed}/{total} completed · {pct}%
+            </AppText>
+          </View>
+          <AppText variant="title" color={p.primary}>
+            {pct}%
           </AppText>
-          <AppText variant="title">
+          <Icon name={open ? 'chevron-up' : 'chevron-down'} color={p.textSecondary} />
+        </View>
+        <View style={[styles.track, { backgroundColor: p.surfaceVariant }]} accessibilityRole="progressbar" accessibilityValue={{ min: 0, max: 100, now: pct }}>
+          <View style={[styles.fill, { width: `${pct}%`, backgroundColor: p.success }]} />
+        </View>
+      </Pressable>
+      {open ? (
+        <View testID="progress-details" style={{ gap: spacing.xs }}>
+          <AppText>
             {completed} of {total} completed
           </AppText>
-        </View>
-        <AppText variant="display" color={p.primary}>
-          {pct}%
-        </AppText>
-      </View>
-      <View style={[styles.track, { backgroundColor: p.surfaceVariant }]} accessibilityRole="progressbar" accessibilityValue={{ min: 0, max: 100, now: pct }}>
-        <View style={[styles.fill, { width: `${pct}%`, backgroundColor: p.success }]} />
-      </View>
-      <View style={{ flexDirection: 'row', gap: spacing.lg }}>
-        <AppText variant="caption" muted>
-          {total - completed} remaining
-        </AppText>
-        {carried > 0 ? (
-          <AppText variant="caption" color={p.warning}>
-            {carried} carried over
+          <AppText variant="caption" muted>
+            {remaining} remaining
           </AppText>
-        ) : null}
-      </View>
+          {carried > 0 ? (
+            <AppText variant="caption" color={p.warning}>
+              {carried} carried over
+            </AppText>
+          ) : null}
+        </View>
+      ) : null}
     </Card>
   );
 }

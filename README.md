@@ -1,8 +1,8 @@
-# DayPlanner — offline-first scheduling & daily productivity (Android-first)
+# NeoPlanner — offline-first scheduling & daily productivity (Android-first)
 
 Expo (React Native) + TypeScript. All data lives on the device: **SQLite on Android**, **IndexedDB-backed storage on web**. No backend, no account.
 
-> Working name and package id (`com.dayplanner.app`) are placeholders until a final brand pass.
+> Display name **NeoPlanner**. Package id stays `com.dayplanner.app` so an upgrade keeps existing data.
 
 ## Quick start
 

@@ -1,6 +1,6 @@
 import type { DbOps, Where } from '../../db/types';
 import { sanitizeBranding } from '../branding';
-import { sanitizeNavigation } from '../navigationPrefs';
+import { sanitizeNavigation, upgradeDrawerOrder } from '../navigationPrefs';
 import {
   DEFAULT_SETTINGS,
   type AppSettings,
@@ -241,6 +241,8 @@ const SETTING_KEYS: Record<keyof AppSettings, string> = {
   branding: 'branding',
   showEmptyFoldersOnTasks: 'show_empty_folders_on_tasks',
   collapseFoldersByDefault: 'collapse_folders_by_default',
+  showFolderPriority: 'show_folder_priority',
+  showFolderTargetDate: 'show_folder_target_date',
 };
 
 export class SettingsRepo {
@@ -281,10 +283,13 @@ export class SettingsRepo {
       settings.themeCustomColors = null;
     }
     settings.navigation = sanitizeNavigation(settings.navigation);
+    settings.navigation = { ...settings.navigation, order: upgradeDrawerOrder(settings.navigation.order) };
     settings.branding = sanitizeBranding(settings.branding);
     settings.showEmptyFoldersOnTasks = settings.showEmptyFoldersOnTasks === true;
     // Missing / legacy → ON (folder cards start collapsed).
     settings.collapseFoldersByDefault = settings.collapseFoldersByDefault !== false;
+    settings.showFolderPriority = settings.showFolderPriority === true;
+    settings.showFolderTargetDate = settings.showFolderTargetDate === true;
     return settings;
   }
 

@@ -56,7 +56,7 @@ export const backupFiles = {
     if (file.exists) file.delete();
     file.create();
     await file.write(json);
-    await Sharing.shareAsync(file.uri, { mimeType: 'application/json', dialogTitle: 'Save DayPlanner backup', UTI: 'public.json' });
+    await Sharing.shareAsync(file.uri, { mimeType: 'application/json', dialogTitle: 'Save NeoPlanner backup', UTI: 'public.json' });
   },
 
   async pick(): Promise<PickedFile | null> {

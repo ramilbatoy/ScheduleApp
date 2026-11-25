@@ -10,7 +10,7 @@ import { pickBrandingLogo } from '@/platform/brandingFiles';
 import { useAppStore, useServices, useSettings } from '@/state/appStore';
 import { HeaderBrand } from '@/ui/components/AppHeader';
 import { ReadyScreen } from '@/ui/components/ReadyScreen';
-import { AppText, Button, Card, Divider, ErrorState, ListRow, Screen, Segmented, SwitchRow } from '@/ui/components/primitives';
+import { AppText, Button, Card, Divider, ErrorState, IconButton, ListRow, Screen, Segmented, SwitchRow } from '@/ui/components/primitives';
 import { exportBackupFlow, latestSafetyCopyDate, restoreBackupFlow, undoRestoreFlow, type FlowResult } from '@/ui/backupActions';
 import { errorMessage, useAction, useQuery, useToast } from '@/ui/hooks';
 import { spacing } from '@/ui/theme';
@@ -25,7 +25,7 @@ const NAV_LABEL: Record<NavItemId, string> = {
   theme: 'Theme',
   backup: 'Backup & Restore',
   settings: 'Settings',
-  about: 'About NeoOrganizer',
+  about: `About ${APP_HEADER_NAME}`,
 };
 
 const PERMISSION_LABEL: Record<PermissionState, string> = {
@@ -56,6 +56,7 @@ function SettingsScreenReady() {
   const safety = useQuery(() => latestSafetyCopyDate(), []);
   const invalidate = useAppStore((s) => s.invalidate);
   const [busy, setBusy] = useState(false);
+  const [advanced, setAdvanced] = useState(false);
   const run = useAction();
 
   function moveNav(id: NavItemId, dir: -1 | 1) {
@@ -111,37 +112,8 @@ function SettingsScreenReady() {
     permission.reload();
   }
 
-  return (
-    <Screen title="Settings">
-      <AppText variant="label" muted>
-        APPEARANCE
-      </AppText>
-      <Card>
-        <AppText>Theme</AppText>
-        <Segmented<ThemePreference>
-          testID="theme-segmented"
-          value={settings.theme}
-          onChange={(v) => update('theme', v)}
-          options={[
-            { value: 'system', label: 'System' },
-            { value: 'light', label: 'Light' },
-            { value: 'dark', label: 'Dark' },
-          ]}
-        />
-        <AppText variant="caption" muted>
-          Preset: {settings.themePreset.replace(/-/g, ' ')}
-          {settings.themeCustomColors ? ' · customized' : ''}
-        </AppText>
-        <Divider />
-        <ListRow
-          testID="open-theme-settings"
-          icon="color-palette-outline"
-          label="Theme settings"
-          value="Presets & colors"
-          onPress={() => router.push('/theme-settings')}
-        />
-      </Card>
-
+  const advancedSections = (
+    <>
       <AppText variant="label" muted>
         APP BRANDING
       </AppText>
@@ -236,8 +208,61 @@ function SettingsScreenReady() {
         <Divider />
         <ListRow testID="nav-reset" icon="refresh" label="Reset menu" onPress={() => update('navigation', { ...DEFAULT_NAVIGATION, order: [...DEFAULT_NAVIGATION.order] })} />
         <AppText variant="caption" muted>
-          Hiding a shortcut does not remove the screen. Tabs stay. Folders, Categories, Theme, Backup, and About also stay available from this page.
+          Hiding a shortcut does not remove the screen. Day, Calendar, Tasks, and Events stay on the bottom tabs.
         </AppText>
+      </Card>
+    </>
+  );
+
+  if (advanced) {
+    return (
+      <Screen
+        title="Advance Setting"
+        leading={<IconButton testID="advance-back" icon="chevron-back" label="Back to Settings" onPress={() => setAdvanced(false)} />}>
+        {advancedSections}
+      </Screen>
+    );
+  }
+
+  return (
+    <Screen title="Settings">
+      <AppText variant="label" muted>
+        APPEARANCE
+      </AppText>
+      <Card>
+        <AppText>Theme</AppText>
+        <Segmented<ThemePreference>
+          testID="theme-segmented"
+          value={settings.theme}
+          onChange={(v) => update('theme', v)}
+          options={[
+            { value: 'system', label: 'System' },
+            { value: 'light', label: 'Light' },
+            { value: 'dark', label: 'Dark' },
+          ]}
+        />
+        <AppText variant="caption" muted>
+          Preset: {settings.themePreset.replace(/-/g, ' ')}
+          {settings.themeCustomColors ? ' · customized' : ''}
+        </AppText>
+        <Divider />
+        <ListRow
+          testID="open-theme-settings"
+          icon="color-palette-outline"
+          label="Theme settings"
+          value="Presets & colors"
+          onPress={() => router.push('/theme-settings')}
+        />
+      </Card>
+
+      <Card>
+        <ListRow
+          testID="open-advance-setting"
+          icon="options-outline"
+          label="Advance Setting"
+          value="Branding and menu"
+          onPress={() => setAdvanced(true)}
+        />
       </Card>
 
       <AppText variant="label" muted>
@@ -247,9 +272,25 @@ function SettingsScreenReady() {
         <SwitchRow
           testID="toggle-collapse-folders"
           label="Collapse folders by default"
-          description="Today and Week folder cards start collapsed. You can still expand or collapse any card."
+          description="Day, Week, and Month folder cards start collapsed. You can still expand or collapse any card."
           value={settings.collapseFoldersByDefault}
           onChange={(v) => update('collapseFoldersByDefault', v)}
+        />
+        <Divider />
+        <SwitchRow
+          testID="toggle-folder-priority"
+          label="Show priority on folders"
+          description="Shows Priority when you create or edit a folder. Hidden until this is on."
+          value={settings.showFolderPriority}
+          onChange={(v) => update('showFolderPriority', v)}
+        />
+        <Divider />
+        <SwitchRow
+          testID="toggle-folder-target"
+          label="Show target date on folders"
+          description="Shows Target date when you create or edit a folder. Hidden until this is on."
+          value={settings.showFolderTargetDate}
+          onChange={(v) => update('showFolderTargetDate', v)}
         />
         <Divider />
         <SwitchRow
@@ -381,7 +422,7 @@ function SettingsScreenReady() {
           All data stays on this device. No account, no cloud.
         </AppText>
         <Divider />
-        <ListRow testID="open-about" icon="information-circle-outline" label="About NeoOrganizer" onPress={() => router.push('/about')} />
+        <ListRow testID="open-about" icon="information-circle-outline" label={`About ${APP_HEADER_NAME}`} onPress={() => router.push('/about')} />
       </Card>
     </Screen>
   );

@@ -124,8 +124,8 @@ describe.each(DRIVERS)('backup and restore (%s)', (_name, open) => {
 
     it('rejects non-JSON and foreign files', async () => {
       expectInvalid('not json', /not valid JSON/);
-      expectInvalid('{"hello":1}', /not a DayPlanner backup/);
-      expectInvalid('[]', /not a DayPlanner backup/);
+      expectInvalid('{"hello":1}', /not a NeoPlanner backup/);
+      expectInvalid('[]', /not a NeoPlanner backup/);
     });
 
     it('rejects backups from a newer app version', async () => {

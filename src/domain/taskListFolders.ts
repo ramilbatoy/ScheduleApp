@@ -67,16 +67,21 @@ function counts(tasks: readonly Agenda[]): Pick<TaskFolderGroup, 'total' | 'comp
 
 /**
  * Collapse tasks that belong to a folder into one card, in the order of the first matching task.
- * Unassigned tasks and every event stay as their own rows. Tasks whose folder record is missing stay rows.
+ * Unassigned items stay as their own rows. Events stay individual unless `groupEvents` is set.
+ * Tasks whose folder record is missing stay rows.
  */
-export function groupFolderTasks(items: readonly Agenda[], opts?: { search?: string; emptyFolders?: readonly Folder[] }): TaskListEntry[] {
+export function groupFolderTasks(
+  items: readonly Agenda[],
+  opts?: { search?: string; emptyFolders?: readonly Folder[]; groupEvents?: boolean },
+): TaskListEntry[] {
   const search = opts?.search ?? '';
   const groups = new Map<string, TaskFolderGroup>();
   const order: TaskListEntry[] = [];
   for (const agenda of items) {
-    const folder = agenda.task.kind === 'task' ? agenda.folder : null;
+    const groupable = agenda.task.kind === 'task' || (opts?.groupEvents === true && agenda.task.kind === 'event');
+    const folder = groupable ? agenda.folder : null;
     const folderId = agenda.task.folderId;
-    if (agenda.task.kind !== 'task' || !folderId || !folder || folder.id !== folderId) {
+    if (!groupable || !folderId || !folder || folder.id !== folderId) {
       order.push({ kind: 'item', agenda });
       continue;
     }

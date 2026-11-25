@@ -8,7 +8,8 @@ import { PRIORITY_LABEL } from '@/ui/components/AgendaRow';
 import { FolderForm } from '@/ui/components/FolderForm';
 import { OptionsModal } from '@/ui/components/Pickers';
 import { ReadyScreen } from '@/ui/components/ReadyScreen';
-import { AppText, Button, Card, Chip, EmptyState, ErrorState, Icon, Input, LoadingState, type IconName } from '@/ui/components/primitives';
+import { SearchFieldPopup } from '@/ui/components/SearchFieldPopup';
+import { AppText, Button, Card, Chip, EmptyState, ErrorState, Icon, IconButton, LoadingState, type IconName } from '@/ui/components/primitives';
 import { useQuery, useTheme } from '@/ui/hooks';
 import { useSafeAndroidBack } from '@/ui/navigation';
 import { radius, spacing } from '@/ui/theme';
@@ -60,9 +61,11 @@ function ProjectsScreenReady() {
   const services = useServices();
   useSafeAndroidBack();
   const [text, setText] = useState('');
+  const [searchOpen, setSearchOpen] = useState(false);
   const [filter, setFilter] = useState<FolderListFilter>('all');
   const [sort, setSort] = useState<FolderSortKey>('name');
   const [creating, setCreating] = useState(false);
+  const [layout, setLayout] = useState<'list' | 'grid'>('list');
   const [picker, setPicker] = useState<null | 'filter' | 'sort'>(null);
   const all = useQuery((s) => s.folders.cards(), []);
   const shown = useQuery((s) => s.folders.cards({ text, filter, sort }), [text, filter, sort]);
@@ -89,100 +92,129 @@ function ProjectsScreenReady() {
   }
 
   return (
-    <>
-      <ScrollView style={{ backgroundColor: p.background }} contentContainerStyle={{ padding: spacing.lg, gap: spacing.md, paddingBottom: 48 }}>
-        <AppText variant="display">Folders</AppText>
-        <AppText variant="caption" muted testID="projects-overview">
-          {counts.active} active · {counts.overdue} overdue · {counts.completed} completed
-        </AppText>
-        <View style={{ flexDirection: 'row', gap: spacing.sm }}>
-          <View style={{ flex: 1 }}>
-            <Input testID="projects-search" value={text} onChangeText={setText} placeholder="Search folders" />
-          </View>
-          <Button testID="projects-add" label="Add" icon="add" onPress={() => setCreating(true)} />
-        </View>
-        <View style={styles.chipRow} testID="projects-filter-row">
+    <View style={{ flex: 1, backgroundColor: p.background }}>
+      <ScrollView contentContainerStyle={{ padding: spacing.lg, gap: spacing.md, paddingBottom: 120 }}>
+        <View style={styles.titleRow}>
+          <AppText variant="display" style={{ flexShrink: 1 }} numberOfLines={1} testID="projects-title">
+            Folder
+          </AppText>
+          <IconButton testID="projects-search-open" icon="search" label="Search folders" onPress={() => setSearchOpen(true)} />
           <Chip
             testID="projects-filter"
             icon="filter-outline"
-            label={`Status: ${filterLabel}`}
+            label={filterLabel}
             selected={filter !== 'all'}
             onPress={() => setPicker('filter')}
           />
           <Chip
             testID="projects-sort"
             icon="swap-vertical"
-            label={`Sort: ${sortLabel}`}
+            label={sortLabel}
             selected={sort !== 'name'}
             onPress={() => setPicker('sort')}
           />
+          <IconButton
+            testID="projects-layout"
+            icon={layout === 'list' ? 'grid-outline' : 'list-outline'}
+            label={layout === 'list' ? 'Show grid' : 'Show list'}
+            onPress={() => setLayout((v) => (v === 'list' ? 'grid' : 'list'))}
+          />
         </View>
+        <AppText variant="caption" muted testID="projects-overview">
+          {counts.active} active · {counts.overdue} overdue · {counts.completed} completed
+        </AppText>
         {shown.error ? <ErrorState message={shown.error} onRetry={shown.reload} /> : null}
         {!shown.data && !shown.error ? <LoadingState /> : null}
         {shown.data && shown.data.length === 0 ? (
-          <EmptyState icon="folder-open-outline" title={text ? 'No matches' : 'No folders yet'} message="Folders group tasks into projects. Categories stay separate." action={<Button label="Add folder" icon="add" onPress={() => setCreating(true)} />} />
+          <EmptyState icon="folder-open-outline" title={text ? 'No matches' : 'No folders yet'} message="Folders group tasks into projects. Tap + to add one. Categories stay separate." />
         ) : null}
-        {shown.data?.map((card, index) => {
-          const due = targetLabel(card);
-          const open = () => router.push({ pathname: '/folder/[id]', params: { id: card.id } });
-          return (
-            <Card key={card.id} testID={`project-card-${index}`}>
-              <View style={{ flexDirection: 'row', gap: spacing.md, alignItems: 'flex-start' }}>
-                <Pressable
-                  accessibilityRole="button"
-                  accessibilityLabel={`Open ${card.name}`}
-                  onPress={open}
-                  style={({ pressed }) => [{ flex: 1, gap: spacing.sm }, pressed && { opacity: 0.85 }]}>
-                  <View style={{ flexDirection: 'row', gap: spacing.md, alignItems: 'center' }}>
-                    <View style={{ width: 40, height: 40, borderRadius: radius.md, backgroundColor: `${card.color}22`, alignItems: 'center', justifyContent: 'center' }}>
-                      <Icon name={card.icon as IconName} color={card.color} />
-                    </View>
-                    <View style={{ flex: 1, gap: 2 }}>
-                      <AppText variant="heading" numberOfLines={1}>
-                        {card.name}
-                      </AppText>
-                      <AppText variant="caption" muted>
-                        {card.progress.completed}/{card.progress.total || 0} completed · {card.progress.percent}%
-                        {card.progress.pending ? ` · ${card.progress.pending} pending` : ''}
-                        {card.progress.overdue ? ` · ${card.progress.overdue} overdue` : ''}
-                      </AppText>
-                    </View>
-                  </View>
-                  <View style={[styles.track, { backgroundColor: p.surfaceVariant }]}>
-                    <View style={{ width: `${card.progress.percent}%`, height: 6, backgroundColor: card.color, borderRadius: radius.sm }} />
-                  </View>
-                  <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm }}>
-                    <AppText variant="caption" color={p.priority[card.priority]}>
-                      {PRIORITY_LABEL[card.priority]}
-                    </AppText>
-                    {due ? (
-                      <AppText variant="caption" color={card.target.overdue && card.progress.percent < 100 ? p.overdue : p.textSecondary}>
-                        {due}
-                      </AppText>
-                    ) : (
-                      <AppText variant="caption" muted>
-                        No target
-                      </AppText>
-                    )}
-                    {card.status !== 'active' ? (
-                      <AppText variant="caption" muted>
-                        {FOLDER_STATUS_LABEL[card.status]}
-                      </AppText>
+        <View style={layout === 'grid' ? styles.grid : undefined}>
+          {shown.data?.map((card, index) => {
+            const due = targetLabel(card);
+            const open = () => router.push({ pathname: '/folder/[id]', params: { id: card.id } });
+            const completed = card.status === 'completed';
+            return (
+              <View key={card.id} style={layout === 'grid' ? styles.gridCell : undefined}>
+                <Card
+                  testID={`project-card-${index}`}
+                  style={{ backgroundColor: completed ? (p.scheme === 'dark' ? '#3A414B' : '#E4E6EB') : p.surface }}>
+                  <View style={{ flexDirection: 'row', gap: spacing.md, alignItems: 'flex-start' }}>
+                    <Pressable
+                      accessibilityRole="button"
+                      accessibilityLabel={`Open ${card.name}`}
+                      onPress={open}
+                      style={({ pressed }) => [{ flex: 1, gap: spacing.sm }, pressed && { opacity: 0.85 }]}>
+                      <View style={{ flexDirection: 'row', gap: spacing.md, alignItems: 'center' }}>
+                        <View style={{ width: 40, height: 40, borderRadius: radius.md, backgroundColor: `${card.color}22`, alignItems: 'center', justifyContent: 'center' }}>
+                          <Icon name={card.icon as IconName} color={card.color} />
+                        </View>
+                        <View style={{ flex: 1, gap: 2 }}>
+                          <AppText variant="heading" numberOfLines={1}>
+                            {card.name}
+                          </AppText>
+                          <AppText variant="caption" muted>
+                            {card.progress.completed}/{card.progress.total || 0} completed · {card.progress.percent}%
+                            {card.progress.pending ? ` · ${card.progress.pending} pending` : ''}
+                            {card.progress.overdue ? ` · ${card.progress.overdue} overdue` : ''}
+                          </AppText>
+                        </View>
+                      </View>
+                      <View style={[styles.track, { backgroundColor: p.surfaceVariant }]}>
+                        <View style={{ width: `${card.progress.percent}%`, height: 6, backgroundColor: card.color, borderRadius: radius.sm }} />
+                      </View>
+                      <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm }}>
+                        <AppText variant="caption" color={p.priority[card.priority]}>
+                          {PRIORITY_LABEL[card.priority]}
+                        </AppText>
+                        {due ? (
+                          <AppText variant="caption" color={card.target.overdue && card.progress.percent < 100 ? p.overdue : p.textSecondary}>
+                            {due}
+                          </AppText>
+                        ) : (
+                          <AppText variant="caption" muted>
+                            No target
+                          </AppText>
+                        )}
+                        {card.status !== 'active' ? (
+                          <AppText variant="caption" muted>
+                            {FOLDER_STATUS_LABEL[card.status]}
+                          </AppText>
+                        ) : null}
+                      </View>
+                    </Pressable>
+                    {sort === 'manual' ? (
+                      <View>
+                        <Button label="Up" compact tone="ghost" onPress={() => move(card.id, -1)} />
+                        <Button label="Down" compact tone="ghost" onPress={() => move(card.id, 1)} />
+                      </View>
                     ) : null}
                   </View>
-                </Pressable>
-                {sort === 'manual' ? (
-                  <View>
-                    <Button label="Up" compact tone="ghost" onPress={() => move(card.id, -1)} />
-                    <Button label="Down" compact tone="ghost" onPress={() => move(card.id, 1)} />
-                  </View>
-                ) : null}
+                </Card>
               </View>
-            </Card>
-          );
-        })}
+            );
+          })}
+        </View>
       </ScrollView>
-      <FolderForm visible={creating} onClose={() => setCreating(false)} onSaved={() => { shown.reload(); all.reload(); }} />
+      <SearchFieldPopup visible={searchOpen} value={text} onChangeText={setText} onClose={() => setSearchOpen(false)} placeholder="Search folders" testID="projects-search" />
+      <Pressable
+        testID="projects-add"
+        accessibilityRole="button"
+        accessibilityLabel="Add folder"
+        onPress={() => setCreating(true)}
+        style={({ pressed }) => [
+          styles.fab,
+          { backgroundColor: p.primary, opacity: pressed ? 0.85 : 1, shadowColor: p.scheme === 'dark' ? '#000000' : p.text },
+        ]}>
+        <Icon name="add" size={30} color={p.onPrimary} />
+      </Pressable>
+      <FolderForm
+        visible={creating}
+        onClose={() => setCreating(false)}
+        onSaved={() => {
+          shown.reload();
+          all.reload();
+        }}
+      />
       <OptionsModal<FolderListFilter>
         visible={picker === 'filter'}
         title="Filter folders"
@@ -199,11 +231,27 @@ function ProjectsScreenReady() {
         onChange={setSort}
         onClose={() => setPicker(null)}
       />
-    </>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
+  titleRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs, flexWrap: 'wrap' },
   track: { height: 6, borderRadius: radius.sm, overflow: 'hidden' },
-  chipRow: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm },
+  grid: { flexDirection: 'row', flexWrap: 'wrap', marginHorizontal: -6 },
+  gridCell: { width: '50%', paddingHorizontal: 6, paddingBottom: 12 },
+  fab: {
+    position: 'absolute',
+    right: 20,
+    bottom: 20,
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    alignItems: 'center',
+    justifyContent: 'center',
+    elevation: 6,
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 4 },
+  },
 });
