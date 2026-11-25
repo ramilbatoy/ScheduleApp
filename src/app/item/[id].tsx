@@ -3,14 +3,15 @@ import { useRef, useState, type ComponentRef } from 'react';
 import { KeyboardAvoidingView, Platform, ScrollView, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { formatDateKey, formatTime, todayKey } from '@/domain/dates';
+import { formatDateKey, formatDeadline, formatTime, todayKey } from '@/domain/dates';
 import type { HistoryEntry } from '@/domain/models';
 import { describeRule } from '@/domain/recurrence';
 import { agendaPriority, displayTitle, formatOverdueDetail, overdueTimeline } from '@/domain/services/agendaService';
 import { describeOffset } from '@/domain/services/reminderService';
 import type { EditScope } from '@/domain/services/taskService';
 import { useServices } from '@/state/appStore';
-import { formatDeadline, ItemBadges, PRIORITY_LABEL } from '@/ui/components/AgendaRow';
+import { ItemBadges, PRIORITY_LABEL } from '@/ui/components/AgendaRow';
+import { ReadyScreen } from '@/ui/components/ReadyScreen';
 import { choose, confirm } from '@/ui/components/dialogs';
 import { DatePickerModal } from '@/ui/components/Pickers';
 import { AppText, Button, Card, Divider, EmptyState, Icon, LoadingState, type IconName } from '@/ui/components/primitives';
@@ -44,6 +45,14 @@ function InfoRow({ icon, label, value }: { icon: IconName; label: string; value:
 }
 
 export default function ItemDetailScreen() {
+  return (
+    <ReadyScreen testID="detail-boot">
+      <ItemDetailBody />
+    </ReadyScreen>
+  );
+}
+
+function ItemDetailBody() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const p = useTheme();
   const services = useServices();

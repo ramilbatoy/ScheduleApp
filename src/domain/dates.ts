@@ -108,6 +108,12 @@ export function formatDateKey(key: DateKey, pattern = 'EEE, MMM d'): string {
   return format(fromDateKey(key), pattern);
 }
 
+/** Short local date and time for an ISO deadline. Lives here so agenda rows and subtasks do not import each other. */
+export function formatDeadline(iso: string): string {
+  const d = new Date(iso);
+  return d.toLocaleString([], { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
+}
+
 export function minutesOf(time: TimeOfDay): number {
   const [h, m] = time.split(':').map(Number);
   return h * 60 + m;

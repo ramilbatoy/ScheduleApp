@@ -44,7 +44,8 @@ export function NavDrawer() {
   }, [settings?.navigation.order]);
 
   useEffect(() => {
-    Animated.timing(translate, { toValue: open ? 0 : -panelWidth, duration: 180, useNativeDriver: true }).start();
+    // Web has no native animation module; the driver warning fires on every mount if this stays true.
+    Animated.timing(translate, { toValue: open ? 0 : -panelWidth, duration: 180, useNativeDriver: Platform.OS !== 'web' }).start();
   }, [open, panelWidth, translate]);
 
   useEffect(() => {
@@ -74,7 +75,7 @@ export function NavDrawer() {
         },
         onPanResponderRelease: (_, g) => {
           if (g.dx < -48 || g.vx < -0.4) close();
-          else Animated.spring(translate, { toValue: 0, useNativeDriver: true }).start();
+          else Animated.spring(translate, { toValue: 0, useNativeDriver: Platform.OS !== 'web' }).start();
         },
       }),
     [close, panelWidth, translate],

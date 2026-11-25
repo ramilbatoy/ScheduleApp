@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState, type ComponentRef, type RefObject } from 'react';
 import { Keyboard, Platform, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 
-import { combineDateTime, formatDateKey, formatTime, toDateKey, todayKey } from '@/domain/dates';
+import { combineDateTime, formatDateKey, formatDeadline, formatTime, toDateKey, todayKey } from '@/domain/dates';
 import type { SubtaskNode } from '@/domain/models';
 import { countSubtasks, flattenSubtaskTree } from '@/domain/services/subtaskService';
 import { useServices } from '@/state/appStore';
@@ -10,8 +10,6 @@ import { DatePickerModal, TimePickerModal } from '@/ui/components/Pickers';
 import { AppText, Button, Icon, Input, SelectButton } from '@/ui/components/primitives';
 import { useAction, useTheme } from '@/ui/hooks';
 import { radius, spacing, TOUCH } from '@/ui/theme';
-
-import { formatDeadline } from './AgendaRow';
 
 const INDENT = 18;
 

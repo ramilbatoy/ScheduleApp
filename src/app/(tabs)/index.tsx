@@ -60,10 +60,10 @@ function ProgressCard({ completed, total, carried }: { completed: number; total:
           </AppText>
           <Icon name={open ? 'chevron-up' : 'chevron-down'} color={p.textSecondary} />
         </View>
-        <View style={[styles.track, { backgroundColor: p.surfaceVariant }]} accessibilityRole="progressbar" accessibilityValue={{ min: 0, max: 100, now: pct }}>
-          <View style={[styles.fill, { width: `${pct}%`, backgroundColor: p.success }]} />
-        </View>
       </Pressable>
+      <View style={[styles.track, { backgroundColor: p.surfaceVariant }]} accessibilityRole="progressbar" accessibilityValue={{ min: 0, max: 100, now: pct }}>
+        <View style={[styles.fill, { width: `${pct}%`, backgroundColor: p.success }]} />
+      </View>
       {open ? (
         <View testID="progress-details" style={{ gap: spacing.xs }}>
           <AppText>

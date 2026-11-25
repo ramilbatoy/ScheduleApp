@@ -14,6 +14,7 @@ import { DatePickerModal, OptionsModal, TimePickerModal } from '../components/Pi
 import { PrioritySelectDropdown } from '../components/PrioritySelectDropdown';
 import { ReminderAlertModal } from '../components/ReminderAlertModal';
 import { AppText, Button, Card, ErrorState, Field, Input, LoadingState, Segmented, SelectButton, SwitchRow } from '../components/primitives';
+import { ReadyScreen } from '../components/ReadyScreen';
 import { RecurrenceEditor } from '../components/RecurrenceEditor';
 import { SubtaskEditor } from '../components/SubtaskList';
 import { errorMessage, useQuery, useTheme, useToast } from '../hooks';
@@ -32,15 +33,27 @@ export interface ItemFormParams {
   folderId?: string;
 }
 
-export function ItemForm({
+export function ItemForm(props: {
+  params: ItemFormParams;
+  /** When true, skip stack chrome and Android-back hook (used inside modals). */
+  embedded?: boolean;
+  /** Called instead of stack navigation after save/cancel when provided. */
+  onDone?: () => void;
+}) {
+  return (
+    <ReadyScreen testID="item-form-boot">
+      <ItemFormReady {...props} />
+    </ReadyScreen>
+  );
+}
+
+function ItemFormReady({
   params,
   embedded,
   onDone,
 }: {
   params: ItemFormParams;
-  /** When true, skip stack chrome and Android-back hook (used inside modals). */
   embedded?: boolean;
-  /** Called instead of stack navigation after save/cancel when provided. */
   onDone?: () => void;
 }) {
   const services = useServices();

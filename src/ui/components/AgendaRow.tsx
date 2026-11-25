@@ -2,7 +2,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { Pressable, StyleSheet, View } from 'react-native';
 
-import { formatDateKey, formatTime, todayKey } from '@/domain/dates';
+import { formatDateKey, formatDeadline, formatTime, todayKey } from '@/domain/dates';
 import type { Agenda } from '@/domain/models';
 import { agendaPriority, displayTitle, formatOverdueLabels, isOverdue, overdueTimeline } from '@/domain/services/agendaService';
 import { useAppStore } from '@/state/appStore';
@@ -13,11 +13,6 @@ import { AppText, Badge } from './primitives';
 import { AgendaSubtasks, SubtaskProgressBadge } from './SubtaskList';
 
 export const PRIORITY_LABEL = { low: 'Low', medium: 'Medium', high: 'High', urgent: 'Urgent' } as const;
-
-export function formatDeadline(iso: string): string {
-  const d = new Date(iso);
-  return d.toLocaleString([], { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
-}
 
 export function ItemBadges({ a, showDate }: { a: Agenda; showDate?: boolean }) {
   const p = useTheme();
