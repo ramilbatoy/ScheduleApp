@@ -133,13 +133,13 @@ Update this section whenever a phase finishes, a PR merges, or acceptance status
 | NeoOrganizer 1.3.0 upgrade APK | Superseded (2026-11-26 Asia/Manila) | https://github.com/ramilbatoy/ScheduleApp/pull/29 — closed; stale vs #30/#31; do not merge. Local APK may remain at `Finalinstall/1.3.0/`. Report: `/cursor/stores/self/docs/neoorganizer-1.3.0-build-report.md` |
 | NeoPlanner UI overhaul | Merged to main (2026-11-26 Asia/Manila) | https://github.com/ramilbatoy/ScheduleApp/pull/30 — display name NeoPlanner (package `com.dayplanner.app` unchanged); tabs Day / Calendar / Tasks / Events; drawer Folders, Statistics, Settings, About NeoPlanner; Advance Setting; folder/task/event lists; Day folder cards; Daily Progress collapsed until tap; warning pass (require cycle, web drawer driver, ReadyScreen); **248** tests. Report: `/cursor/stores/self/docs/neoplanner-layout-report.md` |
 | Folder / Day / Event polish | Merged to main (2026-11-26 Asia/Manila) | https://github.com/ramilbatoy/ScheduleApp/pull/31 — Folder list layout + Advance Setting default view; folder detail under tabs with options popup / Mark Completed / hidden Quick Add + FAB; Tasks/Events kind-locked quick-add + When dropdown; Day/Week/Month search popup + filters sheet + grid/list; Week date-tap + today dot; Month title go-to-date; **248** tests. Report: `/cursor/stores/self/docs/folder-day-event-polish-report.md` |
-| NeoPlanner 1.3.1 upgrade APK | Open PR (2026-11-26 Asia/Manila) | Branch `cursor/neoplanner-1.3.1-d045` — `versionName` 1.3.1 / `versionCode` 5; same package `com.dayplanner.app` + debug keystore SHA-1 `5E:8F:16:06:…:F6:25`. Android APK: `~/Desktop/git/ScheduleApp/Finalinstall/1.3.1/NeoPlanner-1.3.1-release.apk`. Report: `/cursor/stores/self/docs/neoplanner-1.3.1-build-report.md` |
+| NeoPlanner 1.3.1 upgrade APK | Open PR (2026-11-26 Asia/Manila) | https://github.com/ramilbatoy/ScheduleApp/pull/32 — `versionName` 1.3.1 / `versionCode` 5; same package `com.dayplanner.app` + debug keystore SHA-1 `5E:8F:16:06:…:F6:25`. Android APK: `~/Desktop/git/ScheduleApp/Finalinstall/1.3.1/NeoPlanner-1.3.1-release.apk`. Report: `/cursor/stores/self/docs/neoplanner-1.3.1-build-report.md` |
 
 ### In progress / remaining
 
 | Item | Status | Notes |
 | --- | --- | --- |
-| NeoPlanner 1.3.1 upgrade APK | Open PR | Merge packaging PR; then bump Accomplishments to Merged |
+| NeoPlanner 1.3.1 upgrade APK | Open PR | https://github.com/ramilbatoy/ScheduleApp/pull/32 — merge packaging PR; then bump Accomplishments to Merged |
 | Device re-verify | Optional | Physical phone smoke: install-over Finalinstall 1.3.1 APK (data keep from 1.0–1.3.0), alarms, clipping |
 | iOS signed IPA | Blocked | Needs Apple Developer team / certificates; see `Finalinstall/1.2.0/ios/README.md` |
 | Production signing | Optional | Replace debug-keystore release with Play/EAS credentials when publishing |
