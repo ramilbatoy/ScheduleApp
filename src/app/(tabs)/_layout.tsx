@@ -40,6 +40,8 @@ export default function TabLayout() {
           }}
         />
       ))}
+      {/* Drawer / Settings reach Folders here so the bottom tabs stay visible. */}
+      <Tabs.Screen name="projects" options={{ title: 'Folders', href: null }} />
     </Tabs>
   );
 }

@@ -1,14 +1,30 @@
 import { addMonths, format } from 'date-fns';
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Modal, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 
 import { fromDateKey, nowTimeOfDay, toDateKey } from '@/domain/dates';
 import type { DateKey, TimeOfDay } from '@/domain/models';
+import { jumpAnchorToMonth, parseYearMonth } from '@/domain/monthTable';
 
 import { useTheme } from '../hooks';
 import { radius, spacing } from '../theme';
 import { MonthGrid } from './MonthGrid';
 import { AppText, Button, IconButton } from './primitives';
+
+const MONTH_OPTIONS = [
+  { value: 1, label: 'January' },
+  { value: 2, label: 'February' },
+  { value: 3, label: 'March' },
+  { value: 4, label: 'April' },
+  { value: 5, label: 'May' },
+  { value: 6, label: 'June' },
+  { value: 7, label: 'July' },
+  { value: 8, label: 'August' },
+  { value: 9, label: 'September' },
+  { value: 10, label: 'October' },
+  { value: 11, label: 'November' },
+  { value: 12, label: 'December' },
+] as const;
 
 export function Sheet({ visible, onClose, children, title }: { visible: boolean; onClose: () => void; children: React.ReactNode; title: string }) {
   const p = useTheme();
@@ -39,40 +55,110 @@ export function DatePickerModal({
   onChange: (d: DateKey) => void;
   onClose: () => void;
 }) {
+  const p = useTheme();
   const [month, setMonth] = useState(value ?? today);
+  const [pick, setPick] = useState<null | 'month' | 'year'>(null);
   useEffect(() => {
-    if (visible) setMonth(value ?? today);
+    if (visible) {
+      setMonth(value ?? today);
+      setPick(null);
+    }
   }, [visible, value, today]);
+
+  const ym = parseYearMonth(month);
+  const yearOptions = useMemo(() => {
+    const center = ym.year;
+    return Array.from({ length: 21 }, (_, i) => {
+      const y = center - 10 + i;
+      return { value: y, label: String(y) };
+    });
+  }, [ym.year]);
+
+  function setMonthYear(nextYear: number, nextMonth: number) {
+    setMonth(jumpAnchorToMonth(month, nextYear, nextMonth));
+  }
+
   return (
-    <Sheet visible={visible} onClose={onClose} title={title}>
-      <View style={styles.monthNav}>
-        <IconButton icon="chevron-back" label="Previous month" onPress={() => setMonth(toDateKey(addMonths(fromDateKey(month), -1)))} />
-        <AppText variant="heading">{format(fromDateKey(month), 'MMMM yyyy')}</AppText>
-        <IconButton icon="chevron-forward" label="Next month" onPress={() => setMonth(toDateKey(addMonths(fromDateKey(month), 1)))} />
-      </View>
-      <MonthGrid
-        compact
-        month={month}
-        selected={value}
-        today={today}
-        onSelect={(d) => {
-          onChange(d);
-          onClose();
-        }}
-      />
-      <View style={styles.row}>
-        <Button
-          label="Today"
-          tone="secondary"
+    <>
+      <Sheet visible={visible && pick === null} onClose={onClose} title={title}>
+        <View style={styles.monthNav}>
+          <IconButton
+            icon="chevron-back"
+            label="Previous month"
+            onPress={() => setMonth(toDateKey(addMonths(fromDateKey(month), -1)))}
+            testID="goto-prev-month"
+          />
+          <View style={styles.monthYearPickers}>
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel={`Month ${MONTH_OPTIONS[ym.month - 1]?.label}`}
+              onPress={() => setPick('month')}
+              testID="goto-pick-month"
+              style={[styles.monthYearChip, { backgroundColor: p.surfaceVariant }]}>
+              <AppText variant="heading">{format(fromDateKey(month), 'MMMM')}</AppText>
+            </Pressable>
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel={`Year ${ym.year}`}
+              onPress={() => setPick('year')}
+              testID="goto-pick-year"
+              style={[styles.monthYearChip, { backgroundColor: p.surfaceVariant }]}>
+              <AppText variant="heading">{String(ym.year)}</AppText>
+            </Pressable>
+          </View>
+          <IconButton
+            icon="chevron-forward"
+            label="Next month"
+            onPress={() => setMonth(toDateKey(addMonths(fromDateKey(month), 1)))}
+            testID="goto-next-month"
+          />
+        </View>
+        <MonthGrid
           compact
-          onPress={() => {
-            onChange(today);
+          month={month}
+          selected={value}
+          today={today}
+          onSelect={(d) => {
+            onChange(d);
             onClose();
           }}
         />
-        <Button label="Cancel" tone="ghost" compact onPress={onClose} />
-      </View>
-    </Sheet>
+        <View style={styles.row}>
+          <Button
+            label="Today"
+            tone="secondary"
+            compact
+            onPress={() => {
+              onChange(today);
+              onClose();
+            }}
+          />
+          <Button label="Cancel" tone="ghost" compact onPress={onClose} />
+        </View>
+      </Sheet>
+      <OptionsModal
+        visible={pick === 'month'}
+        title="Month"
+        value={ym.month}
+        options={[...MONTH_OPTIONS]}
+        onChange={(m) => {
+          setMonthYear(ym.year, m);
+          setPick(null);
+        }}
+        onClose={() => setPick(null)}
+      />
+      <OptionsModal
+        visible={pick === 'year'}
+        title="Year"
+        value={ym.year}
+        options={yearOptions}
+        onChange={(y) => {
+          setMonthYear(y, ym.month);
+          setPick(null);
+        }}
+        onClose={() => setPick(null)}
+      />
+    </>
   );
 }
 
@@ -187,7 +273,15 @@ export function OptionsModal<T extends string | number | null>({
 const styles = StyleSheet.create({
   backdrop: { flex: 1, justifyContent: 'center', padding: spacing.lg },
   sheet: { borderRadius: radius.xl, padding: spacing.lg, gap: spacing.md, maxWidth: 440, width: '100%', alignSelf: 'center' },
-  monthNav: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  monthNav: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: spacing.xs },
+  monthYearPickers: { flex: 1, flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', gap: spacing.xs },
+  monthYearChip: {
+    minHeight: 36,
+    paddingHorizontal: spacing.md,
+    borderRadius: radius.md,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
   row: { flexDirection: 'row', justifyContent: 'flex-end', gap: spacing.sm },
   option: { minHeight: 44, paddingHorizontal: spacing.md, borderRadius: radius.md, justifyContent: 'center', alignItems: 'center' },
 });

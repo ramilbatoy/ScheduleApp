@@ -127,7 +127,7 @@ function WeekView({ anchor, today, onOpenDay }: { anchor: DateKey; today: DateKe
                   {d === today ? ' · Today' : ''}
                 </AppText>
                 <AppText variant="caption" muted>
-                  {list.length ? `${done}/${list.length} done` : 'Free'}
+                  {list.length ? `${done}/${list.length} completed` : 'Free'}
                 </AppText>
               </Pressable>
               <IconButton icon="add-circle-outline" label={`Add on ${formatDateKey(d, 'EEEE')}`} color={p.primary} onPress={() => router.push({ pathname: '/quick-add', params: { date: d } })} testID={`week-add-${d}`} />

@@ -34,7 +34,7 @@ function SummaryLines({ rangeLabel, range, overall, testID }: { rangeLabel: stri
         {rangeLabel} {range.completed}/{range.scheduled}
       </AppText>
       <AppText variant="caption" muted>
-        {range.scheduled} scheduled · {range.completed} done · {range.pending} pending
+        {range.scheduled} scheduled · {range.completed} completed · {range.pending} pending
         {overdue}
       </AppText>
       {overall ? (
@@ -69,40 +69,45 @@ function FolderGroupCard({
   const target = targetPhrase(folder, today);
   return (
     <Card testID={testID} style={{ gap: spacing.sm, flex: 1, minWidth: 0 }}>
-      <Pressable
-        accessibilityRole="button"
-        accessibilityState={{ expanded: open }}
-        accessibilityLabel={`${open ? 'Collapse' : 'Expand'} ${folder.name}`}
-        onPress={() => setOpen((v) => !v)}
-        testID={`${testID}-toggle`}
-        style={{ gap: spacing.sm }}>
+      <View style={{ gap: spacing.sm }}>
         <View style={{ flexDirection: 'row', gap: spacing.md, alignItems: 'center' }}>
-          <View style={{ width: 44, height: 44, borderRadius: radius.md, backgroundColor: `${folder.color}22`, alignItems: 'center', justifyContent: 'center' }}>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel={`Open folder details for ${folder.name}`}
+            onPress={() => router.push({ pathname: '/folder/[id]', params: { id: folder.id } })}
+            testID={`${testID}-open`}
+            hitSlop={4}
+            style={{ width: 44, height: 44, borderRadius: radius.md, backgroundColor: `${folder.color}22`, alignItems: 'center', justifyContent: 'center' }}>
             <Icon name={folder.icon as IconName} color={folder.color} />
-          </View>
-          <View style={{ flex: 1, gap: 2 }}>
-            <AppText variant="title" numberOfLines={1}>
-              {folder.name}
-            </AppText>
-            <AppText variant="caption" color={target?.includes('overdue') ? p.overdue : p.priority[folder.priority]}>
-              {PRIORITY_LABEL[folder.priority]}
-              {target ? ` · ${target}` : ''}
-            </AppText>
-          </View>
-          <Icon name={open ? 'chevron-up' : 'chevron-down'} color={p.textSecondary} />
+          </Pressable>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityState={{ expanded: open }}
+            accessibilityLabel={`${open ? 'Collapse' : 'Expand'} ${folder.name}`}
+            onPress={() => setOpen((v) => !v)}
+            testID={`${testID}-toggle`}
+            style={{ flex: 1, flexDirection: 'row', gap: spacing.md, alignItems: 'center' }}>
+            <View style={{ flex: 1, gap: 2 }}>
+              <AppText variant="title" numberOfLines={1}>
+                {folder.name}
+              </AppText>
+              <AppText variant="caption" color={target?.includes('overdue') ? p.overdue : p.priority[folder.priority]}>
+                {PRIORITY_LABEL[folder.priority]}
+                {target ? ` · ${target}` : ''}
+              </AppText>
+            </View>
+            <Icon name={open ? 'chevron-up' : 'chevron-down'} color={p.textSecondary} />
+          </Pressable>
         </View>
-        <SummaryLines rangeLabel={rangeLabel} range={range} overall={overall} testID={testID} />
-      </Pressable>
-      <Pressable
-        accessibilityRole="button"
-        accessibilityLabel={`Open folder ${folder.name}`}
-        onPress={() => router.push({ pathname: '/folder/[id]', params: { id: folder.id } })}
-        testID={`${testID}-open`}
-        hitSlop={4}>
-        <AppText variant="caption" color={p.primary}>
-          Open folder details
-        </AppText>
-      </Pressable>
+        <Pressable
+          accessibilityRole="button"
+          accessibilityState={{ expanded: open }}
+          accessibilityLabel={`${open ? 'Collapse' : 'Expand'} ${folder.name} summary`}
+          onPress={() => setOpen((v) => !v)}
+          testID={`${testID}-summary`}>
+          <SummaryLines rangeLabel={rangeLabel} range={range} overall={overall} testID={testID} />
+        </Pressable>
+      </View>
       {open ? <View style={{ gap: spacing.sm }}>{children}</View> : null}
     </Card>
   );

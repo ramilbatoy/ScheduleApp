@@ -67,7 +67,7 @@ export function MonthGrid({
                 key={d}
                 testID={`day-${d}`}
                 accessibilityRole="button"
-                accessibilityLabel={`${format(fromDateKey(d), 'EEEE, MMMM d')}${s ? `, ${s.total} items, ${s.completed} done` : ''}`}
+                accessibilityLabel={`${format(fromDateKey(d), 'EEEE, MMMM d')}${s ? `, ${s.total} items, ${s.completed} completed` : ''}`}
                 accessibilityState={{ selected: isSel }}
                 onPress={() => onSelect(d)}
                 style={[styles.cell, { height: cellHeight }]}>

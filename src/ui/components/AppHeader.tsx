@@ -5,6 +5,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { APP_HEADER_NAME, displayLogo, logoDataUri } from '@/domain/branding';
 import { useAppStore } from '@/state/appStore';
+import { BRAND_TITLE } from '@/theme/typography';
 import { useTheme } from '@/ui/hooks';
 import { goBackOrDashboard } from '@/ui/navigation';
 import { spacing } from '@/ui/theme';
@@ -40,7 +41,7 @@ export function HeaderBrand({
   let brand: ReactNode;
   if (!uri || failed) {
     brand = (
-      <AppText variant="title" numberOfLines={1} style={styles.name} testID={`${testID}-name`}>
+      <AppText variant="title" numberOfLines={1} style={[styles.name, BRAND_TITLE]} testID={`${testID}-name`}>
         {APP_HEADER_NAME}
       </AppText>
     );

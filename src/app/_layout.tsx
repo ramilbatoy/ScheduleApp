@@ -49,7 +49,6 @@ function Navigation() {
         }}>
         <Stack.Screen name="(tabs)" options={{ headerShown: false, headerLeft: () => null }} />
         <Stack.Screen name="about" options={{ title: 'About' }} />
-        <Stack.Screen name="projects" options={{ title: 'Projects' }} />
         <Stack.Screen name="item/edit" options={{ title: 'Edit', presentation: 'modal' }} />
         <Stack.Screen
           name="quick-add"

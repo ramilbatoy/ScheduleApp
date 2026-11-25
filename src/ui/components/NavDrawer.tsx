@@ -118,7 +118,7 @@ export function NavDrawer() {
           </View>
           {progress.data ? (
             <AppText variant="caption" muted testID="drawer-today-progress">
-              Today {done} of {total} done
+              Today {done} of {total} completed
             </AppText>
           ) : null}
           <View style={{ gap: spacing.xs }}>

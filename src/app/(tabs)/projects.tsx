@@ -1,4 +1,4 @@
-import { router, Stack } from 'expo-router';
+import { router } from 'expo-router';
 import { useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 
@@ -11,6 +11,12 @@ import { AppText, Button, Card, Chip, EmptyState, ErrorState, Icon, Input, Loadi
 import { useQuery, useTheme } from '@/ui/hooks';
 import { useSafeAndroidBack } from '@/ui/navigation';
 import { radius, spacing } from '@/ui/theme';
+
+const FOLDER_STATUS_LABEL: Record<FolderCard['status'], string> = {
+  active: 'Active',
+  archived: 'Archived',
+  completed: 'Completed',
+};
 
 const FILTERS: { value: FolderListFilter; label: string }[] = [
   { value: 'all', label: 'All' },
@@ -75,7 +81,6 @@ export default function ProjectsScreen() {
 
   return (
     <>
-      <Stack.Screen options={{ title: 'Folders' }} />
       <ScrollView style={{ backgroundColor: p.background }} contentContainerStyle={{ padding: spacing.lg, gap: spacing.md, paddingBottom: 48 }}>
         <AppText variant="display">Folders</AppText>
         <AppText variant="caption" muted testID="projects-overview">
@@ -128,7 +133,7 @@ export default function ProjectsScreen() {
                         {card.name}
                       </AppText>
                       <AppText variant="caption" muted>
-                        {card.progress.completed}/{card.progress.total || 0} done · {card.progress.percent}%
+                        {card.progress.completed}/{card.progress.total || 0} completed · {card.progress.percent}%
                         {card.progress.pending ? ` · ${card.progress.pending} pending` : ''}
                         {card.progress.overdue ? ` · ${card.progress.overdue} overdue` : ''}
                       </AppText>
@@ -152,7 +157,7 @@ export default function ProjectsScreen() {
                     )}
                     {card.status !== 'active' ? (
                       <AppText variant="caption" muted>
-                        {card.status}
+                        {FOLDER_STATUS_LABEL[card.status]}
                       </AppText>
                     ) : null}
                   </View>

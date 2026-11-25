@@ -113,7 +113,7 @@ export default function ItemDetailScreen() {
         <View style={{ flexDirection: 'row', gap: spacing.sm, flexWrap: 'wrap' }}>
           <Button
             testID="detail-toggle-complete"
-            label={o.status === 'completed' ? 'Mark not done' : 'Mark complete'}
+            label={o.status === 'completed' ? 'Mark not completed' : 'Mark completed'}
             icon={o.status === 'completed' ? 'arrow-undo' : 'checkmark'}
             tone={o.status === 'completed' ? 'secondary' : 'primary'}
             onPress={() => run((s) => s.tasks.toggleComplete(o.id), o.status === 'completed' ? 'Reopened' : 'Completed')}

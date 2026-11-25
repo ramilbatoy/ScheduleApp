@@ -40,7 +40,7 @@ function ProgressCard({ completed, total, carried }: { completed: number; total:
             DAILY PROGRESS
           </AppText>
           <AppText variant="title">
-            {completed} of {total} done
+            {completed} of {total} completed
           </AppText>
         </View>
         <AppText variant="display" color={p.primary}>
@@ -122,7 +122,7 @@ function TodayDashboard({
   return (
     <View style={{ gap: spacing.md }} testID="dashboard-today">
       <View style={{ paddingTop: spacing.sm }}>
-        <AppText variant="display" testID="today-heading" style={{ fontSize: 20, lineHeight: 26 }}>
+        <AppText variant="display" testID="today-heading">
           {selectedDate === systemToday ? 'Today' : formatDateKey(selectedDate, 'EEEE, MMMM d')}
         </AppText>
       </View>
@@ -172,7 +172,7 @@ function TodayDashboard({
           ) : null}
           {pastOverdue.length > 0 && !settings.autoCarryForward ? (
             <AppText variant="caption" muted>
-              Unfinished tasks from earlier days stay visible here until done. Turn on automatic carry-forward in Settings, or move them.
+              Unfinished tasks from earlier days stay visible here until completed. Turn on automatic carry-forward in Settings, or move them.
             </AppText>
           ) : null}
 

@@ -106,9 +106,9 @@ export function AgendaRow({ a, showDate, testID }: { a: Agenda; showDate?: boole
             testID={testID ? `${testID}-toggle` : undefined}
             accessibilityRole="checkbox"
             accessibilityState={{ checked: done }}
-            accessibilityLabel={done ? `Mark ${title} not done` : `Mark ${title} done`}
+            accessibilityLabel={done ? `Mark ${title} not completed` : `Mark ${title} completed`}
             hitSlop={8}
-            onPress={() => run((s) => s.tasks.toggleComplete(o.id), done ? 'Marked as not done' : 'Completed')}
+            onPress={() => run((s) => s.tasks.toggleComplete(o.id), done ? 'Marked as not completed' : 'Completed')}
             style={styles.check}>
             <Ionicons
               name={done ? 'checkmark-circle' : a.task.kind === 'event' ? 'ellipse-outline' : 'radio-button-off'}

@@ -72,7 +72,7 @@ function Report({ r }: { r: StatsReport }) {
           </AppText>
         </View>
         <ProgressBar value={t.completionRate ?? 0} height={10} />
-        <AppText muted>{t.total ? `${t.completed} of ${plural(t.total, 'task')} done` : `No tasks scheduled ${label}`}</AppText>
+        <AppText muted>{t.total ? `${t.completed} of ${plural(t.total, 'task')} completed` : `No tasks scheduled ${label}`}</AppText>
       </Card>
 
       <View style={styles.tiles}>
@@ -84,7 +84,7 @@ function Report({ r }: { r: StatsReport }) {
         <StatTile
           label="Best day"
           value={r.bestDay ? String(r.bestDay.completed) : '—'}
-          hint={r.bestDay ? `done on ${formatDateKey(r.bestDay.date, 'MMM d')}` : 'no completions yet'}
+          hint={r.bestDay ? `completed on ${formatDateKey(r.bestDay.date, 'MMM d')}` : 'no completions yet'}
         />
       </View>
 
@@ -133,14 +133,14 @@ function Report({ r }: { r: StatsReport }) {
           <AppText muted>Nothing scheduled {label}.</AppText>
         ) : (
           r.categories.map((c) => (
-            <View key={c.categoryId ?? 'none'} style={{ gap: spacing.xs }} accessible accessibilityLabel={`${c.name}: ${c.completed} of ${c.total} done`}>
+            <View key={c.categoryId ?? 'none'} style={{ gap: spacing.xs }} accessible accessibilityLabel={`${c.name}: ${c.completed} of ${c.total} completed`}>
               <View style={styles.catRow}>
                 <View style={[styles.dot, { backgroundColor: c.color }]} />
                 <AppText style={{ flex: 1 }} numberOfLines={1}>
                   {c.name}
                 </AppText>
                 <AppText variant="caption" muted>
-                  {`${c.completed}/${c.total} done`}
+                  {`${c.completed}/${c.total} completed`}
                 </AppText>
               </View>
               <ProgressBar value={c.total ? c.completed / c.total : 0} color={c.color} />

@@ -43,7 +43,7 @@ export function AgendaSubtasks({ nodes, testID }: { nodes: SubtaskNode[]; testID
             testID={testID ? `${testID}-toggle-${n.id}` : undefined}
             accessibilityRole="checkbox"
             accessibilityState={{ checked: n.completed }}
-            accessibilityLabel={n.completed ? `Mark ${n.title} not done` : `Mark ${n.title} done`}
+            accessibilityLabel={n.completed ? `Mark ${n.title} not completed` : `Mark ${n.title} completed`}
             hitSlop={6}
             onPress={() => run((s) => s.subtasks.toggleComplete(n.id))}
             style={styles.miniCheck}>
@@ -156,7 +156,7 @@ export function SubtaskEditor({
                 testID={`${testID}-toggle-${n.id}`}
                 accessibilityRole="checkbox"
                 accessibilityState={{ checked: n.completed }}
-                accessibilityLabel={n.completed ? `Mark ${n.title} not done` : `Mark ${n.title} done`}
+                accessibilityLabel={n.completed ? `Mark ${n.title} not completed` : `Mark ${n.title} completed`}
                 onPress={() => run((s) => s.subtasks.toggleComplete(n.id))}
                 style={styles.miniCheck}
                 disabled={readOnly}>
