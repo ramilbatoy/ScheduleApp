@@ -66,7 +66,7 @@ Use this skill for **any** work on `ramilbatoy/ScheduleApp` (DayPlanner): featur
 
 - Unified `tasks` + `task_occurrences` with `item_kind` = `task` | `event`
 - Also: `recurring_rules`, `categories`, `folders`, `reminders`, `app_settings`, `completion_history`, `task_subtasks` (nested checklist per occurrence)
-- Schema **v3**: optional `tasks.folder_id`; `tasks.priority_explicit` (existing rows stay explicit). A task has one folder or none. Categories stay separate.
+- Schema **v4**: optional `task_subtasks.deadline_at` (ISO UTC). Schema **v3**: optional `tasks.folder_id`; `tasks.priority_explicit` (existing rows stay explicit). A task has one folder or none. Categories stay separate.
 - Unique: one active occurrence per task per day; unique recurrence instance key
 - Soft-delete definitions (`deleted_at`); keep history
 - Nested subtasks: keyed by `occurrence_id` (+ `parent_subtask_id`); ride with carry-forward; new recurrence instances start empty
@@ -122,7 +122,8 @@ Update this section whenever a phase finishes, a PR merges, or acceptance status
 | Quick Add / Edit forms / Reminder / Day polish | Merged to main (2026-11-24 Asia/Manila) | https://github.com/ramilbatoy/ScheduleApp/pull/24 — Quick Add folder+priority row (Auto inherit); current-time picker seed; Event / Start·End Date/Time; Alert reminder modal; Day tab rename + 20px heading; Day Priority/Category/Folder filters; Week/Month responsive filters; empty “Nothing is currently listed here.” **248** tests. Report: `/cursor/stores/self/docs/quick-add-forms-today-report.md` |
 | NeoOrganizer 1.2.0 sideload packages | Merged to main (2026-11-24 Asia/Manila) | https://github.com/ramilbatoy/ScheduleApp/pull/25 — `versionName` 1.2.0 / `versionCode` 3; same package `com.dayplanner.app` + debug keystore SHA-1 `5E:8F:16:06:…:F6:25`. Android APK: `~/Desktop/git/ScheduleApp/Finalinstall/1.2.0/NeoOrganizer-1.2.0-release.apk`. iOS under `Finalinstall/1.2.0/ios/` (simulator `.app`, unsigned xcarchive/IPA; device IPA needs Apple signing). Report: `/cursor/stores/self/docs/neoorganizer-1.2.0-build-report.md` |
 | Tasks + Projects minimalist filters | Merged to main (2026-11-25 Asia/Manila) | https://github.com/ramilbatoy/ScheduleApp/pull/26 — `/tasks` and `/projects` compact wrapping dropdowns (WeekFilterBar pattern); Group by Folder kept; **248** tests. Report: `/cursor/stores/self/docs/tasks-filters-minimal-report.md` |
-| Completed labels + UI polish | Open PR (2026-11-25 Asia/Manila) | https://github.com/ramilbatoy/ScheduleApp/pull/27 — Done→Completed copy; Go to date month/year; folder icon opens details; display 18 / title 16 (brand 20); `/projects` under tabs; **248** tests. Report: `/cursor/stores/self/docs/completed-labels-ui-polish-report.md` |
+| Completed labels + UI polish | Merged to main (2026-11-25 Asia/Manila) | https://github.com/ramilbatoy/ScheduleApp/pull/27 — Done→Completed copy; Go to date month/year; folder icon opens details; display 18 / title 16 (brand 20); `/projects` under tabs with `tabBarButton` hide (not `href: null`); **248** tests. Report: `/cursor/stores/self/docs/completed-labels-ui-polish-report.md` |
+| Day folders + subtask deadline + Settings menus | Open PR (2026-11-25 Asia/Manila) | Day folder expand no longer overlaps (scoped `flex:1` to Week); schema v4 `task_subtasks.deadline_at`; Settings App Branding + Navigation restored; **248** tests. Report: `/cursor/stores/self/docs/day-folders-subtask-deadline-report.md` |
 
 ### In progress / remaining
 
@@ -150,7 +151,9 @@ Update this section whenever a phase finishes, a PR merges, or acceptance status
 - User-facing status wording is **Completed** / **completed** (not Done/done); stored status values remain `completed`
 - Typography: `display` 18, `title` 16; AppHeader NeoOrganizer brand stays 20 via `BRAND_TITLE`
 - DatePickerModal Go to date exposes month + year pickers in addition to the day grid
-- Settings no longer shows App Branding or Navigation editors; branding bytes and drawer prefs still persist. Defaults for new installs: drawer Tasks / Folders / About; `collapseFoldersByDefault` true
+- Settings again shows App Branding and Navigation editors (restored after #22 hide); prefs still persist via `app_settings`. Defaults for new installs: drawer Tasks / Folders / About; `collapseFoldersByDefault` true
+- Day/Month folder cards size to content; Week grid cards still use `stretch`/`flex:1` for equal-height cells
+- Optional subtask deadline (`deadline_at`) on create/edit; shown when set; rides with carry-forward on the same occurrence
 - Existing installs keep a previously saved drawer order until that setting is rewritten
 - `npm run lint` has no committed ESLint config; first `expo lint` can fail on pre-existing files
 - Header branding is separate from the Android launcher. Custom logo is PNG/JPEG/WebP bytes in `app_settings` (max ~1.5 MB). Invalid/missing → NeoOrganizer
