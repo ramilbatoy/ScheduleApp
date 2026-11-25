@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { FlatList, ScrollView, StyleSheet, View } from 'react-native';
+import { FlatList, StyleSheet, View } from 'react-native';
 
 import { todayKey } from '@/domain/dates';
 import { PRIORITIES, type ItemKind, type Priority } from '@/domain/models';
@@ -32,6 +32,12 @@ const SORTS: { value: SortKey; label: string }[] = [
 
 type KindFilter = 'task' | 'event' | 'all';
 
+const KINDS: { value: KindFilter; label: string }[] = [
+  { value: 'task', label: 'Tasks' },
+  { value: 'event', label: 'Events' },
+  { value: 'all', label: 'All items' },
+];
+
 export default function TasksScreen() {
   const p = useTheme();
   const services = useAppStore((s) => s.services);
@@ -47,7 +53,7 @@ export default function TasksScreen() {
   const [folderTarget, setFolderTarget] = useState<FolderTargetFilter>('any');
   const [sort, setSort] = useState<SortKey>('date');
   const [groupByFolder, setGroupByFolder] = useState(false);
-  const [picker, setPicker] = useState<null | 'sort' | 'category' | 'priority' | 'folder' | 'folderTarget'>(null);
+  const [picker, setPicker] = useState<null | 'kind' | 'status' | 'sort' | 'category' | 'priority' | 'folder' | 'folderTarget'>(null);
   const categories = useQuery((s) => s.categories.list(), []);
   const folders = useQuery((s) => s.folders.cards(), []);
   const kinds: ItemKind[] | undefined = kind === 'all' ? undefined : [kind];
@@ -67,6 +73,26 @@ export default function TasksScreen() {
     [text, status, kind, priority, categoryId, folderId, folderAssignment, folderTarget, sort],
   );
   const category = categories.data?.find((c) => c.id === categoryId);
+  const selectedFolder = folderId ? folders.data?.find((f) => f.id === folderId) : null;
+  const kindLabel = KINDS.find((k) => k.value === kind)?.label ?? 'Tasks';
+  const statusLabel = STATUSES.find((s) => s.value === status)?.label ?? 'Pending';
+  const folderLabel = folderId
+    ? (selectedFolder?.name ?? 'Folder')
+    : folderAssignment === 'unassigned'
+      ? 'No folder'
+      : folderAssignment === 'assigned'
+        ? 'In a folder'
+        : 'Folder';
+  const folderTargetLabel =
+    folderTarget === 'any'
+      ? 'Folder target'
+      : folderTarget === 'overdue'
+        ? 'Target overdue'
+        : folderTarget === 'approaching'
+          ? 'Target soon'
+          : folderTarget === 'set'
+            ? 'Has target'
+            : 'No target';
   const rows = useMemo(() => {
     if (!list.data) return [] as TaskListEntry[];
     if (!groupByFolder) return list.data.map((agenda): TaskListEntry => ({ kind: 'item', agenda }));
@@ -100,34 +126,49 @@ export default function TasksScreen() {
         </View>
         <Input testID="search-input" value={text} onChangeText={setText} placeholder="Search titles, notes, categories" style={{ paddingLeft: 40 }} clearButtonMode="while-editing" />
       </View>
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: spacing.sm }}>
-        {(['task', 'event', 'all'] as KindFilter[]).map((k) => (
-          <Chip key={k} testID={`kind-${k}`} label={k === 'task' ? 'Tasks' : k === 'event' ? 'Events' : 'All items'} selected={kind === k} onPress={() => setKind(k)} />
-        ))}
-        <Chip testID="filter-priority" icon="flag" label={priority ? PRIORITY_LABEL[priority] : 'Priority'} color={priority ? p.priority[priority] : undefined} selected={!!priority} onPress={() => setPicker('priority')} />
-        <Chip testID="filter-category" label={category?.name ?? 'Category'} icon={category ? undefined : 'pricetag-outline'} color={category?.color} selected={!!category} onPress={() => setPicker('category')} />
-        <Chip testID="filter-sort" icon="swap-vertical" label={`Sort: ${SORTS.find((s) => s.value === sort)!.label}`} onPress={() => setPicker('sort')} />
-        <Chip testID="group-by-folder" icon="folder-outline" label="Group by folder" selected={groupByFolder} onPress={() => setGroupByFolder((v) => !v)} />
+      <View style={styles.chipRow} testID="tasks-filter-row">
+        <Chip testID="filter-kind" icon="list-outline" label={kindLabel} selected={kind !== 'task'} onPress={() => setPicker('kind')} />
+        <Chip
+          testID="filter-status"
+          icon="filter-outline"
+          label={`Status: ${statusLabel}`}
+          selected={status !== 'all'}
+          onPress={() => setPicker('status')}
+        />
+        <Chip
+          testID="filter-priority"
+          icon="flag"
+          label={priority ? PRIORITY_LABEL[priority] : 'Priority'}
+          color={priority ? p.priority[priority] : undefined}
+          selected={!!priority}
+          onPress={() => setPicker('priority')}
+        />
+        <Chip
+          testID="filter-category"
+          label={category?.name ?? 'Category'}
+          icon={category ? undefined : 'pricetag-outline'}
+          color={category?.color}
+          selected={!!category}
+          onPress={() => setPicker('category')}
+        />
         <Chip
           testID="filter-folder"
           icon="folder-outline"
-          label={folderId ? (folders.data?.find((f) => f.id === folderId)?.name ?? 'Folder') : folderAssignment === 'unassigned' ? 'No folder' : folderAssignment === 'assigned' ? 'In a folder' : 'Folder'}
+          label={folderLabel}
+          color={selectedFolder?.color}
           selected={!!folderId || folderAssignment !== 'any'}
           onPress={() => setPicker('folder')}
         />
         <Chip
           testID="filter-folder-target"
           icon="flag-outline"
-          label={folderTarget === 'any' ? 'Folder target' : folderTarget === 'overdue' ? 'Target overdue' : folderTarget === 'approaching' ? 'Target soon' : folderTarget === 'set' ? 'Has target' : 'No target'}
+          label={folderTargetLabel}
           selected={folderTarget !== 'any'}
           onPress={() => setPicker('folderTarget')}
         />
-      </ScrollView>
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: spacing.sm }}>
-        {STATUSES.map((s) => (
-          <Chip key={s.value} testID={`status-${s.value}`} label={s.label} selected={status === s.value} onPress={() => setStatus(s.value)} />
-        ))}
-      </ScrollView>
+        <Chip testID="filter-sort" icon="swap-vertical" label={`Sort: ${SORTS.find((s) => s.value === sort)!.label}`} onPress={() => setPicker('sort')} />
+        <Chip testID="group-by-folder" icon="folder-outline" label="Group by folder" selected={groupByFolder} onPress={() => setGroupByFolder((v) => !v)} />
+      </View>
       {list.data ? (
         <AppText variant="caption" muted>
           {groupByFolder
@@ -166,6 +207,15 @@ export default function TasksScreen() {
         }
       />
       <QuickAddButton kind={kind === 'event' ? 'event' : 'task'} />
+      <OptionsModal<KindFilter> visible={picker === 'kind'} title="Show" value={kind} options={KINDS} onChange={setKind} onClose={() => setPicker(null)} />
+      <OptionsModal<StatusFilter>
+        visible={picker === 'status'}
+        title="Filter by status"
+        value={status}
+        options={STATUSES}
+        onChange={setStatus}
+        onClose={() => setPicker(null)}
+      />
       <OptionsModal<SortKey> visible={picker === 'sort'} title="Sort by" value={sort} options={SORTS} onChange={setSort} onClose={() => setPicker(null)} />
       <OptionsModal<Priority | null>
         visible={picker === 'priority'}
@@ -226,4 +276,5 @@ export default function TasksScreen() {
 const styles = StyleSheet.create({
   search: { justifyContent: 'center' },
   searchIcon: { position: 'absolute', left: 12, zIndex: 1 },
+  chipRow: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm },
 });
