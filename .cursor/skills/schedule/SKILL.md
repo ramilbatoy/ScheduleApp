@@ -132,13 +132,13 @@ Update this section whenever a phase finishes, a PR merges, or acceptance status
 | Day folders + subtask deadline + Settings menus | Merged to main (2026-11-25 Asia/Manila) | https://github.com/ramilbatoy/ScheduleApp/pull/28 — Day folder expand no longer overlaps (scoped `flex:1` to Week); schema v4 `task_subtasks.deadline_at`; Settings App Branding + Navigation restored; **248** tests. Report: `/cursor/stores/self/docs/day-folders-subtask-deadline-report.md` |
 | NeoOrganizer 1.3.0 upgrade APK | Open PR (2026-11-25 Asia/Manila) | https://github.com/ramilbatoy/ScheduleApp/pull/29 — `versionName` 1.3.0 / `versionCode` 4; same package `com.dayplanner.app` + debug keystore SHA-1 `5E:8F:16:06:…:F6:25`. Android APK: `~/Desktop/git/ScheduleApp/Finalinstall/1.3.0/NeoOrganizer-1.3.0-release.apk`. Report: `/cursor/stores/self/docs/neoorganizer-1.3.0-build-report.md` |
 | NeoPlanner UI overhaul | Merged to main (2026-11-26 Asia/Manila) | https://github.com/ramilbatoy/ScheduleApp/pull/30 — display name NeoPlanner (package `com.dayplanner.app` unchanged); tabs Day / Calendar / Tasks / Events; drawer Folders, Statistics, Settings, About NeoPlanner; Advance Setting; folder/task/event lists; Day folder cards; Daily Progress collapsed until tap; warning pass (require cycle, web drawer driver, ReadyScreen); **248** tests. Report: `/cursor/stores/self/docs/neoplanner-layout-report.md` |
-| Folder / Day / Event polish | Open PR (2026-11-26 Asia/Manila) | Branch `cursor/folder-day-event-polish-0ec3` — Folder list layout + Advance Setting default view; folder detail under tabs with options popup / Mark Completed / hidden Quick Add + FAB; Tasks/Events kind-locked quick-add + When dropdown; Day/Week/Month search popup + filters sheet + grid/list; Week date-tap + today dot; Month title go-to-date; **248** tests. Report: `/cursor/stores/self/docs/folder-day-event-polish-report.md` |
+| Folder / Day / Event polish | Open PR (2026-11-26 Asia/Manila) | https://github.com/ramilbatoy/ScheduleApp/pull/31 — Folder list layout + Advance Setting default view; folder detail under tabs with options popup / Mark Completed / hidden Quick Add + FAB; Tasks/Events kind-locked quick-add + When dropdown; Day/Week/Month search popup + filters sheet + grid/list; Week date-tap + today dot; Month title go-to-date; **248** tests. Report: `/cursor/stores/self/docs/folder-day-event-polish-report.md` |
 
 ### In progress / remaining
 
 | Item | Status | Notes |
 | --- | --- | --- |
-| Folder / Day / Event polish | Open PR | See Done row; merge then bump to Merged |
+| Folder / Day / Event polish | Open PR | https://github.com/ramilbatoy/ScheduleApp/pull/31 — merge then bump to Merged |
 | NeoOrganizer 1.3.0 upgrade APK | Open PR | https://github.com/ramilbatoy/ScheduleApp/pull/29 — rebase onto #30 main if needed, then merge; bump Accomplishments to Merged |
 | Device re-verify | Optional | Physical phone smoke: install-over Finalinstall 1.3.0 APK (data keep from 1.0–1.2), alarms, clipping |
 | iOS signed IPA | Blocked | Needs Apple Developer team / certificates; see `Finalinstall/1.2.0/ios/README.md` |
