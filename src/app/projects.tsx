@@ -1,11 +1,12 @@
 import { router, Stack } from 'expo-router';
 import { useState } from 'react';
-import { Pressable, ScrollView, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 
 import type { FolderCard, FolderListFilter, FolderSortKey } from '@/domain/folderProgress';
 import { useServices } from '@/state/appStore';
 import { PRIORITY_LABEL } from '@/ui/components/AgendaRow';
 import { FolderForm } from '@/ui/components/FolderForm';
+import { OptionsModal } from '@/ui/components/Pickers';
 import { AppText, Button, Card, Chip, EmptyState, ErrorState, Icon, Input, LoadingState, type IconName } from '@/ui/components/primitives';
 import { useQuery, useTheme } from '@/ui/hooks';
 import { useSafeAndroidBack } from '@/ui/navigation';
@@ -47,8 +48,11 @@ export default function ProjectsScreen() {
   const [filter, setFilter] = useState<FolderListFilter>('all');
   const [sort, setSort] = useState<FolderSortKey>('name');
   const [creating, setCreating] = useState(false);
+  const [picker, setPicker] = useState<null | 'filter' | 'sort'>(null);
   const all = useQuery((s) => s.folders.cards(), []);
   const shown = useQuery((s) => s.folders.cards({ text, filter, sort }), [text, filter, sort]);
+  const filterLabel = FILTERS.find((f) => f.value === filter)?.label ?? 'All';
+  const sortLabel = SORTS.find((s) => s.value === sort)?.label ?? 'Name';
 
   const counts = {
     active: (all.data ?? []).filter((c) => c.status === 'active').length,
@@ -83,16 +87,22 @@ export default function ProjectsScreen() {
           </View>
           <Button testID="projects-add" label="Add" icon="add" onPress={() => setCreating(true)} />
         </View>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: spacing.sm }}>
-          {FILTERS.map((f) => (
-            <Chip key={f.value} testID={`projects-filter-${f.value}`} label={f.label} selected={filter === f.value} onPress={() => setFilter(f.value)} />
-          ))}
-        </ScrollView>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: spacing.sm }}>
-          {SORTS.map((s) => (
-            <Chip key={s.value} testID={`projects-sort-${s.value}`} label={s.label} selected={sort === s.value} onPress={() => setSort(s.value)} />
-          ))}
-        </ScrollView>
+        <View style={styles.chipRow} testID="projects-filter-row">
+          <Chip
+            testID="projects-filter"
+            icon="filter-outline"
+            label={`Status: ${filterLabel}`}
+            selected={filter !== 'all'}
+            onPress={() => setPicker('filter')}
+          />
+          <Chip
+            testID="projects-sort"
+            icon="swap-vertical"
+            label={`Sort: ${sortLabel}`}
+            selected={sort !== 'name'}
+            onPress={() => setPicker('sort')}
+          />
+        </View>
         {shown.error ? <ErrorState message={shown.error} onRetry={shown.reload} /> : null}
         {!shown.data && !shown.error ? <LoadingState /> : null}
         {shown.data && shown.data.length === 0 ? (
@@ -159,8 +169,27 @@ export default function ProjectsScreen() {
         })}
       </ScrollView>
       <FolderForm visible={creating} onClose={() => setCreating(false)} onSaved={() => { shown.reload(); all.reload(); }} />
+      <OptionsModal<FolderListFilter>
+        visible={picker === 'filter'}
+        title="Filter folders"
+        value={filter}
+        options={FILTERS}
+        onChange={setFilter}
+        onClose={() => setPicker(null)}
+      />
+      <OptionsModal<FolderSortKey>
+        visible={picker === 'sort'}
+        title="Sort by"
+        value={sort}
+        options={SORTS}
+        onChange={setSort}
+        onClose={() => setPicker(null)}
+      />
     </>
   );
 }
 
-const styles = { track: { height: 6, borderRadius: radius.sm, overflow: 'hidden' as const } };
+const styles = StyleSheet.create({
+  track: { height: 6, borderRadius: radius.sm, overflow: 'hidden' },
+  chipRow: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm },
+});
