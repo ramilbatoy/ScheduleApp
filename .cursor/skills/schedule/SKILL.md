@@ -1,8 +1,9 @@
 ---
 name: schedule
 description: >-
-  Authoritative playbook for the DayPlanner / ScheduleApp offline-first Android
-  scheduling project (Expo + TypeScript). Use for every change, review, test,
+  Authoritative playbook for ScheduleApp (display name NeoPlanner, package
+  com.dayplanner.app), the offline-first Android scheduling project (Expo +
+  TypeScript). Use for every change, review, test,
   APK/web build, or follow-up in this Project. Read this skill before editing
   the app; update the Accomplishments section when a phase, PR, or acceptance
   item lands.
@@ -12,7 +13,7 @@ description: >-
 
 ## When to use
 
-Use this skill for **any** work on `ramilbatoy/ScheduleApp` (DayPlanner): features, bugs, docs, APK/web, tests, audits, or reviews in the Scheduling App Project.
+Use this skill for **any** work on `ramilbatoy/ScheduleApp` (display name NeoPlanner, package `com.dayplanner.app`): features, bugs, docs, APK/web, tests, audits, or reviews in the Scheduling App Project.
 
 ## Read first
 
@@ -39,8 +40,8 @@ Use this skill for **any** work on `ramilbatoy/ScheduleApp` (DayPlanner): featur
 
 | Layer | Choice |
 | --- | --- |
-| App | Expo SDK 58 + TypeScript strict; package `com.dayplanner.app`; launcher display name **NeoOrganizer** (was DayPlanner in 1.0.0) |
-| Nav | Expo Router; tabs Today / Calendar / Tasks / Statistics / Settings |
+| App | Expo SDK 58 + TypeScript strict; package `com.dayplanner.app`; launcher and header display name **NeoPlanner** (was NeoOrganizer; was DayPlanner in 1.0.0) |
+| Nav | Expo Router; tabs **Day** (route `index` / nav id `today`) / Calendar / Tasks / Events (`/events`); Statistics and Settings via drawer; Folders via drawer → `/projects` (hidden tab, `tabBarButton: () => null`) |
 | State | Zustand (UI only) |
 | Android DB | expo-sqlite |
 | Web DB | MemoryDatabase + IndexedDB persistence (`idb`/atomic commit) behind same interface |
@@ -54,7 +55,7 @@ Use this skill for **any** work on `ramilbatoy/ScheduleApp` (DayPlanner): featur
 
 ## Layout (key paths)
 
-- `src/db/` — drivers, migrations, types (schema through v3 folders)
+- `src/db/` — drivers, migrations, types (schema through v4 subtask deadlines)
 - `src/domain/` — models, repos, services (Task, CarryForward, Recurrence, Reminder, Stats, Backup, Settings, Category, Folder, agenda, `plannerGroups`)
 - `src/app/` — Expo Router (tabs, projects/folders, theme-settings, about, item edit, quick-add, categories)
 - `src/theme/` — semantic tokens, presets, ThemeProvider, Paper bridge
@@ -79,16 +80,21 @@ Use this skill for **any** work on `ramilbatoy/ScheduleApp` (DayPlanner): featur
 - Quick-add NL: dates, times, `!priority`, `#category`
 - Backup: validate → safety copy → single-transaction restore → rebuild notifications; undo last restore
 - Theme: system / light / dark + 10 presets + custom HEX + last-used snapshot in `app_settings`
-- Header branding: default text **NeoOrganizer**; optional local logo bytes in `app_settings` (not the Android launcher icon)
+- Header branding: default text **NeoPlanner**; optional local logo bytes in `app_settings` (not the Android launcher icon)
 - Folders: explicit task priority always wins; otherwise inherit folder priority. Folder target date is a project deadline and never rewrites occurrence dates. Progress is computed. Backup format 2 includes folders and `navigation` prefs; device notification prefs are not overwritten
-- Folder-first display: Today / Week / Month group assigned tasks under folders (expand/collapse); unassigned stay individual. Tasks screen defaults to individual list + optional Group by Folder. Occurrence dates stay authoritative
-- Drawer: AppHeader hamburger, bottom tabs stay. Default shortcuts Tasks / Folders / About (other ids remain reachable via tabs/routes). Brand text/logo in AppHeader navigates to Today and closes the drawer; hamburger stays separate
+- Folder-first display: Day / Week / Month group assigned tasks under folders (expand/collapse); unassigned stay individual. Day hides Unassigned chrome; Week cards may `stretch`. Folder header icon opens folder details. Tasks screen defaults to individual list + optional Group by Folder. Occurrence dates stay authoritative
+- Filters: Day/Week/Month keep compact dropdowns. Folder page (`/projects`, title **Folder**) uses a search popup plus status and sort chips that show an icon and the current value only. Tasks and Events use an options popup (Status, Priority, Category, Folder, Sort, Group by) — no kind filter and no Folder Target. Empty Day/Week copy stays “Nothing is currently listed here.”
+- User-facing status wording **Completed** (stored values still `completed`). Typography: display 18 / title 16; AppHeader brand stays 20. Go to date: month + year pickers
+- Drawer: AppHeader hamburger. Default shortcuts **Folders, Statistics, Settings, About NeoPlanner**. The exact previous factory order `tasks, projects, about` upgrades on read; any other saved order stays (in-memory until the next navigation save). Brand → Day tab and closes drawer. App Branding and Navigation live under Settings → **Advance Setting**. Collapse folders default ON. Folder create/edit hides Priority and Target date until `showFolderPriority` / `showFolderTargetDate` (default off)
 - Timed items apply Settings default reminder offset; OS alarms use `alarmClock` when exact-alarm granted else `bestEffort`
+- Subtask optional `deadline_at` (schema v4); rides with carry-forward on the occurrence
 - Android button/chip/segment labels: `includeFontPadding: false` + vertical padding; EmptyState labels use `flexShrink: 0` + `textBreakStrategy: simple` (Phase 5 clipping fix)
 - Web: never nest `<button>` (Pressable / Paper `accessibilityRole="button"`). Outer cards that wrap chips use non-button parents
+- Sideload APKs: same `com.dayplanner.app` + debug keystore for upgrade path; versioned `Finalinstall/<ver>/NeoOrganizer-<ver>-release.apk`. Latest built: **1.3.0** (versionCode 4) — open PR #29 until merged
 
 ## Accomplishments (keep current)
 
+**Last skill refresh:** 2026-11-26 Asia/Manila — `main` through #28; open #29 (1.3.0 APK) and #30 (NeoPlanner UI). Display name is NeoPlanner; package stays `com.dayplanner.app`.  
 Update this section whenever a phase finishes, a PR merges, or acceptance status changes. Date entries in Asia/Manila.
 
 ### Done
@@ -123,13 +129,17 @@ Update this section whenever a phase finishes, a PR merges, or acceptance status
 | NeoOrganizer 1.2.0 sideload packages | Merged to main (2026-11-24 Asia/Manila) | https://github.com/ramilbatoy/ScheduleApp/pull/25 — `versionName` 1.2.0 / `versionCode` 3; same package `com.dayplanner.app` + debug keystore SHA-1 `5E:8F:16:06:…:F6:25`. Android APK: `~/Desktop/git/ScheduleApp/Finalinstall/1.2.0/NeoOrganizer-1.2.0-release.apk`. iOS under `Finalinstall/1.2.0/ios/` (simulator `.app`, unsigned xcarchive/IPA; device IPA needs Apple signing). Report: `/cursor/stores/self/docs/neoorganizer-1.2.0-build-report.md` |
 | Tasks + Projects minimalist filters | Merged to main (2026-11-25 Asia/Manila) | https://github.com/ramilbatoy/ScheduleApp/pull/26 — `/tasks` and `/projects` compact wrapping dropdowns (WeekFilterBar pattern); Group by Folder kept; **248** tests. Report: `/cursor/stores/self/docs/tasks-filters-minimal-report.md` |
 | Completed labels + UI polish | Merged to main (2026-11-25 Asia/Manila) | https://github.com/ramilbatoy/ScheduleApp/pull/27 — Done→Completed copy; Go to date month/year; folder icon opens details; display 18 / title 16 (brand 20); `/projects` under tabs with `tabBarButton` hide (not `href: null`); **248** tests. Report: `/cursor/stores/self/docs/completed-labels-ui-polish-report.md` |
-| Day folders + subtask deadline + Settings menus | Open PR (2026-11-25 Asia/Manila) | https://github.com/ramilbatoy/ScheduleApp/pull/28 — Day folder expand no longer overlaps (scoped `flex:1` to Week); schema v4 `task_subtasks.deadline_at`; Settings App Branding + Navigation restored; **248** tests. Report: `/cursor/stores/self/docs/day-folders-subtask-deadline-report.md` |
+| Day folders + subtask deadline + Settings menus | Merged to main (2026-11-25 Asia/Manila) | https://github.com/ramilbatoy/ScheduleApp/pull/28 — Day folder expand no longer overlaps (scoped `flex:1` to Week); schema v4 `task_subtasks.deadline_at`; Settings App Branding + Navigation restored; **248** tests. Report: `/cursor/stores/self/docs/day-folders-subtask-deadline-report.md` |
+| NeoOrganizer 1.3.0 upgrade APK | Open PR (2026-11-25 Asia/Manila) | https://github.com/ramilbatoy/ScheduleApp/pull/29 — `versionName` 1.3.0 / `versionCode` 4; same package `com.dayplanner.app` + debug keystore SHA-1 `5E:8F:16:06:…:F6:25`. Android APK: `~/Desktop/git/ScheduleApp/Finalinstall/1.3.0/NeoOrganizer-1.3.0-release.apk`. Report: `/cursor/stores/self/docs/neoorganizer-1.3.0-build-report.md` |
+| NeoPlanner UI overhaul | Open PR (2026-11-26 Asia/Manila) | https://github.com/ramilbatoy/ScheduleApp/pull/30 — display name NeoPlanner (package `com.dayplanner.app` unchanged); tabs Day / Calendar / Tasks / Events; drawer Folders, Statistics, Settings, About NeoPlanner; Advance Setting; folder/task/event lists; Day folder cards; Daily Progress collapsed until tap; **248** tests. Report: `/cursor/stores/self/docs/neoplanner-layout-report.md` |
 
 ### In progress / remaining
 
 | Item | Status | Notes |
 | --- | --- | --- |
-| Device re-verify | Optional | Physical phone smoke: install-over Finalinstall 1.2.0 APK (data keep), alarms, clipping |
+| NeoOrganizer 1.3.0 upgrade APK | Open PR | https://github.com/ramilbatoy/ScheduleApp/pull/29 — merge after review; then bump Accomplishments to Merged |
+| NeoPlanner UI overhaul | Open PR | https://github.com/ramilbatoy/ScheduleApp/pull/30 — merge after review; then bump Accomplishments to Merged |
+| Device re-verify | Optional | Physical phone smoke: install-over Finalinstall 1.3.0 APK (data keep from 1.0–1.2), alarms, clipping |
 | iOS signed IPA | Blocked | Needs Apple Developer team / certificates; see `Finalinstall/1.2.0/ios/README.md` |
 | Production signing | Optional | Replace debug-keystore release with Play/EAS credentials when publishing |
 | Project templates | Optional | Spec mentioned Website Launch / etc.; not required for core folders |
@@ -141,29 +151,29 @@ Update this section whenever a phase finishes, a PR merges, or acceptance status
 - Exact Android alarm delivery depends on OS / exact-alarm permission (`alarmClock` vs `bestEffort`)
 - Local `assembleRelease` / Finalinstall APK uses the debug keystore until Play/EAS production credentials
 - Expo Go is not acceptance; use EAS/dev/Gradle APK or `Finalinstall/`
-- Package id remains `com.dayplanner.app`; launcher display name **NeoOrganizer** (1.1.0+); in-app header branding also defaults to NeoOrganizer
+- Package id remains `com.dayplanner.app`; launcher and in-app header display name **NeoPlanner** (was NeoOrganizer on 1.1.0–1.3.0 builds)
 - Nested subtasks are per-occurrence (not series template); new recurring instances start with an empty checklist
 - “Overdue since” is derived from stored dates (original occurrence date, assigned day, deadline local date, carry-forward and late reschedule history). There is no separate overdue timestamp
 - Folder progress counts occurrences on or before today. Future recurring instances and events are excluded from the percent
 - Week/Day are folder-card first with compact status/priority/category/folder filter dropdowns; Month status is a dropdown. Weekly goals list removed from Week. Day heading shows Today or the selected date; bottom tab label is Day
-- Tasks (`/tasks`) filters use one wrapping dropdown row (kind/status/priority/category/folder/folder-target/sort) plus Group by Folder toggle; no horizontal status/kind chip strips
-- Projects / Folders (`/projects`) lives under the tabs layout with `tabBarButton: () => null` (not `href: null` — that sets `hidden` and redirects away); filters use Status + Sort wrapping dropdowns
+- Tasks (`/tasks`) and Events (`/events`) are separate lists. Options popup: Status, Priority, Category, Folder, Sort, Group by. No kind filter and no Folder Target. Search is a popup. List/grid; grid is 2 columns
+- Folder page (`/projects`, title **Folder**) stays under the tabs layout with `tabBarButton: () => null` (not `href: null` — that sets `hidden` and redirects away). Search popup, status/sort chips (icon + current value), floating +, 2-column grid. Completed folders use a grey card. Priority and Target date on create/edit stay hidden until the Settings toggles are on
 - User-facing status wording is **Completed** / **completed** (not Done/done); stored status values remain `completed`
-- Typography: `display` 18, `title` 16; AppHeader NeoOrganizer brand stays 20 via `BRAND_TITLE`
+- Typography: `display` 18, `title` 16; AppHeader NeoPlanner brand stays 20 via `BRAND_TITLE`
 - DatePickerModal Go to date exposes month + year pickers in addition to the day grid
-- Settings again shows App Branding and Navigation editors (restored after #22 hide); prefs still persist via `app_settings`. Defaults for new installs: drawer Tasks / Folders / About; `collapseFoldersByDefault` true
-- Day/Month folder cards size to content; Week grid cards still use `stretch`/`flex:1` for equal-height cells
+- Settings main list has **Advance Setting**; App Branding and Navigation are on that screen. Prefs persist via `app_settings` (no schema change). Defaults: drawer Folders / Statistics / Settings / About; `collapseFoldersByDefault` true; `showFolderPriority` and `showFolderTargetDate` false
+- Day/Month folder cards size to content (folder chrome matches the Folder page; expand shows tasks and their subtasks); Week grid cards still use `stretch`/`flex:1` for equal-height cells. Daily Progress uses that chrome and stays collapsed until tapped
 - Optional subtask deadline (`deadline_at`) on create/edit; shown when set; rides with carry-forward on the same occurrence
-- Existing installs keep a previously saved drawer order until that setting is rewritten
+- Drawer: the exact retired factory order `tasks, projects, about` upgrades on read to Folders, Statistics, Settings, About. Any other saved order is kept. The database row updates the next time navigation is saved
 - `npm run lint` has no committed ESLint config; first `expo lint` can fail on pre-existing files
-- Header branding is separate from the Android launcher. Custom logo is PNG/JPEG/WebP bytes in `app_settings` (max ~1.5 MB). Invalid/missing → NeoOrganizer
+- Header branding is separate from the Android launcher. Custom logo is PNG/JPEG/WebP bytes in `app_settings` (max ~1.5 MB). Invalid/missing → NeoPlanner. `app.json` `name` is NeoPlanner; slug stays `dayplanner`
 - Folder target dates and folder priorities never rewrite task dates or explicit task priorities
 - Local-first: ship features on the Mac checkout at `~/Desktop/git/ScheduleApp` against `main`
 
 ## How to work
 
 0. **Always** open this skill (and any other relevant Project skills) before planning or coding a change; treat skill rules as binding for this thread.
-1. Branch from updated `main` (through #19). Prefer the Mac local checkout for all new work.
+1. Branch from updated `main` (through #28; open #29 is the 1.3.0 APK, open #30 is the NeoPlanner UI). Prefer the Mac local checkout for all new work.
 2. Keep domain services pure of UI; add tests on **both** SQLite and IndexedDB drivers for storage-touching logic.
 3. Run `npm test` and `npm run typecheck` before declaring a slice done. Avoid nested web buttons.
 4. After each completed phase or merged PR: **update Accomplishments above** and `project-context.md`.
@@ -184,6 +194,7 @@ cd android && ./gradlew assembleDebug assembleRelease
 
 APK / iOS artifacts:  
 - Sideload Android (preferred, versioned): `~/Desktop/git/ScheduleApp/Finalinstall/<version>/NeoOrganizer-<version>-release.apk`  
+  - `…/Finalinstall/1.3.0/NeoOrganizer-1.3.0-release.apk`  
   - `…/Finalinstall/1.2.0/NeoOrganizer-1.2.0-release.apk`  
   - `…/Finalinstall/1.1.0/NeoOrganizer-1.1.0-release.apk`  
   - Legacy flat: `…/Finalinstall/NeoOrganizer-1.0.0-release.apk`  
@@ -193,4 +204,4 @@ Also under `/opt/cursor/artifacts/` on build VMs.
 
 ## Preference hooks
 
-See `/cursor/stores/self/preferences.md` — auto-advance phases; tasks-only carry-forward; placeholder package until Android polish.
+See `/cursor/stores/self/preferences.md` — auto-advance phases; tasks-only carry-forward; display name **NeoPlanner**; package `com.dayplanner.app`.
