@@ -1,5 +1,5 @@
 import { weekFilterToListFilter, type WeekFilterState } from '@/ui/components/WeekFilterBar';
-import { weekFolderColumns } from '@/ui/components/PlannerFolderGroups';
+import { folderGridColumns, weekFolderColumns } from '@/ui/layout/folderGrid';
 
 describe('weekFilterToListFilter', () => {
   const base: WeekFilterState = {
@@ -27,10 +27,15 @@ describe('weekFilterToListFilter', () => {
   });
 });
 
-describe('weekFolderColumns', () => {
-  it('keeps 2 columns on phone width and allows 3 on very wide web', () => {
+describe('folderGridColumns / weekFolderColumns', () => {
+  it('uses content-width breakpoints: 1 under 370, 2 through tablet, 3 at desktop', () => {
+    expect(folderGridColumns(320)).toBe(1);
+    expect(folderGridColumns(360)).toBe(1);
+    expect(folderGridColumns(375)).toBe(2);
     expect(weekFolderColumns(390)).toBe(2);
-    expect(weekFolderColumns(800)).toBe(2);
-    expect(weekFolderColumns(1200)).toBe(3);
+    expect(folderGridColumns(430)).toBe(2);
+    expect(folderGridColumns(768)).toBe(2);
+    expect(folderGridColumns(1024)).toBe(3);
+    expect(weekFolderColumns(1280)).toBe(3);
   });
 });

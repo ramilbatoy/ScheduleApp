@@ -5,15 +5,18 @@ import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import type { FolderCard, FolderListFilter, FolderSortKey } from '@/domain/folderProgress';
 import { useServices, useSettings } from '@/state/appStore';
 import { PRIORITY_LABEL } from '@/ui/components/AgendaRow';
+import { FolderCardChrome } from '@/ui/components/FolderCardChrome';
 import { FolderForm } from '@/ui/components/FolderForm';
 import { OptionsModal } from '@/ui/components/Pickers';
 import { ReadyScreen } from '@/ui/components/ReadyScreen';
 import { SearchFieldPopup } from '@/ui/components/SearchFieldPopup';
 import { ViewLayoutToggle, type ListLayout } from '@/ui/components/ViewLayoutToggle';
-import { AppText, Button, Card, Chip, EmptyState, ErrorState, Icon, IconButton, LoadingState, type IconName } from '@/ui/components/primitives';
+import { AppText, Button, Card, Chip, EmptyState, ErrorState, Icon, IconButton, LoadingState } from '@/ui/components/primitives';
+import { useFolderGridColumns } from '@/ui/hooks/useFolderGridColumns';
 import { useQuery, useTheme } from '@/ui/hooks';
+import { folderGridCellStyle, folderGridWrapStyle } from '@/ui/layout/folderGrid';
 import { useSafeAndroidBack } from '@/ui/navigation';
-import { radius, spacing } from '@/ui/theme';
+import { spacing } from '@/ui/theme';
 
 const FOLDER_STATUS_LABEL: Record<FolderCard['status'], string> = {
   active: 'Active',
@@ -69,6 +72,7 @@ function ProjectsScreenReady() {
   const [creating, setCreating] = useState(false);
   const [layout, setLayout] = useState<ListLayout>(settings.defaultFolderListView);
   const [picker, setPicker] = useState<null | 'filter' | 'sort'>(null);
+  const { columns, onGridLayout, compact } = useFolderGridColumns(layout);
   const all = useQuery((s) => s.folders.cards(), []);
   const shown = useQuery((s) => s.folders.cards({ text, filter, sort }), [text, filter, sort]);
   const filterLabel = FILTERS.find((f) => f.value === filter)?.label ?? 'All';
@@ -133,80 +137,43 @@ function ProjectsScreenReady() {
         {shown.data && shown.data.length === 0 ? (
           <EmptyState icon="folder-open-outline" title={text ? 'No matches' : 'No folders yet'} message="Folders group tasks into projects. Tap + to add one. Categories stay separate." />
         ) : null}
-        <View style={layout === 'grid' ? styles.grid : undefined}>
+        <View style={layout === 'grid' ? folderGridWrapStyle() : { gap: spacing.sm }} onLayout={layout === 'grid' ? onGridLayout : undefined}>
           {shown.data?.map((card, index) => {
             const due = targetLabel(card);
             const open = () => router.push({ pathname: '/folder/[id]', params: { id: card.id } });
             const completed = card.status === 'completed';
+            const summary = `${card.progress.completed}/${card.progress.total || 0} completed · ${card.progress.percent}%${
+              card.progress.pending ? ` · ${card.progress.pending} pending` : ''
+            }${card.progress.overdue ? ` · ${card.progress.overdue} overdue` : ''}`;
             return (
-              <View key={card.id} style={layout === 'grid' ? styles.gridCell : undefined}>
+              <View key={card.id} style={layout === 'grid' ? folderGridCellStyle(columns) : undefined}>
                 <Card
                   testID={`project-card-${index}`}
                   style={{
-                    gap: layout === 'grid' ? spacing.xs : undefined,
+                    gap: compact ? spacing.xs : spacing.sm,
                     minWidth: 0,
                     backgroundColor: completed ? (p.scheme === 'dark' ? '#3A414B' : '#E4E6EB') : p.surface,
                   }}>
-                  <View style={{ flexDirection: 'row', gap: layout === 'grid' ? spacing.sm : spacing.md, alignItems: 'flex-start' }}>
-                    <Pressable
-                      accessibilityRole="button"
-                      accessibilityLabel={`Open ${card.name}`}
-                      onPress={open}
-                      style={({ pressed }) => [{ flex: 1, minWidth: 0, gap: layout === 'grid' ? spacing.xs : spacing.sm }, pressed && { opacity: 0.85 }]}>
-                      <View style={{ flexDirection: 'row', gap: layout === 'grid' ? spacing.sm : spacing.md, alignItems: 'center' }}>
-                        <View
-                          style={{
-                            width: layout === 'grid' ? 32 : 40,
-                            height: layout === 'grid' ? 32 : 40,
-                            borderRadius: radius.md,
-                            backgroundColor: `${card.color}22`,
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            flexShrink: 0,
-                          }}>
-                          <Icon name={card.icon as IconName} color={card.color} size={layout === 'grid' ? 18 : 20} />
-                        </View>
-                        <View style={{ flex: 1, gap: 2, minWidth: 0 }}>
-                          <AppText variant={layout === 'grid' ? 'label' : 'heading'} numberOfLines={1}>
-                            {card.name}
-                          </AppText>
-                          <AppText variant="caption" muted numberOfLines={layout === 'grid' ? 2 : 3}>
-                            {card.progress.completed}/{card.progress.total || 0} completed · {card.progress.percent}%
-                            {card.progress.pending ? ` · ${card.progress.pending} pending` : ''}
-                            {card.progress.overdue ? ` · ${card.progress.overdue} overdue` : ''}
-                          </AppText>
-                        </View>
-                      </View>
-                      <View style={[styles.track, { height: layout === 'grid' ? 4 : 6, backgroundColor: p.surfaceVariant }]}>
-                        <View
-                          style={{
-                            width: `${card.progress.percent}%`,
-                            height: layout === 'grid' ? 4 : 6,
-                            backgroundColor: card.color,
-                            borderRadius: radius.sm,
-                          }}
-                        />
-                      </View>
-                      <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm }}>
-                        <AppText variant="caption" color={p.priority[card.priority]}>
-                          {PRIORITY_LABEL[card.priority]}
-                        </AppText>
-                        {due ? (
-                          <AppText variant="caption" color={card.target.overdue && card.progress.percent < 100 ? p.overdue : p.textSecondary}>
-                            {due}
-                          </AppText>
-                        ) : (
-                          <AppText variant="caption" muted>
-                            No target
-                          </AppText>
-                        )}
-                        {card.status !== 'active' ? (
-                          <AppText variant="caption" muted>
-                            {FOLDER_STATUS_LABEL[card.status]}
-                          </AppText>
-                        ) : null}
-                      </View>
-                    </Pressable>
+                  <View style={{ flexDirection: 'row', gap: spacing.sm, alignItems: 'flex-start' }}>
+                    <View style={{ flex: 1, minWidth: 0 }}>
+                      <FolderCardChrome
+                        name={card.name}
+                        color={card.color}
+                        icon={card.icon}
+                        percent={card.progress.percent}
+                        summary={summary}
+                        priorityLabel={PRIORITY_LABEL[card.priority]}
+                        priorityColor={p.priority[card.priority]}
+                        targetText={due}
+                        targetUrgent={!!(card.target.overdue && card.progress.percent < 100)}
+                        statusLabel={card.status !== 'active' ? FOLDER_STATUS_LABEL[card.status] : null}
+                        compact={compact}
+                        titleLines={2}
+                        testID={`project-card-${index}`}
+                        onPressHeader={open}
+                        headerAccessibilityLabel={`Open ${card.name}`}
+                      />
+                    </View>
                     {sort === 'manual' ? (
                       <View>
                         <Button label="Up" compact tone="ghost" onPress={() => move(card.id, -1)} />
@@ -264,9 +231,6 @@ const styles = StyleSheet.create({
   titleRow: { flexDirection: 'row', alignItems: 'flex-start', gap: spacing.sm, justifyContent: 'space-between', flexWrap: 'wrap' },
   titleControls: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs, flexWrap: 'wrap', justifyContent: 'flex-end', flexShrink: 1 },
   overviewRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, flexWrap: 'wrap' },
-  track: { height: 6, borderRadius: radius.sm, overflow: 'hidden' },
-  grid: { flexDirection: 'row', flexWrap: 'wrap', marginHorizontal: -4 },
-  gridCell: { width: '50%', paddingHorizontal: 4, paddingBottom: 8, minWidth: 0 },
   fab: {
     position: 'absolute',
     right: 20,

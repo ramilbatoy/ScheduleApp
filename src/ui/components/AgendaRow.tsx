@@ -18,11 +18,14 @@ export function ItemBadges({
   a,
   showDate,
   hideFolder,
+  /** Compact nested rows: keep urgency/priority; drop lower-priority chrome. */
+  compact = false,
 }: {
   a: Agenda;
   showDate?: boolean;
   /** Nested under a folder card — folder chip is redundant and eats width. */
   hideFolder?: boolean;
+  compact?: boolean;
 }) {
   const p = useTheme();
   const services = useAppStore((s) => s.services);
@@ -40,7 +43,7 @@ export function ItemBadges({
       {showDate ? <Badge label={formatDateKey(o.date, 'MMM d')} color={p.textSecondary} background={p.surfaceVariant} icon="calendar-outline" /> : null}
       {a.task.kind === 'task' && (priority !== 'medium' || inherited) ? (
         <Badge
-          label={inherited ? `${PRIORITY_LABEL[priority]} · folder` : PRIORITY_LABEL[priority]}
+          label={inherited && !compact ? `${PRIORITY_LABEL[priority]} · folder` : PRIORITY_LABEL[priority]}
           color={p.priority[priority]}
           background={`${p.priority[priority]}22`}
           icon="flag"
@@ -59,20 +62,25 @@ export function ItemBadges({
           <Badge label={a.folder.name} color={a.folder.color} background={`${a.folder.color}22`} icon="folder-outline" />
         </Pressable>
       ) : null}
-      {a.category ? <Badge label={a.category.name} color={a.category.color} background={`${a.category.color}22`} /> : null}
+      {!compact && a.category ? <Badge label={a.category.name} color={a.category.color} background={`${a.category.color}22`} /> : null}
       {o.isCarriedForward && o.status === 'pending' ? (
-        <Badge label={`Carried over${o.carryForwardCount > 1 ? ` ×${o.carryForwardCount}` : ''}`} color={p.warning} background={p.warningSoft} icon="return-down-forward" />
+        <Badge
+          label={compact ? 'Carried' : `Carried over${o.carryForwardCount > 1 ? ` ×${o.carryForwardCount}` : ''}`}
+          color={p.warning}
+          background={p.warningSoft}
+          icon="return-down-forward"
+        />
       ) : null}
       {overdueLabels ? (
         <View testID={`overdue-timeline-${o.id}`} style={styles.badges}>
-          <Badge label={overdueLabels.started} color={p.textSecondary} background={p.surfaceVariant} icon="play-outline" />
+          {!compact ? <Badge label={overdueLabels.started} color={p.textSecondary} background={p.surfaceVariant} icon="play-outline" /> : null}
           <Badge label={overdueLabels.overdue} color={p.overdue} background={p.errorSoft} icon="alert-circle" />
         </View>
       ) : overdue ? (
         <Badge label={deadlinePassed ? 'Past deadline' : 'Overdue'} color={p.overdue} background={p.errorSoft} icon="alert-circle" />
       ) : null}
-      {a.rule ? <Badge label="Repeats" color={p.info} background={p.infoSoft} icon="repeat" /> : null}
-      {a.task.deadlineAt && !deadlinePassed ? (
+      {!compact && a.rule ? <Badge label="Repeats" color={p.info} background={p.infoSoft} icon="repeat" /> : null}
+      {!compact && a.task.deadlineAt && !deadlinePassed ? (
         <Badge label={`Due ${formatDeadline(a.task.deadlineAt)}`} color={p.textSecondary} background={p.surfaceVariant} icon="hourglass-outline" />
       ) : null}
     </View>
@@ -166,7 +174,7 @@ export function AgendaRow({
               </AppText>
             ) : null}
             {!compact ? <SubtaskProgressBadge nodes={a.subtasks} /> : null}
-            <ItemBadges a={a} showDate={showDate} hideFolder={compact} />
+            <ItemBadges a={a} showDate={showDate} hideFolder={compact} compact={compact} />
           </Pressable>
         </View>
         {hasSubtasks ? (
@@ -178,6 +186,7 @@ export function AgendaRow({
                 backgroundColor: p.surfaceVariant,
                 marginLeft: checkW,
                 marginRight: compact ? spacing.sm : spacing.md,
+                overflow: 'hidden',
               },
             ]}>
             <AgendaSubtasks nodes={a.subtasks} testID={testID ? `${testID}-subs` : undefined} />

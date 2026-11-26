@@ -18,7 +18,9 @@ import { FolderForm } from '@/ui/components/FolderForm';
 import { OptionsModal, Sheet } from '@/ui/components/Pickers';
 import { type ListLayout } from '@/ui/components/ViewLayoutToggle';
 import { AppText, Button, Card, EmptyState, ErrorState, Icon, IconButton, Input, LoadingState, type IconName } from '@/ui/components/primitives';
+import { useFolderGridColumns } from '@/ui/hooks/useFolderGridColumns';
 import { useAction, useQuery, useTheme, useToast } from '@/ui/hooks';
+import { folderGridCellStyle, folderGridWrapStyle } from '@/ui/layout/folderGrid';
 import { goBackOrDashboard, useSafeAndroidBack } from '@/ui/navigation';
 import { radius, spacing } from '@/ui/theme';
 
@@ -44,6 +46,7 @@ export default function FolderDetailScreen() {
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [picker, setPicker] = useState<FolderPicker | null>(null);
   const [layout, setLayout] = useState<ListLayout>('grid');
+  const { columns, onGridLayout, compact } = useFolderGridColumns(layout);
   const filterCtl = useAgendaFilterState({ status: 'all' });
   const card = useQuery((s) => s.folders.card(id), [id]);
   const categories = useQuery((s) => s.categories.list(), []);
@@ -154,15 +157,19 @@ export default function FolderDetailScreen() {
     <View style={{ flex: 1, backgroundColor: p.background }}>
       <ScrollView ref={scrollRef} contentContainerStyle={{ padding: spacing.lg, gap: spacing.lg, paddingBottom: 120 }}>
         <Card>
-          <View style={{ flexDirection: 'row', gap: spacing.md, alignItems: 'center' }}>
-            <View style={{ width: 44, height: 44, borderRadius: radius.md, backgroundColor: `${folder.color}22`, alignItems: 'center', justifyContent: 'center' }}>
+          <View style={{ flexDirection: 'row', gap: spacing.md, alignItems: 'center', minWidth: 0 }}>
+            <View style={{ width: 40, height: 40, borderRadius: radius.md, backgroundColor: `${folder.color}22`, alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
               <Icon name={folder.icon as IconName} color={folder.color} />
             </View>
-            <View style={{ flex: 1 }}>
-              <AppText variant="title" testID="folder-name">
+            <View style={{ flex: 1, minWidth: 0 }}>
+              <AppText variant="title" numberOfLines={2} testID="folder-name">
                 {folder.name}
               </AppText>
-              {folder.description ? <AppText muted>{folder.description}</AppText> : null}
+              {folder.description ? (
+                <AppText muted numberOfLines={3}>
+                  {folder.description}
+                </AppText>
+              ) : null}
             </View>
             <IconButton testID="folder-options" icon="ellipsis-horizontal" label="Folder options" onPress={() => setOptionsOpen(true)} />
           </View>
@@ -250,21 +257,25 @@ export default function FolderDetailScreen() {
         {!tasks.data && !tasks.error ? <LoadingState /> : null}
         {tasks.data && tasks.data.length === 0 ? <AppText muted>No tasks in this folder for these filters.</AppText> : null}
         <View
-          style={layout === 'grid' ? styles.grid : { gap: spacing.sm }}
+          style={layout === 'grid' ? folderGridWrapStyle() : { gap: spacing.sm }}
           onLayout={(e) => {
             listTop.current = e.nativeEvent.layout.y;
+            if (layout === 'grid') onGridLayout(e);
           }}>
           {tasks.data?.map((a, i) => {
             const highlighted = focusId === a.occurrence.id;
             return (
               <View
                 key={a.occurrence.id}
-                style={[layout === 'grid' ? styles.gridCell : undefined, highlighted ? { borderWidth: 2, borderColor: p.primary, borderRadius: radius.md } : undefined]}
+                style={[
+                  layout === 'grid' ? folderGridCellStyle(columns) : undefined,
+                  highlighted ? { borderWidth: 2, borderColor: p.primary, borderRadius: radius.md } : undefined,
+                ]}
                 onLayout={(e) => {
                   if (!highlighted) return;
                   scrollRef.current?.scrollTo({ y: Math.max(0, listTop.current + e.nativeEvent.layout.y - spacing.md), animated: false });
                 }}>
-                <AgendaRow a={a} showDate compact={layout === 'grid'} testID={`folder-task-${i}`} />
+                <AgendaRow a={a} showDate compact={compact} testID={`folder-task-${i}`} />
               </View>
             );
           })}
@@ -421,8 +432,6 @@ export default function FolderDetailScreen() {
 }
 
 const styles = StyleSheet.create({
-  grid: { flexDirection: 'row', flexWrap: 'wrap', marginHorizontal: -4 },
-  gridCell: { width: '50%', paddingHorizontal: 4, paddingBottom: 8, minWidth: 0 },
   fab: {
     position: 'absolute',
     right: 20,

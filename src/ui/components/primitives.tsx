@@ -468,9 +468,10 @@ const styles = StyleSheet.create({
   input: { minHeight: TOUCH, borderWidth: 1, borderRadius: radius.md, paddingHorizontal: spacing.md, fontSize: 15 },
   select: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
   row: { minHeight: TOUCH + 4, flexDirection: 'row', alignItems: 'center', gap: spacing.md, paddingVertical: spacing.sm },
-  segmented: { flexDirection: 'row', borderRadius: radius.md, padding: 3 },
+  segmented: { flexDirection: 'row', borderRadius: radius.md, padding: 3, minWidth: 0, alignSelf: 'stretch' },
   segment: {
     flex: 1,
+    minWidth: 0,
     minHeight: 40,
     paddingHorizontal: spacing.xs,
     paddingVertical: spacing.xs,

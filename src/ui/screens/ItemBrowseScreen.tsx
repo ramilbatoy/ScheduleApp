@@ -13,6 +13,7 @@ import { ViewLayoutToggle } from '@/ui/components/ViewLayoutToggle';
 import { AppText, EmptyState, ErrorState, IconButton, ListRow, LoadingState, SwitchRow } from '@/ui/components/primitives';
 import { QuickAddButton } from '@/ui/components/QuickAddButton';
 import { SearchFieldPopup } from '@/ui/components/SearchFieldPopup';
+import { useFolderGridColumns } from '@/ui/hooks/useFolderGridColumns';
 import { useQuery, useTheme } from '@/ui/hooks';
 import { spacing } from '@/ui/theme';
 
@@ -51,6 +52,7 @@ export function ItemBrowseScreen({ kind, title }: { kind: ItemKind; title: strin
   const [sort, setSort] = useState<SortKey>('date');
   const [groupByFolder, setGroupByFolder] = useState(false);
   const [layout, setLayout] = useState<'list' | 'grid'>('grid');
+  const { columns, compact, onGridLayout } = useFolderGridColumns(layout);
   const [picker, setPicker] = useState<Picker | null>(null);
   const categories = useQuery((s) => s.categories.list(), []);
   const folders = useQuery((s) => s.folders.cards(), []);
@@ -135,20 +137,21 @@ export function ItemBrowseScreen({ kind, title }: { kind: ItemKind; title: strin
   return (
     <View style={{ flex: 1, backgroundColor: p.background }}>
       <FlatList
-        key={layout}
+        key={`${layout}-${columns}`}
         data={rows}
-        numColumns={layout === 'grid' ? 2 : 1}
-        columnWrapperStyle={layout === 'grid' ? { gap: spacing.sm } : undefined}
+        numColumns={layout === 'grid' ? columns : 1}
+        columnWrapperStyle={layout === 'grid' && columns > 1 ? { gap: spacing.sm } : undefined}
         keyExtractor={(row) => (row.kind === 'folder' ? `folder-${row.group.folder.id}` : row.agenda.occurrence.id)}
         ListHeaderComponent={header}
         contentContainerStyle={{ paddingHorizontal: spacing.lg, paddingBottom: 120, gap: spacing.sm }}
+        onLayout={onGridLayout}
         keyboardShouldPersistTaps="handled"
         renderItem={({ item, index }) => (
           <View style={layout === 'grid' ? { flex: 1, minWidth: 0 } : undefined}>
             {item.kind === 'folder' ? (
-              <FolderTaskCard group={item.group} today={today} compact={layout === 'grid'} testID={`list-folder-${index}`} />
+              <FolderTaskCard group={item.group} today={today} compact={compact} testID={`list-folder-${index}`} />
             ) : (
-              <AgendaRow a={item.agenda} showDate compact={layout === 'grid'} testID={`list-${index}`} />
+              <AgendaRow a={item.agenda} showDate compact={compact} testID={`list-${index}`} />
             )}
           </View>
         )}

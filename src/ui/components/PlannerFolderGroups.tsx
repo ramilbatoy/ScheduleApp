@@ -1,5 +1,5 @@
 import { useState, type ReactNode } from 'react';
-import { Pressable, StyleSheet, View } from 'react-native';
+import { View } from 'react-native';
 import { router } from 'expo-router';
 
 import { formatDateKey } from '@/domain/dates';
@@ -7,11 +7,16 @@ import { folderTargetStatus } from '@/domain/folderProgress';
 import type { Agenda, DateKey, Folder } from '@/domain/models';
 import type { DayFolderGroups, PlannerFolderGroup, RangeSummary, WeekFolderGroup, WeekFolderGroups } from '@/domain/plannerGroups';
 import { useSettings } from '@/state/appStore';
-import { radius, spacing } from '@/ui/theme';
+import { useFolderGridColumns } from '@/ui/hooks/useFolderGridColumns';
+import { folderGridCellStyle, folderGridWrapStyle } from '@/ui/layout/folderGrid';
+import { spacing } from '@/ui/theme';
 import { useTheme } from '@/ui/hooks';
 
 import { AgendaRow, PRIORITY_LABEL } from './AgendaRow';
-import { AppText, Card, Icon, SectionHeader, type IconName } from './primitives';
+import { FolderCardChrome } from './FolderCardChrome';
+import { AppText, Card, Icon, SectionHeader } from './primitives';
+
+export { weekFolderColumns, folderGridColumns } from '@/ui/layout/folderGrid';
 
 function targetPhrase(folder: Folder, today: DateKey): string | null {
   const target = folderTargetStatus(folder.targetDate, today);
@@ -25,7 +30,7 @@ function targetPhrase(folder: Folder, today: DateKey): string | null {
   return null;
 }
 
-/** Same chrome as the Folders list: icon, counts, bar, priority and target. Expand shows tasks and their subtasks. */
+/** Same chrome as the Folders list. Expand shows tasks and their subtasks. */
 function FolderGroupCard({
   folder,
   today,
@@ -33,9 +38,7 @@ function FolderGroupCard({
   range,
   overall,
   testID,
-  /** Week grid cells need stretch height; Day/Month columns must size to content so the next card is not covered. */
   stretch = false,
-  /** Narrow 2-column grids: slightly smaller icon/type so hierarchy stays readable ~400px. */
   compact = false,
   children,
 }: {
@@ -58,7 +61,9 @@ function FolderGroupCard({
   const statusLabel = folder.status === 'completed' ? 'Completed' : folder.status === 'archived' ? 'Archived' : null;
   const pending = range.pending ? ` · ${range.pending} pending` : '';
   const overdue = range.overdue ? ` · ${range.overdue} overdue` : '';
-  const iconBox = compact ? 32 : 40;
+  const overallBit = overall ? ` · Overall ${overall.completed}/${overall.total}` : '';
+  const summary = `${rangeLabel} ${range.completed}/${range.scheduled} completed · ${pct}%${pending}${overdue}${overallBit}`;
+
   return (
     <Card
       testID={testID}
@@ -69,90 +74,30 @@ function FolderGroupCard({
         backgroundColor: folder.status === 'completed' ? (p.scheme === 'dark' ? '#3A414B' : '#E4E6EB') : p.surface,
         ...(stretch ? { flex: 1 } : null),
       }}>
-      <View style={{ gap: compact ? spacing.xs : spacing.sm }}>
-        <View style={{ flexDirection: 'row', gap: compact ? spacing.sm : spacing.md, alignItems: 'center' }}>
-          <Pressable
-            accessibilityRole="button"
-            accessibilityLabel={`Open folder details for ${folder.name}`}
-            onPress={() => router.push({ pathname: '/folder/[id]', params: { id: folder.id } })}
-            testID={`${testID}-open`}
-            hitSlop={4}
-            style={{
-              width: iconBox,
-              height: iconBox,
-              borderRadius: radius.md,
-              backgroundColor: `${folder.color}22`,
-              alignItems: 'center',
-              justifyContent: 'center',
-              flexShrink: 0,
-            }}>
-            <Icon name={folder.icon as IconName} color={folder.color} size={compact ? 18 : 20} />
-          </Pressable>
-          <Pressable
-            accessibilityRole="button"
-            accessibilityState={{ expanded: open }}
-            accessibilityLabel={`${open ? 'Collapse' : 'Expand'} ${folder.name}`}
-            onPress={toggle}
-            testID={`${testID}-toggle`}
-            style={{ flex: 1, gap: 2, minWidth: 0 }}>
-            <AppText variant={compact ? 'label' : 'title'} numberOfLines={1}>
-              {folder.name}
-            </AppText>
-            <AppText variant="caption" muted numberOfLines={compact ? 2 : 3} testID={`${testID}-range`}>
-              {rangeLabel} {range.completed}/{range.scheduled} completed · {pct}%{pending}{overdue}
-            </AppText>
-            {overall ? (
-              <AppText variant="caption" color={p.primary} numberOfLines={1} testID={`${testID}-overall`}>
-                Overall {overall.completed}/{overall.total}
-              </AppText>
-            ) : null}
-          </Pressable>
-          <Pressable
-            accessibilityRole="button"
-            accessibilityState={{ expanded: open }}
-            accessibilityLabel={`${open ? 'Collapse' : 'Expand'} ${folder.name}`}
-            onPress={toggle}
-            hitSlop={8}
-            style={{ width: 28, height: 28, alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+      <FolderCardChrome
+        name={folder.name}
+        color={folder.color}
+        icon={folder.icon}
+        percent={pct}
+        summary={summary}
+        priorityLabel={PRIORITY_LABEL[folder.priority]}
+        priorityColor={p.priority[folder.priority]}
+        targetText={target}
+        targetUrgent={!!target?.includes('overdue')}
+        statusLabel={statusLabel}
+        compact={compact}
+        titleLines={2}
+        testID={testID}
+        onOpen={() => router.push({ pathname: '/folder/[id]', params: { id: folder.id } })}
+        onPressHeader={toggle}
+        headerAccessibilityLabel={`${open ? 'Collapse' : 'Expand'} ${folder.name}`}
+        headerExpanded={open}
+        trailing={
+          <View style={{ width: 28, height: 28, alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
             <Icon name={open ? 'chevron-up' : 'chevron-down'} color={p.textSecondary} size={compact ? 18 : 20} />
-          </Pressable>
-        </View>
-        <Pressable
-          accessibilityRole="button"
-          accessibilityState={{ expanded: open }}
-          accessibilityLabel={`${open ? 'Collapse' : 'Expand'} ${folder.name} summary`}
-          onPress={toggle}
-          testID={`${testID}-summary`}>
-          <View style={{ height: compact ? 4 : 6, borderRadius: radius.sm, backgroundColor: p.surfaceVariant, overflow: 'hidden' }}>
-            <View style={{ width: `${pct}%`, height: compact ? 4 : 6, backgroundColor: folder.color, borderRadius: radius.sm }} />
           </View>
-        </Pressable>
-        <Pressable
-          accessibilityRole="button"
-          accessibilityState={{ expanded: open }}
-          accessibilityLabel={`${open ? 'Collapse' : 'Expand'} ${folder.name} details`}
-          onPress={toggle}>
-          <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm }}>
-            <AppText variant="caption" color={p.priority[folder.priority]}>
-              {PRIORITY_LABEL[folder.priority]}
-            </AppText>
-            {target ? (
-              <AppText variant="caption" color={target.includes('overdue') ? p.overdue : p.textSecondary}>
-                {target}
-              </AppText>
-            ) : (
-              <AppText variant="caption" muted>
-                No target
-              </AppText>
-            )}
-            {statusLabel ? (
-              <AppText variant="caption" muted>
-                {statusLabel}
-              </AppText>
-            ) : null}
-          </View>
-        </Pressable>
-      </View>
+        }
+      />
       {open ? <View style={{ gap: compact ? spacing.xs : spacing.sm, minWidth: 0 }}>{children}</View> : null}
     </Card>
   );
@@ -198,25 +143,24 @@ export function PlannerDayGroups({
   hideUnassignedHeader?: boolean;
   layout?: 'grid' | 'list';
 }) {
+  const { columns, onGridLayout, compact } = useFolderGridColumns(layout);
   if (!groups.folders.length && !groups.unassigned.length) return <AppText muted>{emptyText}</AppText>;
   const grid = layout === 'grid';
-  const folderWrap = grid ? styles.dayGrid : undefined;
-  const folderCell = grid ? styles.dayGridCell : undefined;
   return (
     <View style={{ gap: spacing.md }} testID={testID}>
-      <View style={folderWrap}>
+      <View style={grid ? folderGridWrapStyle() : undefined} onLayout={grid ? onGridLayout : undefined}>
         {groups.folders.map((group) => (
-          <View key={group.folder.id} style={folderCell}>
+          <View key={group.folder.id} style={grid ? folderGridCellStyle(columns) : undefined}>
             <FolderGroupCard
               folder={group.folder}
               today={today}
               rangeLabel={rangeLabel}
               range={group.range}
               overall={group.overall}
-              compact={grid}
+              compact={compact}
               testID={`${testID}-folder-${group.folder.id}`}>
               {group.tasks.length ? (
-                <TaskList items={group.tasks} testPrefix={`${testID}-task-${group.folder.id}`} showDate={showTaskDate} compact={grid} />
+                <TaskList items={group.tasks} testPrefix={`${testID}-task-${group.folder.id}`} showDate={showTaskDate} compact={compact} />
               ) : (
                 <AppText muted>No matching tasks.</AppText>
               )}
@@ -271,16 +215,6 @@ function WeekFolderBody({
   );
 }
 
-/**
- * Intended Week folder grid density by viewport.
- * Phone (~400px) and up use 2 columns in grid mode; very wide web can use 3.
- * List mode is always 1 column (handled by the layout prop, not this helper).
- */
-export function weekFolderColumns(width: number): 1 | 2 | 3 {
-  if (width >= 1100) return 3;
-  return 2;
-}
-
 export function PlannerWeekGroups({
   groups,
   today,
@@ -296,34 +230,38 @@ export function PlannerWeekGroups({
   hideUnassignedHeader?: boolean;
 }) {
   const p = useTheme();
+  const { columns, onGridLayout, compact } = useFolderGridColumns(layout);
   const grid = layout === 'grid';
-  const columns = layout === 'list' ? 1 : 2;
   const looseCount = groups.unassignedByDay.reduce((n, d) => n + d.tasks.length, 0);
   if (!groups.folders.length && !looseCount) return <AppText muted>Nothing is currently listed here.</AppText>;
   const showUnassignedBlock = looseCount > 0 || !hideUnassignedHeader;
   return (
     <View style={{ gap: spacing.md }} testID={testID}>
-      <View style={[styles.grid, { gap: spacing.sm }]} testID={`${testID}-grid`}>
+      <View
+        style={[folderGridWrapStyle(), { marginHorizontal: 0 }]}
+        onLayout={grid ? onGridLayout : undefined}
+        testID={`${testID}-grid`}>
         {groups.folders.map((group) => (
           <View
             key={group.folder.id}
-            style={{
-              flexGrow: 1,
-              flexBasis: columns === 1 ? '100%' : '47%',
-              maxWidth: columns === 1 ? '100%' : '49%',
-              // Was 220 — forced a single column wrap under ~400px web/phone width.
-              minWidth: columns === 1 ? '100%' : 0,
-            }}>
+            style={
+              columns === 1
+                ? { width: '100%', minWidth: 0, paddingBottom: spacing.sm }
+                : {
+                    ...folderGridCellStyle(columns, 4),
+                    // Keep minWidth 0 so 2-col does not wrap under ~400px (old bug was minWidth 220).
+                  }
+            }>
             <FolderGroupCard
               folder={group.folder}
               today={today}
               rangeLabel="This week"
               range={group.range}
               overall={group.overall}
-              stretch={grid}
-              compact={grid}
+              stretch={grid && columns > 1}
+              compact={compact}
               testID={`${testID}-folder-${group.folder.id}`}>
-              <WeekFolderBody group={group} today={today} compact={grid} testID={`${testID}-folder-${group.folder.id}`} />
+              <WeekFolderBody group={group} today={today} compact={compact} testID={`${testID}-folder-${group.folder.id}`} />
             </FolderGroupCard>
           </View>
         ))}
@@ -349,9 +287,3 @@ export function PlannerWeekGroups({
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  grid: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'stretch' },
-  dayGrid: { flexDirection: 'row', flexWrap: 'wrap', marginHorizontal: -4 },
-  dayGridCell: { width: '50%', paddingHorizontal: 4, paddingBottom: 8, minWidth: 0 },
-});
