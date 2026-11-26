@@ -72,7 +72,7 @@ describe.each(DRIVERS)('branding settings (%s)', (_name, open) => {
     expect(saved.defaultFolderListView).toBe('list');
     expect(saved.showFolderQuickAdd).toBe(true);
     expect(saved.navigation.order).toEqual(['projects', 'statistics', 'settings', 'about']);
-    expect(saved.navigation.orderRevision).toBe(2);
+    expect(saved.navigation.orderRevision).toBe(3);
     expect(JSON.stringify(saved.branding)).not.toMatch(/file:|content:|blob:/);
 
     const named = await app.settings.set('branding', { mode: 'name', logo });

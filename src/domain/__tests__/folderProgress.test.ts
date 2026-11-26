@@ -103,6 +103,7 @@ describe('navigation prefs', () => {
     expect(sanitizeNavigation({ drawerEnabled: true, order: [] }).order).toEqual([]);
     expect(upgradeDrawerOrder(['tasks', 'projects', 'about'])).toEqual(['projects', 'statistics', 'settings', 'about']);
     expect(upgradeDrawerOrder(['projects', 'today'])).toEqual(['projects', 'statistics', 'settings', 'about']);
+    expect(upgradeDrawerOrder(['about', 'settings'], 2)).toEqual(['projects', 'statistics', 'settings', 'about']);
     expect(upgradeDrawerOrder(['projects', 'today'], DRAWER_ORDER_REVISION)).toEqual(['projects', 'today']);
     const migrated = applyDrawerOrderMigration({ drawerEnabled: true, order: ['today', 'about'] });
     expect(migrated.changed).toBe(true);
@@ -111,6 +112,14 @@ describe('navigation prefs', () => {
       order: ['projects', 'statistics', 'settings', 'about'],
       orderRevision: DRAWER_ORDER_REVISION,
     });
+    const fromRev2 = applyDrawerOrderMigration({
+      drawerEnabled: true,
+      order: ['about', 'settings', 'statistics'],
+      orderRevision: 2,
+    });
+    expect(fromRev2.changed).toBe(true);
+    expect(fromRev2.prefs.order).toEqual(['projects', 'statistics', 'settings', 'about']);
+    expect(fromRev2.prefs.orderRevision).toBe(DRAWER_ORDER_REVISION);
     const kept = applyDrawerOrderMigration({
       drawerEnabled: true,
       order: ['about', 'projects'],

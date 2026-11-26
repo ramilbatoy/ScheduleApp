@@ -148,7 +148,7 @@ describe.each(DRIVERS)('folders (%s)', (_name, open) => {
     expect(next.navigation).toEqual({
       drawerEnabled: false,
       order: ['projects', 'today'],
-      orderRevision: 2,
+      orderRevision: 3,
     });
     expect(next.notificationsEnabled).toBe(false);
     const again = await app.settings.get();
@@ -161,7 +161,7 @@ describe.each(DRIVERS)('folders (%s)', (_name, open) => {
     expect(reset.notificationsEnabled).toBe(false);
   });
 
-  it('forces canonical drawer order once for pre-revision installs and persists it', async () => {
+  it('forces canonical drawer order once for pre-revision and revision-2 installs and persists it', async () => {
     await createRepos(app.db).settings.set(
       'navigation',
       { drawerEnabled: true, order: ['about', 'tasks', 'projects'] },
@@ -169,13 +169,25 @@ describe.each(DRIVERS)('folders (%s)', (_name, open) => {
     );
     const first = await app.settings.get();
     expect(first.navigation.order).toEqual(['projects', 'statistics', 'settings', 'about']);
-    expect(first.navigation.orderRevision).toBe(2);
+    expect(first.navigation.orderRevision).toBe(3);
     const raw = await app.db.get('app_settings', 'navigation');
     expect(JSON.parse(String(raw!.value)).order).toEqual(['projects', 'statistics', 'settings', 'about']);
-    expect(JSON.parse(String(raw!.value)).orderRevision).toBe(2);
+    expect(JSON.parse(String(raw!.value)).orderRevision).toBe(3);
+
+    // Users who reordered after #33's revision 2 must be re-forced once on revision 3.
+    await createRepos(app.db).settings.set(
+      'navigation',
+      { drawerEnabled: true, order: ['about', 'settings', 'statistics'], orderRevision: 2 },
+      '2026-11-26T01:00:00.000Z',
+    );
+    const fromRev2 = await app.settings.get();
+    expect(fromRev2.navigation.order).toEqual(['projects', 'statistics', 'settings', 'about']);
+    expect(fromRev2.navigation.orderRevision).toBe(3);
+
     await app.settings.set('navigation', { drawerEnabled: true, order: ['about', 'settings'] });
     const afterCustom = await app.settings.get();
     expect(afterCustom.navigation.order).toEqual(['about', 'settings']);
+    expect(afterCustom.navigation.orderRevision).toBe(3);
   });
 });
 

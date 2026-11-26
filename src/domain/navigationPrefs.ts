@@ -17,8 +17,9 @@ export type NavItemId = (typeof NAV_ITEM_IDS)[number];
 /**
  * Bumped when existing installs must be forced onto the canonical drawer order.
  * Saves that already carry this revision keep the user's order.
+ * Revision 3 re-forces after #33's revision 2 so post-migrate custom orders reset once.
  */
-export const DRAWER_ORDER_REVISION = 2;
+export const DRAWER_ORDER_REVISION = 3;
 
 export interface NavigationPrefs {
   drawerEnabled: boolean;
