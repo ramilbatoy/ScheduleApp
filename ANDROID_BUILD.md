@@ -32,9 +32,9 @@ cd android
 Copy artifacts out of the tree when needed (versioned Finalinstall convention):
 
 ```bash
-mkdir -p Finalinstall/1.3.1
+mkdir -p Finalinstall/1.3.2
 cp android/app/build/outputs/apk/release/app-release.apk \
-  Finalinstall/1.3.1/NeoPlanner-1.3.1-release.apk
+  Finalinstall/1.3.2/NeoPlanner-1.3.2-release.apk
 ```
 
 APKs under `Finalinstall/` are gitignored. See `Finalinstall/README.md`. From **1.3.1** the Android artifact is named `NeoPlanner-<version>-release.apk` (earlier releases used `NeoOrganizer-`).
@@ -42,10 +42,10 @@ APKs under `Finalinstall/` are gitignored. See `Finalinstall/README.md`. From **
 ### Install on a device / emulator
 
 ```bash
-adb install -r Finalinstall/1.3.1/NeoPlanner-1.3.1-release.apk
+adb install -r Finalinstall/1.3.2/NeoPlanner-1.3.2-release.apk
 ```
 
-Package id: `com.dayplanner.app` · versionName **1.3.1** / versionCode **5** · Launcher display name: **NeoPlanner**
+Package id: `com.dayplanner.app` · versionName **1.3.2** / versionCode **6** · Launcher display name: **NeoPlanner**
 
 ### Dev client (optional)
 

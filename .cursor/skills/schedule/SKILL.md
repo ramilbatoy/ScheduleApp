@@ -90,11 +90,11 @@ Use this skill for **any** work on `ramilbatoy/ScheduleApp` (display name NeoPla
 - Subtask optional `deadline_at` (schema v4); rides with carry-forward on the occurrence
 - Android button/chip/segment labels: `includeFontPadding: false` + vertical padding; EmptyState labels use `flexShrink: 0` + `textBreakStrategy: simple` (Phase 5 clipping fix)
 - Web: never nest `<button>` (Pressable / Paper `accessibilityRole="button"`). Outer cards that wrap chips use non-button parents
-- Sideload APKs: same `com.dayplanner.app` + debug keystore for upgrade path; versioned `Finalinstall/<ver>/NeoPlanner-<ver>-release.apk` from **1.3.1** (earlier builds keep `NeoOrganizer-` filenames). Latest built: **1.3.1** (versionCode 5)
+- Sideload APKs: same `com.dayplanner.app` + debug keystore for upgrade path; versioned `Finalinstall/<ver>/NeoPlanner-<ver>-release.apk` from **1.3.1** (earlier builds keep `NeoOrganizer-` filenames). Latest built: **1.3.2** (versionCode 6)
 
 ## Accomplishments (keep current)
 
-**Last skill refresh:** 2026-11-26 Asia/Manila — Search popup Modal + drawer `orderRevision` 3 open as #35; narrow-layout + drawer-order polish merged via #33; NeoPlanner **1.3.1** on `main` via #32. Display name NeoPlanner; package `com.dayplanner.app`.  
+**Last skill refresh:** 2026-11-26 Asia/Manila — NeoPlanner **1.3.2** packaging (versionCode 6) on branch from `main` through #35; search popup + drawer revision 3 via #35; narrow-layout via #33; 1.3.1 via #32. Display name NeoPlanner; package `com.dayplanner.app`.  
 Update this section whenever a phase finishes, a PR merges, or acceptance status changes. Date entries in Asia/Manila.
 
 ### Done
@@ -135,13 +135,14 @@ Update this section whenever a phase finishes, a PR merges, or acceptance status
 | Folder / Day / Event polish | Merged to main (2026-11-26 Asia/Manila) | https://github.com/ramilbatoy/ScheduleApp/pull/31 — Folder list layout + Advance Setting default view; folder detail under tabs with options popup / Mark Completed / hidden Quick Add + FAB; Tasks/Events kind-locked quick-add + When dropdown; Day/Week/Month search popup + filters sheet + grid/list; Week date-tap + today dot; Month title go-to-date; **248** tests. Report: `/cursor/stores/self/docs/folder-day-event-polish-report.md` |
 | NeoPlanner 1.3.1 upgrade APK | Merged to main (2026-11-26 Asia/Manila) | https://github.com/ramilbatoy/ScheduleApp/pull/32 — `versionName` 1.3.1 / `versionCode` 5; same package `com.dayplanner.app` + debug keystore SHA-1 `5E:8F:16:06:…:F6:25`. Android APK: `~/Desktop/git/ScheduleApp/Finalinstall/1.3.1/NeoPlanner-1.3.1-release.apk`. Report: `/cursor/stores/self/docs/neoplanner-1.3.1-build-report.md` |
 | Narrow layout + drawer order | Merged to main (2026-11-26 Asia/Manila) | https://github.com/ramilbatoy/ScheduleApp/pull/33 — content-width folder columns (1 / 2 / 3); shared `FolderCardChrome`; Week Unassigned chrome removed; Month filters below calendar; drawer `orderRevision` 2; **250** tests. Report: `/cursor/stores/self/docs/narrow-layout-drawer-report.md` |
-| Search popup + drawer revision 3 | Open (2026-11-26 Asia/Manila) | https://github.com/ramilbatoy/ScheduleApp/pull/35 — shared `SearchFieldPopup` uses transparent Modal (Day/Week/Month stacking); drawer `orderRevision` **3** re-forces Folders → Statistics → Settings → About; **250** tests. Report: `/cursor/stores/self/docs/search-popup-drawer-report.md` |
+| Search popup + drawer revision 3 | Merged to main (2026-11-26 Asia/Manila) | https://github.com/ramilbatoy/ScheduleApp/pull/35 — shared `SearchFieldPopup` uses transparent Modal (Day/Week/Month stacking); drawer `orderRevision` **3** re-forces Folders → Statistics → Settings → About; **250** tests. Report: `/cursor/stores/self/docs/search-popup-drawer-report.md` |
+| NeoPlanner 1.3.2 upgrade APK | Open (2026-11-26 Asia/Manila) | Packaging PR pending URL — `versionName` 1.3.2 / `versionCode` 6; same package `com.dayplanner.app` + debug keystore SHA-1 `5E:8F:16:06:…:F6:25`. Android APK: `~/Desktop/git/ScheduleApp/Finalinstall/1.3.2/NeoPlanner-1.3.2-release.apk`. Report: `/cursor/stores/self/docs/neoplanner-1.3.2-build-report.md` |
 
 ### In progress / remaining
 
 | Item | Status | Notes |
 | --- | --- | --- |
-| Device re-verify | Optional | Physical phone smoke: install-over Finalinstall 1.3.1 APK (data keep from 1.0–1.3.0), alarms, clipping |
+| Device re-verify | Optional | Physical phone smoke: install-over Finalinstall 1.3.2 APK (data keep from 1.0–1.3.1), alarms, clipping |
 | iOS signed IPA | Blocked | Needs Apple Developer team / certificates; see `Finalinstall/1.2.0/ios/README.md` |
 | Production signing | Optional | Replace debug-keystore release with Play/EAS credentials when publishing |
 | Project templates | Optional | Spec mentioned Website Launch / etc.; not required for core folders |
@@ -179,7 +180,7 @@ Update this section whenever a phase finishes, a PR merges, or acceptance status
 ## How to work
 
 0. **Always** open this skill (and any other relevant Project skills) before planning or coding a change; treat skill rules as binding for this thread.
-1. Branch from updated `main` (through #33; stack #35 for search/drawer when unmerged; 1.3.1 packaging supersedes #29). Prefer the Mac local checkout for all new work.
+1. Branch from updated `main` (through #35; 1.3.2 packaging supersedes #29). Prefer the Mac local checkout for all new work.
 2. Keep domain services pure of UI; add tests on **both** SQLite and IndexedDB drivers for storage-touching logic.
 3. Run `npm test` and `npm run typecheck` before declaring a slice done. Avoid nested web buttons.
 4. After each completed phase or merged PR: **update Accomplishments above** and `project-context.md`.
@@ -200,6 +201,7 @@ cd android && ./gradlew assembleDebug assembleRelease
 
 APK / iOS artifacts:  
 - Sideload Android (preferred, versioned): `~/Desktop/git/ScheduleApp/Finalinstall/<version>/NeoPlanner-<version>-release.apk` (from 1.3.1)  
+  - `…/Finalinstall/1.3.2/NeoPlanner-1.3.2-release.apk` (current; versionCode 6)  
   - `…/Finalinstall/1.3.1/NeoPlanner-1.3.1-release.apk`  
   - `…/Finalinstall/1.3.0/NeoOrganizer-1.3.0-release.apk` (historical; PR #29 superseded)  
   - `…/Finalinstall/1.2.0/NeoOrganizer-1.2.0-release.apk`  
