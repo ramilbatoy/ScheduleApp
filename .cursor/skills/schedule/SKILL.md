@@ -85,7 +85,7 @@ Use this skill for **any** work on `ramilbatoy/ScheduleApp` (display name NeoPla
 - Folder-first display: Day / Week / Month group assigned tasks under folders (expand/collapse); unassigned stay individual. Day hides Unassigned chrome; Week cards may `stretch`. Folder header icon opens folder details. Tasks screen defaults to individual list + optional Group by Folder. Occurrence dates stay authoritative
 - Filters: Day/Week/Month use a Filters sheet (4 rows) + search popup + icons-only grid/list (default grid). Folder page (`/projects`, title **Folder**) uses a search popup plus status and sort chips (icon + current value); grid/list icons sit on the overview row (default from `defaultFolderListView`). Tasks and Events use an options popup (Status, Priority, Category, Folder, Sort, Group by) — no kind filter and no Folder Target. Empty Day/Week copy stays “Nothing is currently listed here.”
 - User-facing status wording **Completed** (stored values still `completed`). Typography: display 18 / title 16; AppHeader brand stays 20. Go to date: month + year pickers (Month dashboard opens via the month/year title)
-- Drawer: AppHeader hamburger. Default shortcuts **Folders, Statistics, Settings, About NeoPlanner**. On read/migrate, any saved order without `orderRevision` 2 is forced to that canonical list and persisted (not only the old `tasks, projects, about` factory). After migration, a user reorder in Settings stamps revision 2 and is kept. Brand → Day tab and closes drawer. App Branding, Navigation, and default folder list view live under Settings → **Advance Setting**. Collapse folders default ON. Folder create/edit hides Priority and Target date until `showFolderPriority` / `showFolderTargetDate` (default off). Folder detail Quick Add section stays hidden until `showFolderQuickAdd`
+- Drawer: AppHeader hamburger. Default shortcuts **Folders, Statistics, Settings, About NeoPlanner**. On read/migrate, any saved order without `orderRevision` **3** is forced to that canonical list and persisted (overrides revision-2 customs from #33 once). After migration, a user reorder in Settings stamps revision 3 and is kept. Brand → Day tab and closes drawer. App Branding, Navigation, and default folder list view live under Settings → **Advance Setting**. Collapse folders default ON. Folder create/edit hides Priority and Target date until `showFolderPriority` / `showFolderTargetDate` (default off). Folder detail Quick Add section stays hidden until `showFolderQuickAdd`
 - Timed items apply Settings default reminder offset; OS alarms use `alarmClock` when exact-alarm granted else `bestEffort`
 - Subtask optional `deadline_at` (schema v4); rides with carry-forward on the occurrence
 - Android button/chip/segment labels: `includeFontPadding: false` + vertical padding; EmptyState labels use `flexShrink: 0` + `textBreakStrategy: simple` (Phase 5 clipping fix)
@@ -94,7 +94,7 @@ Use this skill for **any** work on `ramilbatoy/ScheduleApp` (display name NeoPla
 
 ## Accomplishments (keep current)
 
-**Last skill refresh:** 2026-11-26 Asia/Manila — Narrow-layout + drawer-order polish PR open; NeoPlanner **1.3.1** on `main` via #32. Display name NeoPlanner; package `com.dayplanner.app`.  
+**Last skill refresh:** 2026-11-26 Asia/Manila — Search popup Modal + drawer `orderRevision` 3 open as #35; narrow-layout + drawer-order polish merged via #33; NeoPlanner **1.3.1** on `main` via #32. Display name NeoPlanner; package `com.dayplanner.app`.  
 Update this section whenever a phase finishes, a PR merges, or acceptance status changes. Date entries in Asia/Manila.
 
 ### Done
@@ -134,13 +134,13 @@ Update this section whenever a phase finishes, a PR merges, or acceptance status
 | NeoPlanner UI overhaul | Merged to main (2026-11-26 Asia/Manila) | https://github.com/ramilbatoy/ScheduleApp/pull/30 — display name NeoPlanner (package `com.dayplanner.app` unchanged); tabs Day / Calendar / Tasks / Events; drawer Folders, Statistics, Settings, About NeoPlanner; Advance Setting; folder/task/event lists; Day folder cards; Daily Progress collapsed until tap; warning pass (require cycle, web drawer driver, ReadyScreen); **248** tests. Report: `/cursor/stores/self/docs/neoplanner-layout-report.md` |
 | Folder / Day / Event polish | Merged to main (2026-11-26 Asia/Manila) | https://github.com/ramilbatoy/ScheduleApp/pull/31 — Folder list layout + Advance Setting default view; folder detail under tabs with options popup / Mark Completed / hidden Quick Add + FAB; Tasks/Events kind-locked quick-add + When dropdown; Day/Week/Month search popup + filters sheet + grid/list; Week date-tap + today dot; Month title go-to-date; **248** tests. Report: `/cursor/stores/self/docs/folder-day-event-polish-report.md` |
 | NeoPlanner 1.3.1 upgrade APK | Merged to main (2026-11-26 Asia/Manila) | https://github.com/ramilbatoy/ScheduleApp/pull/32 — `versionName` 1.3.1 / `versionCode` 5; same package `com.dayplanner.app` + debug keystore SHA-1 `5E:8F:16:06:…:F6:25`. Android APK: `~/Desktop/git/ScheduleApp/Finalinstall/1.3.1/NeoPlanner-1.3.1-release.apk`. Report: `/cursor/stores/self/docs/neoplanner-1.3.1-build-report.md` |
-| Narrow layout + drawer order | Open PR (2026-11-26 Asia/Manila) | https://github.com/ramilbatoy/ScheduleApp/pull/33 — content-width folder columns (1 / 2 / 3); shared `FolderCardChrome`; Week Unassigned chrome removed; Month filters below calendar; drawer `orderRevision` 2; **250** tests. Report: `/cursor/stores/self/docs/narrow-layout-drawer-report.md` |
+| Narrow layout + drawer order | Merged to main (2026-11-26 Asia/Manila) | https://github.com/ramilbatoy/ScheduleApp/pull/33 — content-width folder columns (1 / 2 / 3); shared `FolderCardChrome`; Week Unassigned chrome removed; Month filters below calendar; drawer `orderRevision` 2; **250** tests. Report: `/cursor/stores/self/docs/narrow-layout-drawer-report.md` |
+| Search popup + drawer revision 3 | Open (2026-11-26 Asia/Manila) | https://github.com/ramilbatoy/ScheduleApp/pull/35 — shared `SearchFieldPopup` uses transparent Modal (Day/Week/Month stacking); drawer `orderRevision` **3** re-forces Folders → Statistics → Settings → About; **250** tests. Report: `/cursor/stores/self/docs/search-popup-drawer-report.md` |
 
 ### In progress / remaining
 
 | Item | Status | Notes |
 | --- | --- | --- |
-| Narrow layout + drawer order | Open PR | https://github.com/ramilbatoy/ScheduleApp/pull/33 — merge when reviewed; then mark Done |
 | Device re-verify | Optional | Physical phone smoke: install-over Finalinstall 1.3.1 APK (data keep from 1.0–1.3.0), alarms, clipping |
 | iOS signed IPA | Blocked | Needs Apple Developer team / certificates; see `Finalinstall/1.2.0/ios/README.md` |
 | Production signing | Optional | Replace debug-keystore release with Play/EAS credentials when publishing |
@@ -169,7 +169,8 @@ Update this section whenever a phase finishes, a PR merges, or acceptance status
 - Settings main list has **Advance Setting** (App Branding, Navigation, default folder list view). Folder view prefs include Quick Add on folder detail. Prefs persist via `app_settings` (no schema change). Defaults: drawer Folders / Statistics / Settings / About; `collapseFoldersByDefault` true; `showFolderPriority` / `showFolderTargetDate` / `showFolderQuickAdd` false; `defaultFolderListView` grid
 - Day/Month folder cards size to content (folder chrome matches the Folder page; expand shows tasks and their subtasks); Week grid cards still use `stretch`/`flex:1` for equal-height cells. Daily Progress uses that chrome and stays collapsed until tapped
 - Optional subtask deadline (`deadline_at`) on create/edit; shown when set; rides with carry-forward on the same occurrence
-- Drawer: any saved order missing `orderRevision` 2 is forced on read to Folders → Statistics → Settings → About NeoPlanner and persisted. After that migration, Settings reorders stamp revision 2 and stick until a future revision bump
+- Drawer: any saved order missing `orderRevision` **3** (including revision-2 customs) is forced on read to Folders → Statistics → Settings → About NeoPlanner and persisted. After that migration, Settings reorders stamp revision 3 and stick until a future revision bump
+- Day/Week/Month search popup (`SearchFieldPopup`) uses a transparent `Modal` so it stacks above filters, calendar, and list rows (shared component)
 - `npm run lint` has no committed ESLint config; first `expo lint` can fail on pre-existing files
 - Header branding is separate from the Android launcher. Custom logo is PNG/JPEG/WebP bytes in `app_settings` (max ~1.5 MB). Invalid/missing → NeoPlanner. `app.json` `name` is NeoPlanner; slug stays `dayplanner`
 - Folder target dates and folder priorities never rewrite task dates or explicit task priorities
@@ -178,7 +179,7 @@ Update this section whenever a phase finishes, a PR merges, or acceptance status
 ## How to work
 
 0. **Always** open this skill (and any other relevant Project skills) before planning or coding a change; treat skill rules as binding for this thread.
-1. Branch from updated `main` (through #31; 1.3.1 packaging supersedes #29). Prefer the Mac local checkout for all new work.
+1. Branch from updated `main` (through #33; stack #35 for search/drawer when unmerged; 1.3.1 packaging supersedes #29). Prefer the Mac local checkout for all new work.
 2. Keep domain services pure of UI; add tests on **both** SQLite and IndexedDB drivers for storage-touching logic.
 3. Run `npm test` and `npm run typecheck` before declaring a slice done. Avoid nested web buttons.
 4. After each completed phase or merged PR: **update Accomplishments above** and `project-context.md`.
