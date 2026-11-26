@@ -134,13 +134,13 @@ Update this section whenever a phase finishes, a PR merges, or acceptance status
 | NeoPlanner UI overhaul | Merged to main (2026-11-26 Asia/Manila) | https://github.com/ramilbatoy/ScheduleApp/pull/30 — display name NeoPlanner (package `com.dayplanner.app` unchanged); tabs Day / Calendar / Tasks / Events; drawer Folders, Statistics, Settings, About NeoPlanner; Advance Setting; folder/task/event lists; Day folder cards; Daily Progress collapsed until tap; warning pass (require cycle, web drawer driver, ReadyScreen); **248** tests. Report: `/cursor/stores/self/docs/neoplanner-layout-report.md` |
 | Folder / Day / Event polish | Merged to main (2026-11-26 Asia/Manila) | https://github.com/ramilbatoy/ScheduleApp/pull/31 — Folder list layout + Advance Setting default view; folder detail under tabs with options popup / Mark Completed / hidden Quick Add + FAB; Tasks/Events kind-locked quick-add + When dropdown; Day/Week/Month search popup + filters sheet + grid/list; Week date-tap + today dot; Month title go-to-date; **248** tests. Report: `/cursor/stores/self/docs/folder-day-event-polish-report.md` |
 | NeoPlanner 1.3.1 upgrade APK | Merged to main (2026-11-26 Asia/Manila) | https://github.com/ramilbatoy/ScheduleApp/pull/32 — `versionName` 1.3.1 / `versionCode` 5; same package `com.dayplanner.app` + debug keystore SHA-1 `5E:8F:16:06:…:F6:25`. Android APK: `~/Desktop/git/ScheduleApp/Finalinstall/1.3.1/NeoPlanner-1.3.1-release.apk`. Report: `/cursor/stores/self/docs/neoplanner-1.3.1-build-report.md` |
-| Narrow layout + drawer order | Open PR (2026-11-26 Asia/Manila) | Branch `cursor/narrow-layout-drawer-e5c4` — ~400px 2-col folder grids; Week `minWidth` fix + Unassigned chrome removed; Month filters below calendar; drawer `orderRevision` 2 forces Folders → Statistics → Settings → About; **250** tests. Report: `/cursor/stores/self/docs/narrow-layout-drawer-report.md` |
+| Narrow layout + drawer order | Open PR (2026-11-26 Asia/Manila) | https://github.com/ramilbatoy/ScheduleApp/pull/33 — ~400px 2-col folder grids; Week `minWidth` fix + Unassigned chrome removed; Month filters below calendar; drawer `orderRevision` 2 forces Folders → Statistics → Settings → About; **250** tests. Report: `/cursor/stores/self/docs/narrow-layout-drawer-report.md` |
 
 ### In progress / remaining
 
 | Item | Status | Notes |
 | --- | --- | --- |
-| Narrow layout + drawer order | Open PR | Merge when reviewed; then mark Done in Accomplishments |
+| Narrow layout + drawer order | Open PR | https://github.com/ramilbatoy/ScheduleApp/pull/33 — merge when reviewed; then mark Done |
 | Device re-verify | Optional | Physical phone smoke: install-over Finalinstall 1.3.1 APK (data keep from 1.0–1.3.0), alarms, clipping |
 | iOS signed IPA | Blocked | Needs Apple Developer team / certificates; see `Finalinstall/1.2.0/ios/README.md` |
 | Production signing | Optional | Replace debug-keystore release with Play/EAS credentials when publishing |
