@@ -1,6 +1,12 @@
 import { computeFolderProgress, effectivePriority, folderIsOverdue, folderTargetStatus, presentFolders, resolvePriority, type FolderCard } from '../folderProgress';
 import type { Folder } from '../models';
-import { activeDrawerItem, sanitizeNavigation, upgradeDrawerOrder } from '../navigationPrefs';
+import {
+  activeDrawerItem,
+  applyDrawerOrderMigration,
+  DRAWER_ORDER_REVISION,
+  sanitizeNavigation,
+  upgradeDrawerOrder,
+} from '../navigationPrefs';
 
 const today = '2026-03-10';
 
@@ -96,7 +102,22 @@ describe('navigation prefs', () => {
     expect(sanitizeNavigation(null).order).toEqual(['projects', 'statistics', 'settings', 'about']);
     expect(sanitizeNavigation({ drawerEnabled: true, order: [] }).order).toEqual([]);
     expect(upgradeDrawerOrder(['tasks', 'projects', 'about'])).toEqual(['projects', 'statistics', 'settings', 'about']);
-    expect(upgradeDrawerOrder(['projects', 'today'])).toEqual(['projects', 'today']);
+    expect(upgradeDrawerOrder(['projects', 'today'])).toEqual(['projects', 'statistics', 'settings', 'about']);
+    expect(upgradeDrawerOrder(['projects', 'today'], DRAWER_ORDER_REVISION)).toEqual(['projects', 'today']);
+    const migrated = applyDrawerOrderMigration({ drawerEnabled: true, order: ['today', 'about'] });
+    expect(migrated.changed).toBe(true);
+    expect(migrated.prefs).toEqual({
+      drawerEnabled: true,
+      order: ['projects', 'statistics', 'settings', 'about'],
+      orderRevision: DRAWER_ORDER_REVISION,
+    });
+    const kept = applyDrawerOrderMigration({
+      drawerEnabled: true,
+      order: ['about', 'projects'],
+      orderRevision: DRAWER_ORDER_REVISION,
+    });
+    expect(kept.changed).toBe(false);
+    expect(kept.prefs.order).toEqual(['about', 'projects']);
   });
 
   it('highlights the screen that is open, including a folder inside Folders', () => {

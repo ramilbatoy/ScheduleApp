@@ -264,7 +264,7 @@ export default function FolderDetailScreen() {
                   if (!highlighted) return;
                   scrollRef.current?.scrollTo({ y: Math.max(0, listTop.current + e.nativeEvent.layout.y - spacing.md), animated: false });
                 }}>
-                <AgendaRow a={a} showDate testID={`folder-task-${i}`} />
+                <AgendaRow a={a} showDate compact={layout === 'grid'} testID={`folder-task-${i}`} />
               </View>
             );
           })}
@@ -421,8 +421,8 @@ export default function FolderDetailScreen() {
 }
 
 const styles = StyleSheet.create({
-  grid: { flexDirection: 'row', flexWrap: 'wrap', marginHorizontal: -6 },
-  gridCell: { width: '50%', paddingHorizontal: 6, paddingBottom: 12 },
+  grid: { flexDirection: 'row', flexWrap: 'wrap', marginHorizontal: -4 },
+  gridCell: { width: '50%', paddingHorizontal: 4, paddingBottom: 8, minWidth: 0 },
   fab: {
     position: 'absolute',
     right: 20,

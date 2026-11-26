@@ -228,18 +228,6 @@ export function DashboardMonthView({
       {!isSameMonth(anchor, today) ? (
         <Button label="This month" compact tone="ghost" icon="today-outline" onPress={onJumpThisMonth} testID="dash-month-this" style={styles.thisWeekBtn} />
       ) : null}
-      <AgendaFilterBar
-        testID="dash-month-filter"
-        state={filterCtl.state}
-        onText={filterCtl.setText}
-        onStatus={filterCtl.setStatus}
-        onPriority={filterCtl.setPriority}
-        onCategoryId={filterCtl.setCategoryId}
-        onSort={filterCtl.setSort}
-        matchCount={range.data ? filteredRange.length : undefined}
-        layout={layout}
-        onLayoutChange={setLayout}
-      />
       {range.error ? <ErrorState message={range.error} onRetry={range.reload} /> : null}
       {!range.data && !range.error ? <LoadingState /> : null}
       {range.data ? (
@@ -258,6 +246,18 @@ export function DashboardMonthView({
           </AppText>
         </Card>
       ) : null}
+      <AgendaFilterBar
+        testID="dash-month-filter"
+        state={filterCtl.state}
+        onText={filterCtl.setText}
+        onStatus={filterCtl.setStatus}
+        onPriority={filterCtl.setPriority}
+        onCategoryId={filterCtl.setCategoryId}
+        onSort={filterCtl.setSort}
+        matchCount={range.data ? filteredRange.length : undefined}
+        layout={layout}
+        onLayoutChange={setLayout}
+      />
       <AppText variant="heading">{formatDateKey(anchor, 'EEEE, MMMM d')}</AppText>
       {day.error ? <ErrorState message={day.error} onRetry={day.reload} /> : null}
       {!day.data && !day.error ? <LoadingState /> : null}
@@ -287,13 +287,13 @@ export function DashboardMonthView({
 
 const styles = StyleSheet.create({
   nav: { flexDirection: 'row', alignItems: 'center' },
-  weekStrip: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.xs },
+  weekStrip: { flexDirection: 'row', gap: spacing.xs },
   weekDayChip: {
-    flexGrow: 1,
-    flexBasis: 40,
-    minWidth: 40,
+    flex: 1,
+    minWidth: 0,
     borderRadius: radius.md,
     paddingVertical: spacing.xs,
+    paddingHorizontal: 2,
     alignItems: 'center',
     gap: 2,
   },

@@ -2,6 +2,7 @@ import type { Database } from '../../db/types';
 import type { AppServices } from '../services/container';
 import { DRIVERS } from '../../test/databases';
 import { item, makeApp } from '../../test/fixtures';
+import { createRepos } from '../repos/repositories';
 import { agendaPriority } from '../services/agendaService';
 
 type Clock = Awaited<ReturnType<typeof makeApp>>['clock'];
@@ -144,13 +145,37 @@ describe.each(DRIVERS)('folders (%s)', (_name, open) => {
   it('persists drawer prefs without touching notification settings', async () => {
     await app.settings.set('notificationsEnabled', false);
     const next = await app.settings.set('navigation', { drawerEnabled: false, order: ['projects', 'today'] });
-    expect(next.navigation).toEqual({ drawerEnabled: false, order: ['projects', 'today'] });
+    expect(next.navigation).toEqual({
+      drawerEnabled: false,
+      order: ['projects', 'today'],
+      orderRevision: 2,
+    });
     expect(next.notificationsEnabled).toBe(false);
     const again = await app.settings.get();
     expect(again.navigation.order).toEqual(['projects', 'today']);
-    const reset = await app.settings.set('navigation', { drawerEnabled: true, order: ['today', 'calendar', 'tasks', 'projects', 'statistics', 'categories', 'theme', 'backup', 'settings', 'about'] });
+    const reset = await app.settings.set('navigation', {
+      drawerEnabled: true,
+      order: ['today', 'calendar', 'tasks', 'projects', 'statistics', 'categories', 'theme', 'backup', 'settings', 'about'],
+    });
     expect(reset.navigation.drawerEnabled).toBe(true);
     expect(reset.notificationsEnabled).toBe(false);
+  });
+
+  it('forces canonical drawer order once for pre-revision installs and persists it', async () => {
+    await createRepos(app.db).settings.set(
+      'navigation',
+      { drawerEnabled: true, order: ['about', 'tasks', 'projects'] },
+      '2026-11-26T00:00:00.000Z',
+    );
+    const first = await app.settings.get();
+    expect(first.navigation.order).toEqual(['projects', 'statistics', 'settings', 'about']);
+    expect(first.navigation.orderRevision).toBe(2);
+    const raw = await app.db.get('app_settings', 'navigation');
+    expect(JSON.parse(String(raw!.value)).order).toEqual(['projects', 'statistics', 'settings', 'about']);
+    expect(JSON.parse(String(raw!.value)).orderRevision).toBe(2);
+    await app.settings.set('navigation', { drawerEnabled: true, order: ['about', 'settings'] });
+    const afterCustom = await app.settings.get();
+    expect(afterCustom.navigation.order).toEqual(['about', 'settings']);
   });
 });
 

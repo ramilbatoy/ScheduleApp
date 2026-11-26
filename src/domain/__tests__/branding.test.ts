@@ -2,6 +2,7 @@ import { displayLogo, logoDataUri, logoFromBase64, MAX_LOGO_BYTES, sanitizeBrand
 import type { AppServices } from '../services/container';
 import { DRIVERS } from '../../test/databases';
 import { makeApp } from '../../test/fixtures';
+import { createRepos } from '../repos/repositories';
 
 function b64(bytes: number[]): string {
   return Buffer.from(bytes).toString('base64');
@@ -56,7 +57,12 @@ describe.each(DRIVERS)('branding settings (%s)', (_name, open) => {
     await app.settings.set('showFolderTargetDate', true);
     await app.settings.set('defaultFolderListView', 'list');
     await app.settings.set('showFolderQuickAdd', true);
-    await app.settings.set('navigation', { drawerEnabled: true, order: ['tasks', 'projects', 'about'] });
+    // Pre-revision installs (no orderRevision) still force the canonical drawer on get.
+    await createRepos(app.db).settings.set(
+      'navigation',
+      { drawerEnabled: true, order: ['tasks', 'projects', 'about'] },
+      '2026-11-26T00:00:00.000Z',
+    );
     const saved = await app.settings.get();
     expect(saved.branding).toEqual({ mode: 'logo', logo });
     expect(saved.showEmptyFoldersOnTasks).toBe(true);
@@ -66,6 +72,7 @@ describe.each(DRIVERS)('branding settings (%s)', (_name, open) => {
     expect(saved.defaultFolderListView).toBe('list');
     expect(saved.showFolderQuickAdd).toBe(true);
     expect(saved.navigation.order).toEqual(['projects', 'statistics', 'settings', 'about']);
+    expect(saved.navigation.orderRevision).toBe(2);
     expect(JSON.stringify(saved.branding)).not.toMatch(/file:|content:|blob:/);
 
     const named = await app.settings.set('branding', { mode: 'name', logo });

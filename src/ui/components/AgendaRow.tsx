@@ -14,7 +14,16 @@ import { AgendaSubtasks, SubtaskProgressBadge } from './SubtaskList';
 
 export const PRIORITY_LABEL = { low: 'Low', medium: 'Medium', high: 'High', urgent: 'Urgent' } as const;
 
-export function ItemBadges({ a, showDate }: { a: Agenda; showDate?: boolean }) {
+export function ItemBadges({
+  a,
+  showDate,
+  hideFolder,
+}: {
+  a: Agenda;
+  showDate?: boolean;
+  /** Nested under a folder card — folder chip is redundant and eats width. */
+  hideFolder?: boolean;
+}) {
   const p = useTheme();
   const services = useAppStore((s) => s.services);
   const today = services ? todayKey(services.clock) : '';
@@ -37,7 +46,7 @@ export function ItemBadges({ a, showDate }: { a: Agenda; showDate?: boolean }) {
           icon="flag"
         />
       ) : null}
-      {a.folder ? (
+      {a.folder && !hideFolder ? (
         <Pressable
           testID={`folder-chip-${a.folder.id}`}
           accessibilityRole="button"
@@ -71,7 +80,18 @@ export function ItemBadges({ a, showDate }: { a: Agenda; showDate?: boolean }) {
 }
 
 /** One occurrence: tap the circle to complete/reopen, tap the row to open details. */
-export function AgendaRow({ a, showDate, testID }: { a: Agenda; showDate?: boolean; testID?: string }) {
+export function AgendaRow({
+  a,
+  showDate,
+  testID,
+  /** Narrow folder grid cells (~400px / 2-col): tighter chrome, hide folder chip. */
+  compact = false,
+}: {
+  a: Agenda;
+  showDate?: boolean;
+  testID?: string;
+  compact?: boolean;
+}) {
   const p = useTheme();
   const run = useAction();
   const o = a.occurrence;
@@ -80,6 +100,7 @@ export function AgendaRow({ a, showDate, testID }: { a: Agenda; showDate?: boole
   const time = o.startTime ? `${formatTime(o.startTime)}${o.endTime ? ` – ${formatTime(o.endTime)}` : ''}` : a.task.allDay ? 'All day' : null;
   const accent = a.task.kind === 'event' ? (a.category?.color ?? p.primary) : p.priority[agendaPriority(a)];
   const hasSubtasks = a.task.kind === 'task' && a.subtasks.length > 0;
+  const checkW = compact ? 36 : TOUCH;
 
   return (
     <View
@@ -90,12 +111,13 @@ export function AgendaRow({ a, showDate, testID }: { a: Agenda; showDate?: boole
           backgroundColor: p.surface,
           borderColor: hasSubtasks ? accent : p.border,
           borderLeftColor: accent,
+          minWidth: 0,
         },
       ]}
       testID={testID ? `${testID}-main` : undefined}
       accessibilityHint={hasSubtasks ? 'Main task with nested subtasks' : undefined}>
-      <View style={[styles.accent, { backgroundColor: accent }]} />
-      <View style={{ flex: 1 }}>
+      <View style={[styles.accent, { backgroundColor: accent, width: compact ? 3 : 4 }]} />
+      <View style={{ flex: 1, minWidth: 0 }}>
         <View style={{ flexDirection: 'row', alignItems: 'stretch' }}>
           <Pressable
             testID={testID ? `${testID}-toggle` : undefined}
@@ -104,10 +126,10 @@ export function AgendaRow({ a, showDate, testID }: { a: Agenda; showDate?: boole
             accessibilityLabel={done ? `Mark ${title} not completed` : `Mark ${title} completed`}
             hitSlop={8}
             onPress={() => run((s) => s.tasks.toggleComplete(o.id), done ? 'Marked as not completed' : 'Completed')}
-            style={styles.check}>
+            style={{ width: checkW, alignItems: 'center', justifyContent: 'center' }}>
             <Ionicons
               name={done ? 'checkmark-circle' : a.task.kind === 'event' ? 'ellipse-outline' : 'radio-button-off'}
-              size={26}
+              size={compact ? 22 : 26}
               color={done ? p.success : p.textSecondary}
             />
           </Pressable>
@@ -116,30 +138,48 @@ export function AgendaRow({ a, showDate, testID }: { a: Agenda; showDate?: boole
             onPress={() => router.push({ pathname: '/item/[id]', params: { id: o.id } })}
             // A folder chip inside this row is its own <button>. Omit the button role then so
             // RN-web renders a <div> (still pressable) instead of nesting buttons.
-            accessibilityRole={a.folder ? undefined : 'button'}
+            accessibilityRole={a.folder && !compact ? undefined : 'button'}
             accessibilityLabel={`${title}${done ? ', completed' : ''}`}
-            style={({ pressed }) => [{ flex: 1, gap: 4, paddingVertical: spacing.md, paddingRight: spacing.md }, pressed && { opacity: 0.7 }]}>
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm }}>
+            style={({ pressed }) => [
+              {
+                flex: 1,
+                minWidth: 0,
+                gap: compact ? 2 : 4,
+                paddingVertical: compact ? spacing.sm : spacing.md,
+                paddingRight: compact ? spacing.sm : spacing.md,
+              },
+              pressed && { opacity: 0.7 },
+            ]}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm, minWidth: 0 }}>
               {a.task.kind === 'event' ? <Ionicons name="calendar" size={14} color={p.textSecondary} /> : null}
               <AppText
-                variant="heading"
+                variant={compact ? 'label' : 'heading'}
                 numberOfLines={2}
-                style={[{ flex: 1 }, done && { textDecorationLine: 'line-through' }]}
+                style={[{ flex: 1, minWidth: 0 }, done && { textDecorationLine: 'line-through' }]}
                 color={done ? p.textSecondary : p.text}>
                 {title}
               </AppText>
             </View>
             {time ? (
-              <AppText variant="caption" muted>
+              <AppText variant="caption" muted numberOfLines={1}>
                 {time}
               </AppText>
             ) : null}
-            <SubtaskProgressBadge nodes={a.subtasks} />
-            <ItemBadges a={a} showDate={showDate} />
+            {!compact ? <SubtaskProgressBadge nodes={a.subtasks} /> : null}
+            <ItemBadges a={a} showDate={showDate} hideFolder={compact} />
           </Pressable>
         </View>
         {hasSubtasks ? (
-          <View style={[styles.subtaskRail, { borderLeftColor: accent, backgroundColor: p.surfaceVariant }]}>
+          <View
+            style={[
+              styles.subtaskRail,
+              {
+                borderLeftColor: accent,
+                backgroundColor: p.surfaceVariant,
+                marginLeft: checkW,
+                marginRight: compact ? spacing.sm : spacing.md,
+              },
+            ]}>
             <AgendaSubtasks nodes={a.subtasks} testID={testID ? `${testID}-subs` : undefined} />
           </View>
         ) : null}
@@ -153,7 +193,6 @@ const styles = StyleSheet.create({
   /** Main tasks: thicker left edge so hierarchy reads before nested subtasks. */
   mainTask: { borderLeftWidth: 3 },
   accent: { width: 4 },
-  check: { width: TOUCH, alignItems: 'center', justifyContent: 'center' },
   badges: { flexDirection: 'row', flexWrap: 'wrap', gap: 4 },
   subtaskRail: {
     marginLeft: TOUCH,

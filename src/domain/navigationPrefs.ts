@@ -14,10 +14,21 @@ export const NAV_ITEM_IDS = [
 
 export type NavItemId = (typeof NAV_ITEM_IDS)[number];
 
+/**
+ * Bumped when existing installs must be forced onto the canonical drawer order.
+ * Saves that already carry this revision keep the user's order.
+ */
+export const DRAWER_ORDER_REVISION = 2;
+
 export interface NavigationPrefs {
   drawerEnabled: boolean;
   /** Visible items, top to bottom. Ids left out are hidden shortcuts. */
   order: NavItemId[];
+  /**
+   * When missing or older than {@link DRAWER_ORDER_REVISION}, read/migrate forces
+   * {@link DEFAULT_DRAWER_ORDER} and persists the revision.
+   */
+  orderRevision?: number;
 }
 
 /**
@@ -28,28 +39,45 @@ export interface NavigationPrefs {
  */
 export const DEFAULT_DRAWER_ORDER: NavItemId[] = ['projects', 'statistics', 'settings', 'about'];
 
-/** Factory order before the NeoPlanner drawer. An exact saved copy of this list upgrades on read. */
-const RETIRED_DRAWER_ORDER: NavItemId[] = ['tasks', 'projects', 'about'];
+/**
+ * Force the NeoPlanner drawer order when the saved prefs have not yet been
+ * migrated to {@link DRAWER_ORDER_REVISION}. Any prior custom order is replaced once.
+ * After migration, a user reorder (stamped with the current revision) is kept.
+ */
+export function upgradeDrawerOrder(order: readonly NavItemId[], orderRevision?: number): NavItemId[] {
+  if (orderRevision === DRAWER_ORDER_REVISION) return [...order];
+  return [...DEFAULT_DRAWER_ORDER];
+}
 
-/** Replace the retired factory menu. Any other saved order, including a custom one, stays. */
-export function upgradeDrawerOrder(order: readonly NavItemId[]): NavItemId[] {
-  if (order.length === RETIRED_DRAWER_ORDER.length && order.every((id, i) => id === RETIRED_DRAWER_ORDER[i])) {
-    return [...DEFAULT_DRAWER_ORDER];
+/** Apply the one-time canonical drawer migration. `changed` means the caller should persist. */
+export function applyDrawerOrderMigration(prefs: NavigationPrefs): { prefs: NavigationPrefs; changed: boolean } {
+  if (prefs.orderRevision === DRAWER_ORDER_REVISION) {
+    return { prefs: { ...prefs, order: [...prefs.order], orderRevision: DRAWER_ORDER_REVISION }, changed: false };
   }
-  return [...order];
+  return {
+    prefs: {
+      drawerEnabled: prefs.drawerEnabled,
+      order: [...DEFAULT_DRAWER_ORDER],
+      orderRevision: DRAWER_ORDER_REVISION,
+    },
+    changed: true,
+  };
 }
 
 export const DEFAULT_NAVIGATION: NavigationPrefs = {
   drawerEnabled: true,
   order: [...DEFAULT_DRAWER_ORDER],
+  orderRevision: DRAWER_ORDER_REVISION,
 };
 
 const NAV_SET = new Set<string>(NAV_ITEM_IDS);
 
 /** Drop unknown ids and duplicates. Missing ids stay hidden so a saved hide survives reload. */
 export function sanitizeNavigation(value: unknown): NavigationPrefs {
-  if (!value || typeof value !== 'object' || Array.isArray(value)) return { ...DEFAULT_NAVIGATION, order: [...DEFAULT_NAVIGATION.order] };
-  const raw = value as { drawerEnabled?: unknown; order?: unknown };
+  if (!value || typeof value !== 'object' || Array.isArray(value)) {
+    return { ...DEFAULT_NAVIGATION, order: [...DEFAULT_NAVIGATION.order] };
+  }
+  const raw = value as { drawerEnabled?: unknown; order?: unknown; orderRevision?: unknown };
   const drawerEnabled = typeof raw.drawerEnabled === 'boolean' ? raw.drawerEnabled : DEFAULT_NAVIGATION.drawerEnabled;
   const order: NavItemId[] = [];
   const seen = new Set<string>();
@@ -60,7 +88,8 @@ export function sanitizeNavigation(value: unknown): NavigationPrefs {
       order.push(id as NavItemId);
     }
   }
-  return { drawerEnabled, order };
+  const orderRevision = typeof raw.orderRevision === 'number' && Number.isFinite(raw.orderRevision) ? raw.orderRevision : undefined;
+  return orderRevision !== undefined ? { drawerEnabled, order, orderRevision } : { drawerEnabled, order };
 }
 
 /**

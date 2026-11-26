@@ -28,8 +28,8 @@ describe('weekFilterToListFilter', () => {
 });
 
 describe('weekFolderColumns', () => {
-  it('picks 1–3 columns from viewport width', () => {
-    expect(weekFolderColumns(390)).toBe(1);
+  it('keeps 2 columns on phone width and allows 3 on very wide web', () => {
+    expect(weekFolderColumns(390)).toBe(2);
     expect(weekFolderColumns(800)).toBe(2);
     expect(weekFolderColumns(1200)).toBe(3);
   });

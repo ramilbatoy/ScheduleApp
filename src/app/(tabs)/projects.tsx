@@ -142,30 +142,50 @@ function ProjectsScreenReady() {
               <View key={card.id} style={layout === 'grid' ? styles.gridCell : undefined}>
                 <Card
                   testID={`project-card-${index}`}
-                  style={{ backgroundColor: completed ? (p.scheme === 'dark' ? '#3A414B' : '#E4E6EB') : p.surface }}>
-                  <View style={{ flexDirection: 'row', gap: spacing.md, alignItems: 'flex-start' }}>
+                  style={{
+                    gap: layout === 'grid' ? spacing.xs : undefined,
+                    minWidth: 0,
+                    backgroundColor: completed ? (p.scheme === 'dark' ? '#3A414B' : '#E4E6EB') : p.surface,
+                  }}>
+                  <View style={{ flexDirection: 'row', gap: layout === 'grid' ? spacing.sm : spacing.md, alignItems: 'flex-start' }}>
                     <Pressable
                       accessibilityRole="button"
                       accessibilityLabel={`Open ${card.name}`}
                       onPress={open}
-                      style={({ pressed }) => [{ flex: 1, gap: spacing.sm }, pressed && { opacity: 0.85 }]}>
-                      <View style={{ flexDirection: 'row', gap: spacing.md, alignItems: 'center' }}>
-                        <View style={{ width: 40, height: 40, borderRadius: radius.md, backgroundColor: `${card.color}22`, alignItems: 'center', justifyContent: 'center' }}>
-                          <Icon name={card.icon as IconName} color={card.color} />
+                      style={({ pressed }) => [{ flex: 1, minWidth: 0, gap: layout === 'grid' ? spacing.xs : spacing.sm }, pressed && { opacity: 0.85 }]}>
+                      <View style={{ flexDirection: 'row', gap: layout === 'grid' ? spacing.sm : spacing.md, alignItems: 'center' }}>
+                        <View
+                          style={{
+                            width: layout === 'grid' ? 32 : 40,
+                            height: layout === 'grid' ? 32 : 40,
+                            borderRadius: radius.md,
+                            backgroundColor: `${card.color}22`,
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            flexShrink: 0,
+                          }}>
+                          <Icon name={card.icon as IconName} color={card.color} size={layout === 'grid' ? 18 : 20} />
                         </View>
-                        <View style={{ flex: 1, gap: 2 }}>
-                          <AppText variant="heading" numberOfLines={1}>
+                        <View style={{ flex: 1, gap: 2, minWidth: 0 }}>
+                          <AppText variant={layout === 'grid' ? 'label' : 'heading'} numberOfLines={1}>
                             {card.name}
                           </AppText>
-                          <AppText variant="caption" muted>
+                          <AppText variant="caption" muted numberOfLines={layout === 'grid' ? 2 : 3}>
                             {card.progress.completed}/{card.progress.total || 0} completed · {card.progress.percent}%
                             {card.progress.pending ? ` · ${card.progress.pending} pending` : ''}
                             {card.progress.overdue ? ` · ${card.progress.overdue} overdue` : ''}
                           </AppText>
                         </View>
                       </View>
-                      <View style={[styles.track, { backgroundColor: p.surfaceVariant }]}>
-                        <View style={{ width: `${card.progress.percent}%`, height: 6, backgroundColor: card.color, borderRadius: radius.sm }} />
+                      <View style={[styles.track, { height: layout === 'grid' ? 4 : 6, backgroundColor: p.surfaceVariant }]}>
+                        <View
+                          style={{
+                            width: `${card.progress.percent}%`,
+                            height: layout === 'grid' ? 4 : 6,
+                            backgroundColor: card.color,
+                            borderRadius: radius.sm,
+                          }}
+                        />
                       </View>
                       <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm }}>
                         <AppText variant="caption" color={p.priority[card.priority]}>
@@ -241,12 +261,12 @@ function ProjectsScreenReady() {
 }
 
 const styles = StyleSheet.create({
-  titleRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, justifyContent: 'space-between' },
+  titleRow: { flexDirection: 'row', alignItems: 'flex-start', gap: spacing.sm, justifyContent: 'space-between', flexWrap: 'wrap' },
   titleControls: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs, flexWrap: 'wrap', justifyContent: 'flex-end', flexShrink: 1 },
-  overviewRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
+  overviewRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, flexWrap: 'wrap' },
   track: { height: 6, borderRadius: radius.sm, overflow: 'hidden' },
-  grid: { flexDirection: 'row', flexWrap: 'wrap', marginHorizontal: -6 },
-  gridCell: { width: '50%', paddingHorizontal: 6, paddingBottom: 12 },
+  grid: { flexDirection: 'row', flexWrap: 'wrap', marginHorizontal: -4 },
+  gridCell: { width: '50%', paddingHorizontal: 4, paddingBottom: 8, minWidth: 0 },
   fab: {
     position: 'absolute',
     right: 20,

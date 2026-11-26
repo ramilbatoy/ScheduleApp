@@ -1,6 +1,6 @@
 import type { DbOps, Where } from '../../db/types';
 import { sanitizeBranding } from '../branding';
-import { sanitizeNavigation, upgradeDrawerOrder } from '../navigationPrefs';
+import { applyDrawerOrderMigration, sanitizeNavigation } from '../navigationPrefs';
 import {
   DEFAULT_SETTINGS,
   type AppSettings,
@@ -284,8 +284,7 @@ export class SettingsRepo {
     if (settings.themeCustomColors && typeof settings.themeCustomColors !== 'object') {
       settings.themeCustomColors = null;
     }
-    settings.navigation = sanitizeNavigation(settings.navigation);
-    settings.navigation = { ...settings.navigation, order: upgradeDrawerOrder(settings.navigation.order) };
+    settings.navigation = applyDrawerOrderMigration(sanitizeNavigation(settings.navigation)).prefs;
     settings.branding = sanitizeBranding(settings.branding);
     settings.showEmptyFoldersOnTasks = settings.showEmptyFoldersOnTasks === true;
     // Missing / legacy → ON (folder cards start collapsed).

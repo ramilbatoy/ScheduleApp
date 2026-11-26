@@ -110,13 +110,15 @@ export function ItemBrowseScreen({ kind, title }: { kind: ItemKind; title: strin
 
   const header = (
     <View style={{ gap: spacing.sm, paddingBottom: spacing.sm }}>
-      <View style={{ flexDirection: 'row', alignItems: 'center', paddingTop: spacing.md, gap: spacing.xs }}>
-        <AppText variant="display" style={{ flex: 1 }} numberOfLines={1} testID={`${kind}-title`}>
+      <View style={{ flexDirection: 'row', alignItems: 'center', paddingTop: spacing.md, gap: spacing.xs, flexWrap: 'wrap' }}>
+        <AppText variant="display" style={{ flexGrow: 1, flexShrink: 1, minWidth: 120 }} numberOfLines={1} testID={`${kind}-title`}>
           {title}
         </AppText>
-        <IconButton testID={`${kind}-search-open`} icon="search" label="Search" onPress={() => setSearchOpen(true)} />
-        <IconButton testID={`${kind}-options`} icon="ellipsis-horizontal" label="Options" onPress={() => setOptionsOpen(true)} />
-        <ViewLayoutToggle testID={`${kind}-layout`} layout={layout} onChange={setLayout} />
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.xs, flexShrink: 0 }}>
+          <IconButton testID={`${kind}-search-open`} icon="search" label="Search" onPress={() => setSearchOpen(true)} />
+          <IconButton testID={`${kind}-options`} icon="ellipsis-horizontal" label="Options" onPress={() => setOptionsOpen(true)} />
+          <ViewLayoutToggle testID={`${kind}-layout`} layout={layout} onChange={setLayout} />
+        </View>
       </View>
       {list.data ? (
         <AppText variant="caption" muted>
@@ -142,11 +144,11 @@ export function ItemBrowseScreen({ kind, title }: { kind: ItemKind; title: strin
         contentContainerStyle={{ paddingHorizontal: spacing.lg, paddingBottom: 120, gap: spacing.sm }}
         keyboardShouldPersistTaps="handled"
         renderItem={({ item, index }) => (
-          <View style={layout === 'grid' ? { flex: 1 } : undefined}>
+          <View style={layout === 'grid' ? { flex: 1, minWidth: 0 } : undefined}>
             {item.kind === 'folder' ? (
-              <FolderTaskCard group={item.group} today={today} testID={`list-folder-${index}`} />
+              <FolderTaskCard group={item.group} today={today} compact={layout === 'grid'} testID={`list-folder-${index}`} />
             ) : (
-              <AgendaRow a={item.agenda} showDate testID={`list-${index}`} />
+              <AgendaRow a={item.agenda} showDate compact={layout === 'grid'} testID={`list-${index}`} />
             )}
           </View>
         )}
