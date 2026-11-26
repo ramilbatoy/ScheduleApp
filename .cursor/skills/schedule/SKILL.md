@@ -94,7 +94,7 @@ Use this skill for **any** work on `ramilbatoy/ScheduleApp` (display name NeoPla
 
 ## Accomplishments (keep current)
 
-**Last skill refresh:** 2026-11-26 Asia/Manila — NeoPlanner **1.3.2** packaging (versionCode 6) on branch from `main` through #35; search popup + drawer revision 3 via #35; narrow-layout via #33; 1.3.1 via #32. Display name NeoPlanner; package `com.dayplanner.app`.  
+**Last skill refresh:** 2026-11-26 Asia/Manila — NeoPlanner **1.3.2** packaging PR #36 (versionCode 6); search popup + drawer revision 3 via #35; narrow-layout via #33; 1.3.1 via #32. Display name NeoPlanner; package `com.dayplanner.app`.  
 Update this section whenever a phase finishes, a PR merges, or acceptance status changes. Date entries in Asia/Manila.
 
 ### Done
@@ -136,7 +136,7 @@ Update this section whenever a phase finishes, a PR merges, or acceptance status
 | NeoPlanner 1.3.1 upgrade APK | Merged to main (2026-11-26 Asia/Manila) | https://github.com/ramilbatoy/ScheduleApp/pull/32 — `versionName` 1.3.1 / `versionCode` 5; same package `com.dayplanner.app` + debug keystore SHA-1 `5E:8F:16:06:…:F6:25`. Android APK: `~/Desktop/git/ScheduleApp/Finalinstall/1.3.1/NeoPlanner-1.3.1-release.apk`. Report: `/cursor/stores/self/docs/neoplanner-1.3.1-build-report.md` |
 | Narrow layout + drawer order | Merged to main (2026-11-26 Asia/Manila) | https://github.com/ramilbatoy/ScheduleApp/pull/33 — content-width folder columns (1 / 2 / 3); shared `FolderCardChrome`; Week Unassigned chrome removed; Month filters below calendar; drawer `orderRevision` 2; **250** tests. Report: `/cursor/stores/self/docs/narrow-layout-drawer-report.md` |
 | Search popup + drawer revision 3 | Merged to main (2026-11-26 Asia/Manila) | https://github.com/ramilbatoy/ScheduleApp/pull/35 — shared `SearchFieldPopup` uses transparent Modal (Day/Week/Month stacking); drawer `orderRevision` **3** re-forces Folders → Statistics → Settings → About; **250** tests. Report: `/cursor/stores/self/docs/search-popup-drawer-report.md` |
-| NeoPlanner 1.3.2 upgrade APK | Branch ready (2026-11-26 Asia/Manila) | Branch `cursor/neoplanner-1.3.2-d82f` pushed — `versionName` 1.3.2 / `versionCode` 6; same package `com.dayplanner.app` + debug keystore SHA-1 `5E:8F:16:06:…:F6:25`. Android APK: `~/Desktop/git/ScheduleApp/Finalinstall/1.3.2/NeoPlanner-1.3.2-release.apk`. Compare: https://github.com/ramilbatoy/ScheduleApp/compare/main...cursor/neoplanner-1.3.2-d82f?expand=1 (PR create blocked: ManagePullRequest targeted nycc). Report: `/cursor/stores/self/docs/neoplanner-1.3.2-build-report.md` |
+| NeoPlanner 1.3.2 upgrade APK | Open PR (2026-11-26 Asia/Manila) | https://github.com/ramilbatoy/ScheduleApp/pull/36 — `versionName` 1.3.2 / `versionCode` 6; same package `com.dayplanner.app` + debug keystore SHA-1 `5E:8F:16:06:…:F6:25`. Android APK: `~/Desktop/git/ScheduleApp/Finalinstall/1.3.2/NeoPlanner-1.3.2-release.apk`. Report: `/cursor/stores/self/docs/neoplanner-1.3.2-build-report.md` |
 
 ### In progress / remaining
 
