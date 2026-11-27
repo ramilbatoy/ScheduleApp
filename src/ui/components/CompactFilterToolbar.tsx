@@ -1,12 +1,11 @@
-import type { ComponentProps, ComponentRef, ReactNode } from 'react';
-import { useRef, useState } from 'react';
-import { View, type LayoutRectangle } from 'react-native';
+import type { ComponentProps, ReactNode } from 'react';
+import { View } from 'react-native';
 
 import { Sheet } from '@/ui/components/Pickers';
-import { SearchFieldPopup } from '@/ui/components/SearchFieldPopup';
 import { ViewLayoutToggle, type ListLayout } from '@/ui/components/ViewLayoutToggle';
-import { IconButton, ListRow } from '@/ui/components/primitives';
-import { spacing } from '@/ui/theme';
+import { IconButton, Input, ListRow } from '@/ui/components/primitives';
+import { useTheme } from '@/ui/hooks';
+import { radius, spacing } from '@/ui/theme';
 
 export type FilterRow = {
   testID?: string;
@@ -18,7 +17,7 @@ export type FilterRow = {
 
 /**
  * Optional leading title + today icon, then search → filter → listing.
- * Search opens an inline field anchored to the search icon.
+ * Search expands inline under the icon row at full width.
  */
 export function CompactFilterToolbar({
   testID,
@@ -54,20 +53,10 @@ export function CompactFilterToolbar({
   /** Extra controls after the filter/search icons (before layout). */
   trailing?: ReactNode;
 }) {
-  const searchBtnRef = useRef<ComponentRef<typeof View>>(null);
-  const [anchor, setAnchor] = useState<LayoutRectangle | null>(null);
+  const p = useTheme();
 
-  function openSearch() {
-    const node = searchBtnRef.current as (ComponentRef<typeof View> & { measureInWindow?: (cb: (x: number, y: number, width: number, height: number) => void) => void }) | null;
-    if (node?.measureInWindow) {
-      node.measureInWindow((x, y, width, height) => {
-        setAnchor({ x, y, width, height });
-        onSearchOpenChange(true);
-      });
-      return;
-    }
-    setAnchor(null);
-    onSearchOpenChange(true);
+  function toggleSearch() {
+    onSearchOpenChange(!searchOpen);
   }
 
   return (
@@ -76,23 +65,59 @@ export function CompactFilterToolbar({
         {leading ? <View style={{ flex: 1, minWidth: 0, marginRight: spacing.xs }}>{leading}</View> : null}
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.xs, marginLeft: leading ? undefined : 'auto' }}>
           {beforeSearch}
-          <View ref={searchBtnRef} collapsable={false}>
-            <IconButton testID={`${testID}-search-open`} icon="search" label="Search" onPress={openSearch} />
-          </View>
+          <IconButton
+            testID={`${testID}-search-open`}
+            icon="search"
+            label={searchOpen ? 'Hide search' : 'Search'}
+            onPress={toggleSearch}
+            color={searchOpen ? p.primary : undefined}
+          />
           <IconButton testID={`${testID}-filters`} icon="filter-outline" label="Filters" onPress={() => onFiltersOpenChange(true)} />
           {trailing}
           {layout && onLayoutChange ? <ViewLayoutToggle testID={`${testID}-layout`} layout={layout} onChange={onLayoutChange} /> : null}
         </View>
       </View>
-      <SearchFieldPopup
-        visible={searchOpen}
-        value={searchValue}
-        onChangeText={onSearchChange}
-        onClose={() => onSearchOpenChange(false)}
-        placeholder={searchPlaceholder}
-        testID={`${testID}-search`}
-        anchor={anchor}
-      />
+      {searchOpen ? (
+        <View
+          testID={`${testID}-search-inline`}
+          style={{
+            flexDirection: 'row',
+            alignItems: 'center',
+            gap: spacing.sm,
+            width: '100%',
+            borderWidth: 1,
+            borderColor: p.border,
+            borderRadius: radius.lg,
+            backgroundColor: p.surface,
+            paddingHorizontal: spacing.sm,
+            paddingVertical: spacing.xs,
+          }}>
+          <View style={{ flex: 1, minWidth: 0 }}>
+            <Input
+              testID={`${testID}-search`}
+              value={searchValue}
+              onChangeText={onSearchChange}
+              placeholder={searchPlaceholder}
+              autoFocus
+              clearButtonMode="never"
+            />
+          </View>
+          <IconButton
+            icon="close-circle"
+            label="Clear search"
+            onPress={() => onSearchChange('')}
+            testID={`${testID}-search-clear`}
+            color={searchValue ? p.textSecondary : p.border}
+          />
+          <IconButton
+            icon="close"
+            label="Close search"
+            onPress={() => onSearchOpenChange(false)}
+            testID={`${testID}-search-close`}
+            color={p.textSecondary}
+          />
+        </View>
+      ) : null}
       <Sheet visible={filtersOpen} title="Filters" onClose={() => onFiltersOpenChange(false)}>
         {filterRows.map((row) => (
           <ListRow

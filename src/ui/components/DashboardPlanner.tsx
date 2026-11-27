@@ -111,6 +111,30 @@ export function DashboardWeekView({
 
   return (
     <View style={{ gap: spacing.sm }} testID="dashboard-week">
+      <View style={styles.weekStrip} testID="dash-week-days">
+        {days.map((d) => (
+          <Pressable
+            key={d}
+            accessibilityRole="button"
+            accessibilityLabel={`Add on ${formatDateKey(d, 'EEEE')}`}
+            onPress={() => router.push({ pathname: '/quick-add', params: { date: d } })}
+            style={({ pressed }) => [
+              styles.weekDayChip,
+              { backgroundColor: d === today ? p.primarySoft : p.surfaceVariant, opacity: pressed ? 0.85 : 1 },
+            ]}
+            testID={`dash-week-${d}`}>
+            <AppText variant="caption" color={d === today ? p.primary : p.textSecondary} style={{ textAlign: 'center' }}>
+              {formatDateKey(d, 'EEE')}
+            </AppText>
+            <AppText variant="label" color={d === today ? p.primary : p.text} style={{ textAlign: 'center' }}>
+              {formatDateKey(d, 'd')}
+            </AppText>
+            <View style={styles.dotSlot}>
+              {d === today ? <View style={[styles.dot, { backgroundColor: p.primary }]} testID={`dash-week-dot-${d}`} /> : null}
+            </View>
+          </Pressable>
+        ))}
+      </View>
       <WeekFilterBar
         testID="dash-week-filter"
         state={filterCtl.state}
@@ -141,30 +165,6 @@ export function DashboardWeekView({
           />
         }
       />
-      <View style={styles.weekStrip} testID="dash-week-days">
-        {days.map((d) => (
-          <Pressable
-            key={d}
-            accessibilityRole="button"
-            accessibilityLabel={`Add on ${formatDateKey(d, 'EEEE')}`}
-            onPress={() => router.push({ pathname: '/quick-add', params: { date: d } })}
-            style={({ pressed }) => [
-              styles.weekDayChip,
-              { backgroundColor: d === today ? p.primarySoft : p.surfaceVariant, opacity: pressed ? 0.85 : 1 },
-            ]}
-            testID={`dash-week-${d}`}>
-            <AppText variant="caption" color={d === today ? p.primary : p.textSecondary} style={{ textAlign: 'center' }}>
-              {formatDateKey(d, 'EEE')}
-            </AppText>
-            <AppText variant="label" color={d === today ? p.primary : p.text} style={{ textAlign: 'center' }}>
-              {formatDateKey(d, 'd')}
-            </AppText>
-            <View style={styles.dotSlot}>
-              {d === today ? <View style={[styles.dot, { backgroundColor: p.primary }]} testID={`dash-week-dot-${d}`} /> : null}
-            </View>
-          </Pressable>
-        ))}
-      </View>
       {items.error ? <ErrorState message={items.error} onRetry={items.reload} /> : null}
       {!items.data && !items.error ? <LoadingState /> : null}
       {items.data ? <PlannerWeekGroups groups={grouped} today={today} layout={layout} testID="dash-week-groups" /> : null}

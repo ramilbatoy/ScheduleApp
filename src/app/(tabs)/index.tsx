@@ -139,6 +139,15 @@ function TodayDashboard({
 
   return (
     <View style={{ gap: spacing.sm }} testID="dashboard-today">
+      <DateStrip
+        selected={selectedDate}
+        today={systemToday}
+        summaries={summariesQ.data}
+        onSelect={onSelectDate}
+        testID="today-date-strip"
+        showTodayButton={false}
+      />
+
       <WeekFilterBar
         testID="today-status-filter"
         state={filterCtl.state}
@@ -158,15 +167,6 @@ function TodayDashboard({
         beforeSearch={
           <IconButton testID="today-jump" icon="today-outline" label="Today" onPress={() => onSelectDate(systemToday)} />
         }
-      />
-
-      <DateStrip
-        selected={selectedDate}
-        today={systemToday}
-        summaries={summariesQ.data}
-        onSelect={onSelectDate}
-        testID="today-date-strip"
-        showTodayButton={false}
       />
 
       {dayQ.error ? <ErrorState message={dayQ.error} onRetry={dayQ.reload} /> : null}
@@ -201,7 +201,7 @@ function TodayDashboard({
 
           {filteredEvents.length > 0 ? (
             <>
-              <SectionHeader title="Schedule" count={filteredEvents.length} />
+              <SectionHeader title="Events" count={filteredEvents.length} />
               <List items={filteredEvents} testPrefix="event" />
             </>
           ) : null}
