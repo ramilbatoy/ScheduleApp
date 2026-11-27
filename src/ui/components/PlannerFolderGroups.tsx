@@ -238,19 +238,21 @@ export function PlannerWeekGroups({
   return (
     <View style={{ gap: spacing.md }} testID={testID}>
       <View
-        style={[folderGridWrapStyle(), { marginHorizontal: 0 }]}
+        style={grid ? [folderGridWrapStyle(), { marginHorizontal: 0 }] : { gap: spacing.sm }}
         onLayout={grid ? onGridLayout : undefined}
         testID={`${testID}-grid`}>
         {groups.folders.map((group) => (
           <View
             key={group.folder.id}
             style={
-              columns === 1
-                ? { width: '100%', minWidth: 0, paddingBottom: spacing.sm }
-                : {
-                    ...folderGridCellStyle(columns, 4),
-                    // Keep minWidth 0 so 2-col does not wrap under ~400px (old bug was minWidth 220).
-                  }
+              grid
+                ? columns === 1
+                  ? { width: '100%', minWidth: 0, paddingBottom: spacing.sm }
+                  : {
+                      ...folderGridCellStyle(columns, 4),
+                      // Keep minWidth 0 so 2-col does not wrap under ~400px (old bug was minWidth 220).
+                    }
+                : undefined
             }>
             <FolderGroupCard
               folder={group.folder}

@@ -62,8 +62,7 @@ export function FolderTaskCard({
         compact={compact}
         titleLines={2}
         testID={testID}
-        onPressHeader={() => openFolder(group.folder.id, focus)}
-        headerAccessibilityLabel={`${group.folder.name}, ${group.completed} completed, ${group.pending} pending`}
+        onOpen={() => openFolder(group.folder.id, focus)}
         trailing={
           <AppText variant="label" color={group.folder.color} style={{ flexShrink: 0 }}>
             {group.percent}%

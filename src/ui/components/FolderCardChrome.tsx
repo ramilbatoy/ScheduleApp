@@ -25,9 +25,12 @@ export type FolderCardChromeProps = {
   /** Title wraps up to this many lines (default 2 — not aggressive 1-line truncation). */
   titleLines?: number;
   testID?: string;
-  /** Folder icon → details (own button; not nested under header toggle). */
+  /**
+   * Folder icon + title → details (sibling pressables; not nested under expand).
+   * When set with onPressHeader, expand stays on the chevron / summary body.
+   */
   onOpen?: () => void;
-  /** Title / summary / chevron → expand or navigate. */
+  /** Expand/collapse or navigate when onOpen is absent. Chevron + summary use this when both are set. */
   onPressHeader?: () => void;
   headerAccessibilityLabel?: string;
   headerExpanded?: boolean;
@@ -38,7 +41,7 @@ export type FolderCardChromeProps = {
 /**
  * Shared 2-row folder card chrome (icon+title | progress+meta).
  * Used by Day/Week/Month folder groups, Folder page, and Tasks Group-by-Folder.
- * Icon open and header toggle stay sibling pressables (no nested web buttons).
+ * Icon/title open and header toggle stay sibling pressables (no nested web buttons).
  */
 export function FolderCardChrome({
   name,
@@ -117,6 +120,12 @@ export function FolderCardChrome({
     </View>
   );
 
+  const expandState = headerExpanded === undefined ? undefined : { expanded: headerExpanded };
+  /** Icon + name open details; chevron/summary keep expand when both handlers exist. */
+  const splitOpenAndExpand = !!(onOpen && onPressHeader);
+  const titleOpens = !!onOpen;
+  const titleExpands = !onOpen && !!onPressHeader;
+
   return (
     <View style={{ gap, minWidth: 0 }} testID={testID ? `${testID}-chrome` : undefined}>
       {/* Row 1: icon · title · trailing — siblings, not nested buttons */}
@@ -133,10 +142,20 @@ export function FolderCardChrome({
         ) : (
           iconEl
         )}
-        {onPressHeader ? (
+        {titleOpens ? (
           <Pressable
             accessibilityRole="button"
-            accessibilityState={headerExpanded === undefined ? undefined : { expanded: headerExpanded }}
+            accessibilityLabel={`Open folder details for ${name}`}
+            onPress={onOpen}
+            testID={testID ? `${testID}-title` : undefined}
+            style={{ flex: 1, minWidth: 0 }}
+            hitSlop={4}>
+            {titleBlock}
+          </Pressable>
+        ) : titleExpands ? (
+          <Pressable
+            accessibilityRole="button"
+            accessibilityState={expandState}
             accessibilityLabel={headerAccessibilityLabel ?? name}
             onPress={onPressHeader}
             testID={testID ? `${testID}-toggle` : undefined}
@@ -147,17 +166,32 @@ export function FolderCardChrome({
         ) : (
           <View style={{ flex: 1, minWidth: 0, flexDirection: 'row', alignItems: 'center', gap: spacing.sm }}>
             {titleBlock}
-            {trailing}
+            {!splitOpenAndExpand ? trailing : null}
           </View>
         )}
+        {splitOpenAndExpand && trailing ? (
+          <Pressable
+            accessibilityRole="button"
+            accessibilityState={expandState}
+            accessibilityLabel={headerAccessibilityLabel ?? `${name} expand`}
+            onPress={onPressHeader}
+            testID={testID ? `${testID}-toggle` : undefined}
+            hitSlop={4}
+            style={{ flexShrink: 0 }}>
+            {trailing}
+          </Pressable>
+        ) : titleOpens && trailing ? (
+          <View style={{ flexShrink: 0 }}>{trailing}</View>
+        ) : null}
       </View>
-      {/* Row 2: progress + meta */}
+      {/* Row 2: progress + meta — expand when split; open-only leaves summary static */}
       {onPressHeader ? (
         <Pressable
           accessibilityRole="button"
-          accessibilityState={headerExpanded === undefined ? undefined : { expanded: headerExpanded }}
+          accessibilityState={expandState}
           accessibilityLabel={headerAccessibilityLabel ?? `${name} summary`}
-          onPress={onPressHeader}>
+          onPress={onPressHeader}
+          testID={testID ? `${testID}-summary-press` : undefined}>
           {summaryBlock}
         </Pressable>
       ) : (

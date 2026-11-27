@@ -41,7 +41,7 @@ Use this skill for **any** work on `ramilbatoy/ScheduleApp` (display name NeoPla
 | Layer | Choice |
 | --- | --- |
 | App | Expo SDK 58 + TypeScript strict; package `com.dayplanner.app`; launcher and header display name **NeoPlanner** (was NeoOrganizer; was DayPlanner in 1.0.0) |
-| Nav | Expo Router; tabs **Day** (route `index` / nav id `today`) / Calendar / Tasks / Events (`/events`); Statistics and Settings via drawer; Folders via drawer → `/projects` (hidden tab, `tabBarButton: () => null`) |
+| Nav | Expo Router; tabs **Day** (route `index` / nav id `today`) / **Calendar** (footer only — same route as Day with Month segment; no `/calendar` screen) / Tasks / Events (`/events`); Statistics and Settings via drawer; Folders via drawer → `/projects` (hidden tab, `tabBarButton: () => null`) |
 | State | Zustand (UI only) |
 | Android DB | expo-sqlite |
 | Web DB | MemoryDatabase + IndexedDB persistence (`idb`/atomic commit) behind same interface |
@@ -82,8 +82,8 @@ Use this skill for **any** work on `ramilbatoy/ScheduleApp` (display name NeoPla
 - Theme: system / light / dark + 10 presets + custom HEX + last-used snapshot in `app_settings`
 - Header branding: default text **NeoPlanner**; optional local logo bytes in `app_settings` (not the Android launcher icon)
 - Folders: explicit task priority always wins; otherwise inherit folder priority. Folder target date is a project deadline and never rewrites occurrence dates. Progress is computed. Backup format 2 includes folders and `navigation` prefs; device notification prefs are not overwritten
-- Folder-first display: Day / Week / Month group assigned tasks under folders (expand/collapse); unassigned stay individual. Day hides Unassigned chrome; Week cards may `stretch`. Folder header icon opens folder details. Tasks screen defaults to individual list + optional Group by Folder. Occurrence dates stay authoritative
-- Filters: Day/Week/Month use a Filters sheet (4 rows) + search popup + icons-only grid/list (default grid). Folder page (`/projects`, title **Folder**) uses a search popup plus status and sort chips (icon + current value); grid/list icons sit on the overview row (default from `defaultFolderListView`). Tasks and Events use an options popup (Status, Priority, Category, Folder, Sort, Group by) — no kind filter and no Folder Target. Empty Day/Week copy stays “Nothing is currently listed here.”
+- Folder-first display: Day / Week / Month group assigned tasks under folders (expand/collapse); unassigned stay individual. Day hides Unassigned chrome; Week cards may `stretch`. Folder **icon and title** open folder details; chevron/summary expand/collapse. Tasks screen defaults to individual list + optional Group by Folder. Occurrence dates stay authoritative
+- Filters: Day/Week/Month use a Filters sheet (4 rows) + search popup + **one** grid/list toggle icon (shows the other mode; default grid). Folder page (`/projects`, title **Folder**) uses a search popup plus status and sort chips (icon + current value); the same single layout toggle sits on the overview row (default from `defaultFolderListView`). Tasks and Events use an options popup (Status, Priority, Category, Folder, Sort, Group by) — no kind filter and no Folder Target. Empty Day/Week copy stays “Nothing is currently listed here.” Layout uses flex-wrap grids (not FlatList `numColumns`) so Android toggles stay reliable.
 - User-facing status wording **Completed** (stored values still `completed`). Typography: display 18 / title 16; AppHeader brand stays 20. Go to date: month + year pickers (Month dashboard opens via the month/year title)
 - Drawer: AppHeader hamburger. Default shortcuts **Folders, Statistics, Settings, About NeoPlanner**. On read/migrate, any saved order without `orderRevision` **3** is forced to that canonical list and persisted (overrides revision-2 customs from #33 once). After migration, a user reorder in Settings stamps revision 3 and is kept. Brand → Day tab and closes drawer. App Branding, Navigation, and default folder list view live under Settings → **Advance Setting**. Collapse folders default ON. Folder create/edit hides Priority and Target date until `showFolderPriority` / `showFolderTargetDate` (default off). Folder detail Quick Add section stays hidden until `showFolderQuickAdd`
 - Timed items apply Settings default reminder offset; OS alarms use `alarmClock` when exact-alarm granted else `bestEffort`
@@ -94,7 +94,7 @@ Use this skill for **any** work on `ramilbatoy/ScheduleApp` (display name NeoPla
 
 ## Accomplishments (keep current)
 
-**Last skill refresh:** 2026-11-26 Asia/Manila — NeoPlanner **1.3.2** packaging PR #36 (versionCode 6); search popup + drawer revision 3 via #35; narrow-layout via #33; 1.3.1 via #32. Display name NeoPlanner; package `com.dayplanner.app`.  
+**Last skill refresh:** 2026-11-27 Asia/Manila — Grid/list Android fix + single layout toggle; folder title opens detail; removed `/calendar` route; footer Calendar → Day Month focus. Prior: NeoPlanner **1.3.2** via #36. Display name NeoPlanner; package `com.dayplanner.app`.  
 Update this section whenever a phase finishes, a PR merges, or acceptance status changes. Date entries in Asia/Manila.
 
 ### Done
@@ -136,7 +136,8 @@ Update this section whenever a phase finishes, a PR merges, or acceptance status
 | NeoPlanner 1.3.1 upgrade APK | Merged to main (2026-11-26 Asia/Manila) | https://github.com/ramilbatoy/ScheduleApp/pull/32 — `versionName` 1.3.1 / `versionCode` 5; same package `com.dayplanner.app` + debug keystore SHA-1 `5E:8F:16:06:…:F6:25`. Android APK: `~/Desktop/git/ScheduleApp/Finalinstall/1.3.1/NeoPlanner-1.3.1-release.apk`. Report: `/cursor/stores/self/docs/neoplanner-1.3.1-build-report.md` |
 | Narrow layout + drawer order | Merged to main (2026-11-26 Asia/Manila) | https://github.com/ramilbatoy/ScheduleApp/pull/33 — content-width folder columns (1 / 2 / 3); shared `FolderCardChrome`; Week Unassigned chrome removed; Month filters below calendar; drawer `orderRevision` 2; **250** tests. Report: `/cursor/stores/self/docs/narrow-layout-drawer-report.md` |
 | Search popup + drawer revision 3 | Merged to main (2026-11-26 Asia/Manila) | https://github.com/ramilbatoy/ScheduleApp/pull/35 — shared `SearchFieldPopup` uses transparent Modal (Day/Week/Month stacking); drawer `orderRevision` **3** re-forces Folders → Statistics → Settings → About; **250** tests. Report: `/cursor/stores/self/docs/search-popup-drawer-report.md` |
-| NeoPlanner 1.3.2 upgrade APK | Open PR (2026-11-26 Asia/Manila) | https://github.com/ramilbatoy/ScheduleApp/pull/36 — `versionName` 1.3.2 / `versionCode` 6; same package `com.dayplanner.app` + debug keystore SHA-1 `5E:8F:16:06:…:F6:25`. Android APK: `~/Desktop/git/ScheduleApp/Finalinstall/1.3.2/NeoPlanner-1.3.2-release.apk`. Report: `/cursor/stores/self/docs/neoplanner-1.3.2-build-report.md` |
+| NeoPlanner 1.3.2 upgrade APK | Merged to main (2026-11-26 Asia/Manila) | https://github.com/ramilbatoy/ScheduleApp/pull/36 — `versionName` 1.3.2 / `versionCode` 6; same package `com.dayplanner.app` + debug keystore SHA-1 `5E:8F:16:06:…:F6:25`. Android APK: `~/Desktop/git/ScheduleApp/Finalinstall/1.3.2/NeoPlanner-1.3.2-release.apk`. Report: `/cursor/stores/self/docs/neoplanner-1.3.2-build-report.md` |
+| Grid/list + calendar footer | Open PR (2026-11-27 Asia/Manila) | Branch `cursor/grid-list-calendar-footer-0542` — Android FlatList `numColumns` remount flake fixed (flex-wrap); single layout toggle; folder title→detail; `/calendar` removed; footer Calendar → Day Month via `dashMode`; **250** tests. Report: `/cursor/stores/self/docs/grid-list-calendar-footer-report.md` |
 
 ### In progress / remaining
 
@@ -146,7 +147,6 @@ Update this section whenever a phase finishes, a PR merges, or acceptance status
 | iOS signed IPA | Blocked | Needs Apple Developer team / certificates; see `Finalinstall/1.2.0/ios/README.md` |
 | Production signing | Optional | Replace debug-keystore release with Play/EAS credentials when publishing |
 | Project templates | Optional | Spec mentioned Website Launch / etc.; not required for core folders |
-| Calendar-tab month titles | Known gap | Dashboard Month uses folder markers; Calendar tab month may still show task titles |
 
 ### Known issues / limitations (live)
 
@@ -159,11 +159,12 @@ Update this section whenever a phase finishes, a PR merges, or acceptance status
 - “Overdue since” is derived from stored dates (original occurrence date, assigned day, deadline local date, carry-forward and late reschedule history). There is no separate overdue timestamp
 - Folder progress counts occurrences on or before today. Future recurring instances and events are excluded from the percent
 - Week/Day are folder-card first with compact status/priority/category/folder filter dropdowns; Month status is a dropdown. Weekly goals list removed from Week. Day heading shows Today or the selected date; bottom tab label is Day
-- Tasks (`/tasks`) and Events (`/events`) are separate lists. Options popup: Status, Priority, Category, Folder, Sort, Group by. No kind filter and no Folder Target. Search is a popup. List/grid; grid is 2 columns
-- Folder page (`/projects`, title **Folder**) stays under the tabs layout with `tabBarButton: () => null` (not `href: null` — that sets `hidden` and redirects away). Title left; search/status/sort right. Overview row holds icons-only grid/list (default grid from `defaultFolderListView`). Floating +, 2-column grid. Completed folders use a grey card. Priority and Target date on create/edit stay hidden until the Settings toggles are on
-- Folder detail (`/folder/[id]`) is also under tabs (bottom bar visible). Options ⋯ holds Edit / Archive / Mark Completed / Delete. Inline Quick Add is off until `showFolderQuickAdd`; floating + still adds a task to that folder. Search popup + 4-filter sheet + grid/list (default grid)
+- Tasks (`/tasks`) and Events (`/events`) are separate lists. Options popup: Status, Priority, Category, Folder, Sort, Group by. No kind filter and no Folder Target. Search is a popup. Single grid/list toggle; grid columns follow content width (flex-wrap, not FlatList `numColumns`)
+- Folder page (`/projects`, title **Folder**) stays under the tabs layout with `tabBarButton: () => null` (not `href: null` — that sets `hidden` and redirects away). Title left; search/status/sort right. Overview row holds one layout toggle (default grid from `defaultFolderListView`). Floating +, content-width grid. Completed folders use a grey card. Priority and Target date on create/edit stay hidden until the Settings toggles are on. Folder icon **and title** open folder detail
+- Folder detail (`/folder/[id]`) is also under tabs (bottom bar visible). Options ⋯ holds Edit / Archive / Mark Completed / Delete. Inline Quick Add is off until `showFolderQuickAdd`; floating + still adds a task to that folder. Search popup + 4-filter sheet + single grid/list toggle (default grid)
+- Bottom tabs: Day / Calendar / Tasks / Events. There is **no** `/calendar` route. Footer Calendar calls `requestMonthFocus()` and navigates to Day (`/`) with the Month segment selected (`dashMode` in Zustand). Day footer uses `requestDayFocus()` (Day segment + today date)
 - Tasks (`/tasks`) and Events (`/events`) quick-add lock kind (no Task/Event tab). Placeholders `Add task here` / `Add Event here`. Date/time use one When dropdown (Today / Tomorrow / Pick date / Add time). Day FAB without `kind` still shows the segmented control
-- Day/Week/Month: search popup (`Search: task, events, or folder`), one Filters sheet (4 rows), icons-only grid/list default grid. Folder/planner grid columns follow **content width**: 1 below 370px, 2 from 370–1023, 3 at ≥1024 (not a hard always-2 at ~400px). Week cells keep `minWidth: 0` so 2-col does not falsely wrap. Shared `FolderCardChrome` is a compact 2-row header. Week This week uses `today-outline`; day chips open quick-add (no per-day +); today shows a dot. Month title opens Go to date; Month search/filter/layout sit **below** the calendar; no Unassigned header on Day or Week; no Add to this day
+- Day/Week/Month: search popup (`Search: task, events, or folder`), one Filters sheet (4 rows), one layout toggle (default grid). Folder/planner grid columns follow **content width**: 1 below 370px, 2 from 370–1023, 3 at ≥1024 (not a hard always-2 at ~400px). Week cells keep `minWidth: 0` so 2-col does not falsely wrap. Shared `FolderCardChrome` is a compact 2-row header (icon+title → detail; chevron/summary → expand). Week This week uses `today-outline`; day chips open quick-add (no per-day +); today shows a dot. Month title opens Go to date; Month search/filter/layout sit **below** the calendar; no Unassigned header on Day or Week; no Add to this day
 - User-facing status wording is **Completed** / **completed** (not Done/done); stored status values remain `completed`
 - Typography: `display` 18, `title` 16; AppHeader NeoPlanner brand stays 20 via `BRAND_TITLE`
 - DatePickerModal Go to date exposes month + year pickers in addition to the day grid
@@ -180,7 +181,7 @@ Update this section whenever a phase finishes, a PR merges, or acceptance status
 ## How to work
 
 0. **Always** open this skill (and any other relevant Project skills) before planning or coding a change; treat skill rules as binding for this thread.
-1. Branch from updated `main` (through #35; 1.3.2 packaging supersedes #29). Prefer the Mac local checkout for all new work.
+1. Branch from updated `main` (through #36+; 1.3.2 packaging supersedes #29). Prefer the Mac local checkout for all new work.
 2. Keep domain services pure of UI; add tests on **both** SQLite and IndexedDB drivers for storage-touching logic.
 3. Run `npm test` and `npm run typecheck` before declaring a slice done. Avoid nested web buttons.
 4. After each completed phase or merged PR: **update Accomplishments above** and `project-context.md`.

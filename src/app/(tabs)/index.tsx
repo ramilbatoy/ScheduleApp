@@ -1,5 +1,4 @@
-import { useNavigation } from 'expo-router';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Pressable, RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
 
 import { formatDateKey, todayKey } from '@/domain/dates';
@@ -7,7 +6,7 @@ import type { Agenda, DateKey } from '@/domain/models';
 import { filterAgendaItems } from '@/domain/services/agendaService';
 import { groupDayByFolder } from '@/domain/plannerGroups';
 import { selectEmptyFoldersForTasks } from '@/domain/taskListFolders';
-import { useAppStore, useServices, useSettings } from '@/state/appStore';
+import { useAppStore, useServices, useSettings, type DashMode } from '@/state/appStore';
 import { AgendaRow } from '@/ui/components/AgendaRow';
 import { DateStrip, DATE_STRIP_RADIUS, dateStripWindow, dayProgressFromAgenda } from '@/ui/components/DateStrip';
 import {
@@ -27,8 +26,6 @@ import { useAction, useQuery, useTheme } from '@/ui/hooks';
 import { radius, spacing } from '@/ui/theme';
 
 const EMPTY_DAY_COPY = 'Nothing is currently listed here.';
-
-type DashMode = 'today' | 'week' | 'month';
 
 function ProgressCard({ completed, total, carried }: { completed: number; total: number; carried: number }) {
   const p = useTheme();
@@ -241,28 +238,22 @@ export default function TodayScreen() {
 function TodayScreenReady() {
   const p = useTheme();
   const services = useServices();
-  const navigation = useNavigation();
   const invalidate = useAppStore((s) => s.invalidate);
+  const mode = useAppStore((s) => s.dashMode);
+  const setMode = useAppStore((s) => s.setDashMode);
+  const dayFocusToken = useAppStore((s) => s.dayFocusToken);
   const today = todayKey(services.clock);
-  const [mode, setMode] = useState<DashMode>('today');
   const [selectedDate, setSelectedDate] = useState<DateKey>(today);
   const [weekAnchor, setWeekAnchor] = useState<DateKey>(() => currentWeekAnchor(today));
   const [weekNavigated, setWeekNavigated] = useState(false);
   const [monthAnchor, setMonthAnchor] = useState<DateKey>(today);
   const [refreshing, setRefreshing] = useState(false);
 
-  const jumpToToday = useCallback(() => {
-    const d = todayKey(services.clock);
-    setMode('today');
-    setSelectedDate(d);
-  }, [services.clock]);
-
-  // Bottom Day tab (route id `index`): show Day mode focused on the current local date.
+  // Footer Day tab bumps dayFocusToken → reset the date strip to today (Calendar uses Month and must not).
   useEffect(() => {
-    // Tab navigators emit `tabPress`; the root stack NavigationProp typing does not list it.
-    const tabNav = navigation as unknown as { addListener: (event: 'tabPress', cb: () => void) => () => void };
-    return tabNav.addListener('tabPress', jumpToToday);
-  }, [navigation, jumpToToday]);
+    if (dayFocusToken === 0) return;
+    setSelectedDate(todayKey(services.clock));
+  }, [dayFocusToken, services.clock]);
 
   // Open Week on the current week unless the user already used prev/next this session.
   useEffect(() => {

@@ -170,8 +170,7 @@ function ProjectsScreenReady() {
                         compact={compact}
                         titleLines={2}
                         testID={`project-card-${index}`}
-                        onPressHeader={open}
-                        headerAccessibilityLabel={`Open ${card.name}`}
+                        onOpen={open}
                       />
                     </View>
                     {sort === 'manual' ? (

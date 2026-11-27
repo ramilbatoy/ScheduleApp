@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { FlatList, View } from 'react-native';
+import { ScrollView, View } from 'react-native';
 
 import { todayKey } from '@/domain/dates';
 import { PRIORITIES, type ItemKind, type Priority } from '@/domain/models';
@@ -15,6 +15,7 @@ import { QuickAddButton } from '@/ui/components/QuickAddButton';
 import { SearchFieldPopup } from '@/ui/components/SearchFieldPopup';
 import { useFolderGridColumns } from '@/ui/hooks/useFolderGridColumns';
 import { useQuery, useTheme } from '@/ui/hooks';
+import { folderGridCellStyle, folderGridWrapStyle } from '@/ui/layout/folderGrid';
 import { spacing } from '@/ui/theme';
 
 const STATUSES: { value: StatusFilter; label: string }[] = [
@@ -134,41 +135,46 @@ export function ItemBrowseScreen({ kind, title }: { kind: ItemKind; title: strin
     </View>
   );
 
+  /**
+   * Flex-wrap grid (same as Folder page) instead of FlatList `numColumns`.
+   * Changing FlatList numColumns on Android requires remounting via `key`, which races
+   * with filter/query updates and drops layout state. ScrollView + wrap stays stable.
+   */
   return (
     <View style={{ flex: 1, backgroundColor: p.background }}>
-      <FlatList
-        key={`${layout}-${columns}`}
-        data={rows}
-        numColumns={layout === 'grid' ? columns : 1}
-        columnWrapperStyle={layout === 'grid' && columns > 1 ? { gap: spacing.sm } : undefined}
-        keyExtractor={(row) => (row.kind === 'folder' ? `folder-${row.group.folder.id}` : row.agenda.occurrence.id)}
-        ListHeaderComponent={header}
+      <ScrollView
         contentContainerStyle={{ paddingHorizontal: spacing.lg, paddingBottom: 120, gap: spacing.sm }}
-        onLayout={onGridLayout}
-        keyboardShouldPersistTaps="handled"
-        renderItem={({ item, index }) => (
-          <View style={layout === 'grid' ? { flex: 1, minWidth: 0 } : undefined}>
-            {item.kind === 'folder' ? (
-              <FolderTaskCard group={item.group} today={today} compact={compact} testID={`list-folder-${index}`} />
-            ) : (
-              <AgendaRow a={item.agenda} showDate compact={compact} testID={`list-${index}`} />
-            )}
+        keyboardShouldPersistTaps="handled">
+        {header}
+        {list.error ? (
+          <ErrorState message={list.error} onRetry={list.reload} />
+        ) : !list.data ? (
+          <LoadingState />
+        ) : rows.length === 0 ? (
+          <EmptyState
+            icon={text ? 'search' : 'checkmark-done-outline'}
+            title={text ? 'No matches' : 'Nothing here'}
+            message={text ? `Nothing matches "${text}" with these filters.` : 'Try another filter or add something new.'}
+          />
+        ) : (
+          <View
+            style={layout === 'grid' ? folderGridWrapStyle() : { gap: spacing.sm }}
+            onLayout={layout === 'grid' ? onGridLayout : undefined}
+            testID={`${kind}-list`}>
+            {rows.map((item, index) => (
+              <View
+                key={item.kind === 'folder' ? `folder-${item.group.folder.id}` : item.agenda.occurrence.id}
+                style={layout === 'grid' ? folderGridCellStyle(columns) : undefined}>
+                {item.kind === 'folder' ? (
+                  <FolderTaskCard group={item.group} today={today} compact={compact} testID={`list-folder-${index}`} />
+                ) : (
+                  <AgendaRow a={item.agenda} showDate compact={compact} testID={`list-${index}`} />
+                )}
+              </View>
+            ))}
           </View>
         )}
-        ListEmptyComponent={
-          list.error ? (
-            <ErrorState message={list.error} onRetry={list.reload} />
-          ) : !list.data ? (
-            <LoadingState />
-          ) : (
-            <EmptyState
-              icon={text ? 'search' : 'checkmark-done-outline'}
-              title={text ? 'No matches' : 'Nothing here'}
-              message={text ? `Nothing matches "${text}" with these filters.` : 'Try another filter or add something new.'}
-            />
-          )
-        }
-      />
+      </ScrollView>
       <SearchFieldPopup
         visible={searchOpen}
         value={text}

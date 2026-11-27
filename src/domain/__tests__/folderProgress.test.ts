@@ -98,6 +98,8 @@ describe('navigation prefs', () => {
   it('drops unknown ids and keeps a hidden item hidden', () => {
     const prefs = sanitizeNavigation({ drawerEnabled: false, order: ['tasks', 'nope', 'tasks', 'projects'] });
     expect(prefs).toEqual({ drawerEnabled: false, order: ['tasks', 'projects'] });
+    // Legacy drawer id from the removed `/calendar` route is stripped.
+    expect(sanitizeNavigation({ drawerEnabled: true, order: ['today', 'calendar', 'tasks'] }).order).toEqual(['today', 'tasks']);
     expect(sanitizeNavigation(null).drawerEnabled).toBe(true);
     expect(sanitizeNavigation(null).order).toEqual(['projects', 'statistics', 'settings', 'about']);
     expect(sanitizeNavigation({ drawerEnabled: true, order: [] }).order).toEqual([]);

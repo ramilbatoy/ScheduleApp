@@ -1,7 +1,6 @@
 /** Drawer destinations. Hiding one does not remove the underlying screen. */
 export const NAV_ITEM_IDS = [
   'today',
-  'calendar',
   'tasks',
   'projects',
   'statistics',
@@ -34,9 +33,10 @@ export interface NavigationPrefs {
 
 /**
  * Shortcuts shown until the user customizes the drawer.
- * Day, Calendar, Tasks, and Events stay on the bottom tabs.
+ * Day, Calendar (Month on Day), Tasks, and Events stay on the bottom tabs.
  * Statistics and Settings are drawer items, not tabs.
  * The Projects row is the Folders screen (`/projects`); there is no second route.
+ * There is no `/calendar` route — footer Calendar focuses Month on Day.
  */
 export const DEFAULT_DRAWER_ORDER: NavItemId[] = ['projects', 'statistics', 'settings', 'about'];
 
@@ -100,7 +100,6 @@ export function sanitizeNavigation(value: unknown): NavigationPrefs {
 export function activeDrawerItem(pathname: string): NavItemId | null {
   const path = (pathname.split('?')[0].replace(/\/+$/, '') || '/').replace('/(tabs)', '') || '/';
   if (path === '/' || path === '/index') return 'today';
-  if (path === '/calendar' || path.startsWith('/calendar/')) return 'calendar';
   if (path === '/tasks' || path.startsWith('/tasks/')) return 'tasks';
   if (path === '/projects' || path.startsWith('/projects/') || path === '/folder' || path.startsWith('/folder/')) return 'projects';
   if (path === '/stats' || path.startsWith('/stats/')) return 'statistics';

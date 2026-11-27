@@ -17,7 +17,6 @@ import { spacing } from '@/ui/theme';
 
 const NAV_LABEL: Record<NavItemId, string> = {
   today: 'Today',
-  calendar: 'Calendar',
   tasks: 'Tasks',
   projects: 'Folders',
   statistics: 'Statistics',
@@ -208,7 +207,7 @@ function SettingsScreenReady() {
         <Divider />
         <ListRow testID="nav-reset" icon="refresh" label="Reset menu" onPress={() => update('navigation', { ...DEFAULT_NAVIGATION, order: [...DEFAULT_NAVIGATION.order] })} />
         <AppText variant="caption" muted>
-          Hiding a shortcut does not remove the screen. Day, Calendar, Tasks, and Events stay on the bottom tabs.
+          Hiding a shortcut does not remove the screen. Day, Calendar (Month on Day), Tasks, and Events stay on the bottom tabs.
         </AppText>
       </Card>
 

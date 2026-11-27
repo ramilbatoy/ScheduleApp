@@ -1,12 +1,12 @@
-import { View } from 'react-native';
-
 import { IconButton } from '@/ui/components/primitives';
 import { useTheme } from '@/ui/hooks';
-import { spacing } from '@/ui/theme';
 
 export type ListLayout = 'grid' | 'list';
 
-/** Icons-only grid / list switch. Selected icon uses the primary color. */
+/**
+ * Single icon that toggles grid ↔ list.
+ * Shows the *other* mode so the tap target is “switch to …” (list icon while in grid, and vice versa).
+ */
 export function ViewLayoutToggle({
   layout,
   onChange,
@@ -17,22 +17,14 @@ export function ViewLayoutToggle({
   testID?: string;
 }) {
   const p = useTheme();
+  const next: ListLayout = layout === 'grid' ? 'list' : 'grid';
   return (
-    <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.xs }} testID={testID}>
-      <IconButton
-        testID={`${testID}-grid`}
-        icon="grid-outline"
-        label="Grid view"
-        color={layout === 'grid' ? p.primary : p.textSecondary}
-        onPress={() => onChange('grid')}
-      />
-      <IconButton
-        testID={`${testID}-list`}
-        icon="list-outline"
-        label="List view"
-        color={layout === 'list' ? p.primary : p.textSecondary}
-        onPress={() => onChange('list')}
-      />
-    </View>
+    <IconButton
+      testID={testID}
+      icon={next === 'list' ? 'list-outline' : 'grid-outline'}
+      label={next === 'list' ? 'Switch to list view' : 'Switch to grid view'}
+      color={p.textSecondary}
+      onPress={() => onChange(next)}
+    />
   );
 }

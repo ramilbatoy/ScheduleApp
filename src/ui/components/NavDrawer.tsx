@@ -12,9 +12,8 @@ import { HeaderBrand } from './AppHeader';
 import { AppText, Icon, type IconName } from './primitives';
 import { radius, spacing } from '../theme';
 
-const LINKS: { id: NavItemId; label: string; icon: IconName; href: '/' | '/calendar' | '/tasks' | '/projects' | '/stats' | '/categories' | '/theme-settings' | '/settings' | '/about' }[] = [
+const LINKS: { id: NavItemId; label: string; icon: IconName; href: '/' | '/tasks' | '/projects' | '/stats' | '/categories' | '/theme-settings' | '/settings' | '/about' }[] = [
   { id: 'today', label: 'Day', icon: 'sunny-outline', href: '/' },
-  { id: 'calendar', label: 'Calendar', icon: 'calendar-outline', href: '/calendar' },
   { id: 'tasks', label: 'Tasks', icon: 'checkbox-outline', href: '/tasks' },
   { id: 'projects', label: 'Folders', icon: 'folder-outline', href: '/projects' },
   { id: 'statistics', label: 'Statistics', icon: 'stats-chart-outline', href: '/stats' },

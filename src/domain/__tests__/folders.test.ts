@@ -155,7 +155,7 @@ describe.each(DRIVERS)('folders (%s)', (_name, open) => {
     expect(again.navigation.order).toEqual(['projects', 'today']);
     const reset = await app.settings.set('navigation', {
       drawerEnabled: true,
-      order: ['today', 'calendar', 'tasks', 'projects', 'statistics', 'categories', 'theme', 'backup', 'settings', 'about'],
+      order: ['today', 'tasks', 'projects', 'statistics', 'categories', 'theme', 'backup', 'settings', 'about'],
     });
     expect(reset.navigation.drawerEnabled).toBe(true);
     expect(reset.notificationsEnabled).toBe(false);
