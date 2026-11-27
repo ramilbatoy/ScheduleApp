@@ -242,9 +242,6 @@ export function DashboardMonthView({
             onSelectDay={onSelectDay}
             onDoubleSelectDay={(d) => router.push({ pathname: '/quick-add', params: { date: d } })}
           />
-          <AppText variant="caption" muted style={{ marginTop: spacing.sm, textAlign: 'center' }}>
-            Days show folder colors and counts. Tap a day for its tasks; double-tap to quick-add.
-          </AppText>
         </Card>
       ) : null}
       <AgendaFilterBar
