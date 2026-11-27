@@ -20,6 +20,8 @@ import { PlannerDayGroups } from '@/ui/components/PlannerFolderGroups';
 import { ReadyScreen } from '@/ui/components/ReadyScreen';
 import { useWeekFilterState, WeekFilterBar } from '@/ui/components/WeekFilterBar';
 import { type ListLayout } from '@/ui/components/ViewLayoutToggle';
+import { useFolderGridColumns } from '@/ui/hooks/useFolderGridColumns';
+import { folderGridCellStyle, folderGridWrapStyle } from '@/ui/layout/folderGrid';
 import { AppText, Button, Card, ErrorState, Icon, IconButton, LoadingState, SectionHeader, Segmented } from '@/ui/components/primitives';
 import { QuickAddButton } from '@/ui/components/QuickAddButton';
 import { useAction, useQuery, useTheme } from '@/ui/hooks';
@@ -81,11 +83,18 @@ function ProgressCard({ completed, total, carried }: { completed: number; total:
   );
 }
 
-function List({ items, testPrefix }: { items: Agenda[]; testPrefix: string }) {
+function List({ items, testPrefix, layout = 'list' }: { items: Agenda[]; testPrefix: string; layout?: ListLayout }) {
+  const { columns, onGridLayout, compact } = useFolderGridColumns(layout);
+  const grid = layout === 'grid';
   return (
-    <View style={{ gap: spacing.sm }}>
+    <View
+      style={grid ? [folderGridWrapStyle(), { marginHorizontal: 0 }] : { gap: spacing.sm }}
+      onLayout={grid ? onGridLayout : undefined}
+      testID={grid ? `${testPrefix}-grid` : undefined}>
       {items.map((a, i) => (
-        <AgendaRow key={a.occurrence.id} a={a} testID={`${testPrefix}-${i}`} />
+        <View key={a.occurrence.id} style={grid ? folderGridCellStyle(columns) : undefined}>
+          <AgendaRow a={a} compact={compact} testID={`${testPrefix}-${i}`} />
+        </View>
       ))}
     </View>
   );
@@ -202,7 +211,7 @@ function TodayDashboard({
           {filteredEvents.length > 0 ? (
             <>
               <SectionHeader title="Events" count={filteredEvents.length} />
-              <List items={filteredEvents} testPrefix="event" />
+              <List items={filteredEvents} testPrefix="event" layout={layout} />
             </>
           ) : null}
 

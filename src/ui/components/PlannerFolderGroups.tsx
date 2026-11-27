@@ -103,21 +103,32 @@ function FolderGroupCard({
   );
 }
 
+/** Agenda rows as a vertical list or the same flex-wrap grid used for folder cards. */
 function TaskList({
   items,
   testPrefix,
   showDate,
   compact,
+  layout = 'list',
 }: {
   items: Agenda[];
   testPrefix: string;
   showDate?: (a: Agenda) => boolean;
   compact?: boolean;
+  layout?: 'grid' | 'list';
 }) {
+  const { columns, onGridLayout, compact: gridCompact } = useFolderGridColumns(layout);
+  const grid = layout === 'grid';
+  const rowCompact = compact ?? gridCompact;
   return (
-    <View style={{ gap: compact ? spacing.xs : spacing.sm, minWidth: 0 }}>
+    <View
+      style={grid ? [folderGridWrapStyle(), { marginHorizontal: 0, minWidth: 0 }] : { gap: rowCompact ? spacing.xs : spacing.sm, minWidth: 0 }}
+      onLayout={grid ? onGridLayout : undefined}
+      testID={grid ? `${testPrefix}-grid` : undefined}>
       {items.map((a, i) => (
-        <AgendaRow key={a.occurrence.id} a={a} showDate={showDate?.(a)} compact={compact} testID={`${testPrefix}-${i}`} />
+        <View key={a.occurrence.id} style={grid ? folderGridCellStyle(columns) : undefined}>
+          <AgendaRow a={a} showDate={showDate?.(a)} compact={rowCompact} testID={`${testPrefix}-${i}`} />
+        </View>
       ))}
     </View>
   );
@@ -172,7 +183,7 @@ export function PlannerDayGroups({
         <View style={{ gap: spacing.sm }} testID={`${testID}-unassigned`}>
           {hideUnassignedHeader ? null : <SectionHeader title="Unassigned" count={groups.unassigned.length} />}
           {groups.unassigned.length ? (
-            <TaskList items={groups.unassigned} testPrefix={`${testID}-loose`} showDate={showTaskDate} />
+            <TaskList items={groups.unassigned} testPrefix={`${testID}-loose`} showDate={showTaskDate} layout={layout} />
           ) : hideUnassignedHeader ? null : (
             <AppText muted>No unassigned tasks.</AppText>
           )}
@@ -278,7 +289,12 @@ export function PlannerWeekGroups({
                   {formatDateKey(day.date, 'EEEE')}
                   {day.date === today ? ' · Today' : ''}
                 </AppText>
-                <TaskList items={day.tasks} testPrefix={`${testID}-loose-${day.date}`} showDate={(a) => a.occurrence.date !== day.date} />
+                <TaskList
+                  items={day.tasks}
+                  testPrefix={`${testID}-loose-${day.date}`}
+                  showDate={(a) => a.occurrence.date !== day.date}
+                  layout={layout}
+                />
               </View>
             ))
           ) : hideUnassignedHeader ? null : (
