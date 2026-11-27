@@ -110,25 +110,7 @@ export function DashboardWeekView({
   const title = `${formatDateKey(start, 'MMM d')} – ${formatDateKey(end, start.slice(5, 7) === end.slice(5, 7) ? 'd' : 'MMM d')}`;
 
   return (
-    <View style={{ gap: spacing.md }} testID="dashboard-week">
-      <View style={styles.nav}>
-        <IconButton icon="chevron-back" label="Previous week" onPress={() => onShiftWeek(-1)} testID="dash-week-prev" />
-        <AppText variant="title" style={{ flex: 1, textAlign: 'center' }} testID="dash-week-title">
-          {title}
-        </AppText>
-        <IconButton icon="chevron-forward" label="Next week" onPress={() => onShiftWeek(1)} testID="dash-week-next" />
-      </View>
-      {start !== thisWeekStart ? (
-        <Button
-          testID="dash-week-this"
-          label="This week"
-          compact
-          tone="ghost"
-          icon="today-outline"
-          onPress={onJumpThisWeek}
-          style={styles.thisWeekBtn}
-        />
-      ) : null}
+    <View style={{ gap: spacing.sm }} testID="dashboard-week">
       <WeekFilterBar
         testID="dash-week-filter"
         state={filterCtl.state}
@@ -140,6 +122,24 @@ export function DashboardWeekView({
         matchCount={items.data ? filtered.length + earlier.length : undefined}
         layout={layout}
         onLayoutChange={setLayout}
+        leading={
+          <View style={styles.weekHeading} testID="dash-week-title-row">
+            <IconButton icon="chevron-back" label="Previous week" onPress={() => onShiftWeek(-1)} testID="dash-week-prev" />
+            <AppText variant="title" style={{ flex: 1, minWidth: 0 }} numberOfLines={1} testID="dash-week-title">
+              {title}
+            </AppText>
+            <IconButton icon="chevron-forward" label="Next week" onPress={() => onShiftWeek(1)} testID="dash-week-next" />
+          </View>
+        }
+        beforeSearch={
+          <IconButton
+            testID="dash-week-this"
+            icon="today-outline"
+            label="This week"
+            onPress={onJumpThisWeek}
+            color={start === thisWeekStart ? p.primary : undefined}
+          />
+        }
       />
       <View style={styles.weekStrip} testID="dash-week-days">
         {days.map((d) => (
@@ -240,9 +240,10 @@ export function DashboardMonthView({
             now={now}
             presentation="folders"
             onSelectDay={onSelectDay}
+            onDoubleSelectDay={(d) => router.push({ pathname: '/quick-add', params: { date: d } })}
           />
           <AppText variant="caption" muted style={{ marginTop: spacing.sm, textAlign: 'center' }}>
-            Days show folder colors and counts. Open a day for its tasks.
+            Days show folder colors and counts. Tap a day for its tasks; double-tap to quick-add.
           </AppText>
         </Card>
       ) : null}
@@ -287,6 +288,7 @@ export function DashboardMonthView({
 
 const styles = StyleSheet.create({
   nav: { flexDirection: 'row', alignItems: 'center' },
+  weekHeading: { flexDirection: 'row', alignItems: 'center', gap: 2, minWidth: 0 },
   weekStrip: { flexDirection: 'row', gap: spacing.xs },
   weekDayChip: {
     flex: 1,

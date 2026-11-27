@@ -1,4 +1,5 @@
 import { format } from 'date-fns';
+import { useRef } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 
 import { fromDateKey } from '@/domain/dates';
@@ -13,6 +14,7 @@ import { monthMatrix, weekdayLabels } from './MonthGrid';
 import { AppText } from './primitives';
 
 const CELL_LIMIT = 3;
+const DOUBLE_TAP_MS = 280;
 
 export function MonthTaskGrid({
   month,
@@ -21,6 +23,7 @@ export function MonthTaskGrid({
   itemsByDate,
   now,
   onSelectDay,
+  onDoubleSelectDay,
   onSelectTask,
   presentation = 'tasks',
   testID = 'month-task-grid',
@@ -31,6 +34,8 @@ export function MonthTaskGrid({
   itemsByDate: Record<DateKey, Agenda[]>;
   now: Date;
   onSelectDay: (d: DateKey) => void;
+  /** Double-tap / double-click a day cell (e.g. open quick-add for that date). */
+  onDoubleSelectDay?: (d: DateKey) => void;
   /** Task chips. Omitted when `presentation` is `folders` — markers are not buttons. */
   onSelectTask?: (a: Agenda) => void;
   /** `folders` draws color markers and counts instead of task titles. */
@@ -39,6 +44,32 @@ export function MonthTaskGrid({
 }) {
   const p = useTheme();
   const prefix = monthPrefix(month);
+  const lastTap = useRef<{ date: DateKey; at: number } | null>(null);
+  const singleTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  function handleCellPress(d: DateKey) {
+    if (!onDoubleSelectDay) {
+      onSelectDay(d);
+      return;
+    }
+    const nowMs = Date.now();
+    const prev = lastTap.current;
+    if (prev && prev.date === d && nowMs - prev.at < DOUBLE_TAP_MS) {
+      if (singleTimer.current) {
+        clearTimeout(singleTimer.current);
+        singleTimer.current = null;
+      }
+      lastTap.current = null;
+      onDoubleSelectDay(d);
+      return;
+    }
+    lastTap.current = { date: d, at: nowMs };
+    if (singleTimer.current) clearTimeout(singleTimer.current);
+    singleTimer.current = setTimeout(() => {
+      singleTimer.current = null;
+      onSelectDay(d);
+    }, DOUBLE_TAP_MS);
+  }
 
   return (
     <View testID={testID}>
@@ -71,8 +102,9 @@ export function MonthTaskGrid({
                 testID={`month-cell-${d}`}
                 accessibilityRole={presentation === 'folders' ? 'button' : undefined}
                 accessibilityLabel={`${format(fromDateKey(d), 'EEEE, MMMM d')}${presentation === 'folders' ? folderLabel : dayItems.length ? `, ${dayItems.length} items` : ''}`}
+                accessibilityHint={onDoubleSelectDay ? 'Double tap to quick add' : undefined}
                 accessibilityState={{ selected: isSel }}
-                onPress={() => onSelectDay(d)}
+                onPress={() => handleCellPress(d)}
                 style={[
                   styles.cell,
                   {

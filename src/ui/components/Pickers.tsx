@@ -47,6 +47,10 @@ export function DatePickerModal({
   title = 'Pick a date',
   onChange,
   onClose,
+  allDay,
+  onAllDayChange,
+  timeLabel,
+  onTimePress,
 }: {
   visible: boolean;
   value: DateKey | null;
@@ -54,10 +58,17 @@ export function DatePickerModal({
   title?: string;
   onChange: (d: DateKey) => void;
   onClose: () => void;
+  /** When set with `onAllDayChange`, shows All Day next to Today (quick-add When). */
+  allDay?: boolean;
+  onAllDayChange?: (next: boolean) => void;
+  /** Label for the Time button; omitted from UI when All Day is on. */
+  timeLabel?: string;
+  onTimePress?: () => void;
 }) {
   const p = useTheme();
   const [month, setMonth] = useState(value ?? today);
   const [pick, setPick] = useState<null | 'month' | 'year'>(null);
+  const showWhenExtras = typeof allDay === 'boolean' && !!onAllDayChange;
   useEffect(() => {
     if (visible) {
       setMonth(value ?? today);
@@ -120,20 +131,53 @@ export function DatePickerModal({
           today={today}
           onSelect={(d) => {
             onChange(d);
-            onClose();
+            if (!showWhenExtras) onClose();
           }}
         />
-        <View style={styles.row}>
+        <View style={styles.whenRow}>
           <Button
+            testID="goto-today"
             label="Today"
             tone="secondary"
             compact
             onPress={() => {
               onChange(today);
-              onClose();
+              if (!showWhenExtras) onClose();
             }}
           />
-          <Button label="Cancel" tone="ghost" compact onPress={onClose} />
+          {showWhenExtras ? (
+            <>
+              <Pressable
+                testID="goto-all-day"
+                accessibilityRole="switch"
+                accessibilityState={{ checked: allDay }}
+                accessibilityLabel="All Day"
+                onPress={() => onAllDayChange(!allDay)}
+                style={[
+                  styles.allDayChip,
+                  {
+                    borderColor: allDay ? p.primary : p.border,
+                    backgroundColor: allDay ? `${p.primary}22` : p.surface,
+                  },
+                ]}>
+                <AppText variant="label" color={allDay ? p.primary : p.text}>
+                  All Day
+                </AppText>
+              </Pressable>
+              {!allDay && onTimePress ? (
+                <Button
+                  testID="goto-time"
+                  label={timeLabel ?? 'Time'}
+                  tone="secondary"
+                  compact
+                  icon="time-outline"
+                  onPress={onTimePress}
+                />
+              ) : null}
+            </>
+          ) : null}
+          <View style={{ flex: 1 }} />
+          <Button label={showWhenExtras ? 'Done' : 'Cancel'} tone="ghost" compact onPress={onClose} />
         </View>
       </Sheet>
       <OptionsModal
@@ -283,5 +327,14 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   row: { flexDirection: 'row', justifyContent: 'flex-end', gap: spacing.sm },
+  whenRow: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', gap: spacing.sm },
+  allDayChip: {
+    minHeight: 36,
+    paddingHorizontal: spacing.md,
+    borderRadius: radius.md,
+    borderWidth: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
   option: { minHeight: 44, paddingHorizontal: spacing.md, borderRadius: radius.md, justifyContent: 'center', alignItems: 'center' },
 });

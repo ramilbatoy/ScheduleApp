@@ -3,20 +3,18 @@ import { useMemo, useState } from 'react';
 import { KeyboardAvoidingView, Platform, Pressable, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { addDaysKey, formatDateKey, formatTime, todayKey } from '@/domain/dates';
+import { formatDateKey, formatTime, todayKey } from '@/domain/dates';
 import type { DateKey, ItemKind, Priority, TimeOfDay } from '@/domain/models';
 import { parseQuickAdd } from '@/domain/quickParse';
 import { useAppStore, useServices, useSettings } from '@/state/appStore';
 import { FolderForm } from '@/ui/components/FolderForm';
-import { DatePickerModal, OptionsModal, TimePickerModal } from '@/ui/components/Pickers';
+import { DatePickerModal, TimePickerModal } from '@/ui/components/Pickers';
 import { FolderSelectDropdown } from '@/ui/components/FolderSelectDropdown';
 import { PrioritySelectDropdown } from '@/ui/components/PrioritySelectDropdown';
 import { AppText, Badge, Button, Chip, Input, Segmented } from '@/ui/components/primitives';
 import { errorMessage, useQuery, useTheme, useToast } from '@/ui/hooks';
 import { goBackOrDashboard, useSafeAndroidBack } from '@/ui/navigation';
 import { radius, spacing } from '@/ui/theme';
-
-type WhenChoice = 'today' | 'tomorrow' | 'pick-date' | 'add-time';
 
 export default function QuickAddScreen() {
   const params = useLocalSearchParams<{ date?: DateKey; kind?: ItemKind; folderId?: string }>();
@@ -37,17 +35,18 @@ export default function QuickAddScreen() {
   const [text, setText] = useState('');
   const [date, setDate] = useState<DateKey | null>(null);
   const [time, setTime] = useState<TimeOfDay | null>(null);
+  const [allDay, setAllDay] = useState(false);
   /** Explicit priority from the dropdown; null means inherit folder (or default medium). */
   const [priority, setPriority] = useState<Priority | null>(null);
   const [folderId, setFolderId] = useState<string | null>(typeof params.folderId === 'string' ? params.folderId : null);
-  const [picker, setPicker] = useState<null | 'date' | 'time' | 'when'>(null);
+  const [picker, setPicker] = useState<null | 'date' | 'time'>(null);
   const [makingFolder, setMakingFolder] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const parsed = useMemo(() => parseQuickAdd(text, today), [text, today]);
   const effectiveDate = date ?? parsed.date ?? params.date ?? today;
-  const effectiveTime = time ?? parsed.time;
+  const effectiveTime = allDay ? null : (time ?? parsed.time);
   const nlPriority = parsed.priority;
   const chosenPriority = priority ?? nlPriority;
   const selectedFolder = folders.data?.find((f) => f.id === folderId) ?? null;
@@ -57,14 +56,13 @@ export default function QuickAddScreen() {
     ? (categories.data?.find((c) => c.name.toLowerCase() === parsed.categoryName!.toLowerCase()) ?? null)
     : null;
   const title = parsed.title || text.trim();
-  const tomorrow = addDaysKey(today, 1);
 
   const whenLabel = (() => {
     const parts: string[] = [];
     if (effectiveDate === today) parts.push('Today');
-    else if (effectiveDate === tomorrow) parts.push('Tomorrow');
     else parts.push(formatDateKey(effectiveDate, 'EEE, MMM d'));
-    if (effectiveTime) parts.push(formatTime(effectiveTime));
+    if (allDay) parts.push('All day');
+    else if (effectiveTime) parts.push(formatTime(effectiveTime));
     return parts.join(' · ');
   })();
 
@@ -90,7 +88,7 @@ export default function QuickAddScreen() {
         priority: effectivePriority,
         priorityExplicit: !inheriting,
         date: effectiveDate,
-        allDay: false,
+        allDay,
         startTime: effectiveTime,
         endTime: null,
         deadlineAt: null,
@@ -117,12 +115,9 @@ export default function QuickAddScreen() {
     setFolderId(nextId);
   }
 
-  function onWhenChoice(choice: WhenChoice) {
-    setPicker(null);
-    if (choice === 'today') setDate(today);
-    else if (choice === 'tomorrow') setDate(tomorrow);
-    else if (choice === 'pick-date') setPicker('date');
-    else setPicker('time');
+  function onAllDayChange(next: boolean) {
+    setAllDay(next);
+    if (next) setTime(null);
   }
 
   return (
@@ -163,7 +158,7 @@ export default function QuickAddScreen() {
             label={whenLabel}
             icon="calendar-outline"
             selected
-            onPress={() => setPicker('when')}
+            onPress={() => setPicker('date')}
           />
           {category ? <Chip label={category.name} color={category.color} selected /> : null}
         </View>
@@ -208,51 +203,27 @@ export default function QuickAddScreen() {
           setPriority(null);
         }}
       />
-      <OptionsModal<WhenChoice>
-        visible={picker === 'when'}
-        title={kind === 'event' ? 'When' : 'When'}
-        value={
-          effectiveDate === today && !effectiveTime
-            ? 'today'
-            : effectiveDate === tomorrow && !effectiveTime
-              ? 'tomorrow'
-              : effectiveTime
-                ? 'add-time'
-                : 'pick-date'
-        }
-        options={[
-          { value: 'today', label: 'Today' },
-          { value: 'tomorrow', label: 'Tomorrow' },
-          {
-            value: 'pick-date',
-            label:
-              effectiveDate !== today && effectiveDate !== tomorrow
-                ? formatDateKey(effectiveDate, 'EEE, MMM d')
-                : 'Pick date',
-          },
-          { value: 'add-time', label: effectiveTime ? formatTime(effectiveTime) : 'Add time' },
-        ]}
-        onChange={onWhenChoice}
-        onClose={() => setPicker(null)}
-      />
       <DatePickerModal
         visible={picker === 'date'}
         value={effectiveDate}
         today={today}
-        onChange={(d) => {
-          setDate(d);
-          setPicker(null);
-        }}
+        title="When"
+        allDay={allDay}
+        onAllDayChange={onAllDayChange}
+        timeLabel={effectiveTime ? formatTime(effectiveTime) : 'Time'}
+        onTimePress={() => setPicker('time')}
+        onChange={(d) => setDate(d)}
         onClose={() => setPicker(null)}
       />
       <TimePickerModal
         visible={picker === 'time'}
         value={effectiveTime}
         onChange={(t) => {
+          setAllDay(false);
           setTime(t);
-          setPicker(null);
+          setPicker('date');
         }}
-        onClose={() => setPicker(null)}
+        onClose={() => setPicker('date')}
       />
     </KeyboardAvoidingView>
   );

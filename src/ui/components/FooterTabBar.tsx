@@ -1,11 +1,14 @@
 import { Ionicons } from '@expo/vector-icons';
 import { router, usePathname } from 'expo-router';
 import type { ComponentProps } from 'react';
-import { Pressable, Text, View } from 'react-native';
+import { Platform, Pressable, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { useAppStore } from '@/state/appStore';
 import { useTheme } from '@/ui/hooks';
+
+/** Extra space below tab icons so labels clear Android gesture/nav bars. */
+const FOOTER_EXTRA_BOTTOM = Platform.OS === 'android' ? 14 : 8;
 
 type IconName = ComponentProps<typeof Ionicons>['name'];
 
@@ -44,7 +47,7 @@ export function FooterTabBar() {
         borderTopWidth: 1,
         minHeight: 64,
         paddingTop: 6,
-        paddingBottom: Math.max(insets.bottom, 6),
+        paddingBottom: Math.max(insets.bottom, 6) + FOOTER_EXTRA_BOTTOM,
       }}
       accessibilityRole="tablist"
       testID="footer-tabs">

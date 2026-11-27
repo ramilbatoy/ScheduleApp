@@ -17,7 +17,7 @@ export type FilterRow = {
 };
 
 /**
- * Search → filter → listing toggle (Day / Week / Month, folder detail, etc.).
+ * Optional leading title + today icon, then search → filter → listing.
  * Search opens an inline field anchored to the search icon.
  */
 export function CompactFilterToolbar({
@@ -32,6 +32,8 @@ export function CompactFilterToolbar({
   filterRows,
   layout,
   onLayoutChange,
+  leading,
+  beforeSearch,
   trailing,
 }: {
   testID: string;
@@ -45,6 +47,10 @@ export function CompactFilterToolbar({
   filterRows: FilterRow[];
   layout?: ListLayout;
   onLayoutChange?: (next: ListLayout) => void;
+  /** Left-side heading / week title (inline with the icon row). */
+  leading?: ReactNode;
+  /** Controls immediately before search (e.g. Today icon). */
+  beforeSearch?: ReactNode;
   /** Extra controls after the filter/search icons (before layout). */
   trailing?: ReactNode;
 }) {
@@ -66,13 +72,17 @@ export function CompactFilterToolbar({
 
   return (
     <View style={{ gap: spacing.sm }} testID={testID}>
-      <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-end', gap: spacing.xs, flexWrap: 'wrap' }}>
-        <View ref={searchBtnRef} collapsable={false}>
-          <IconButton testID={`${testID}-search-open`} icon="search" label="Search" onPress={openSearch} />
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.xs, flexWrap: 'wrap' }}>
+        {leading ? <View style={{ flex: 1, minWidth: 0, marginRight: spacing.xs }}>{leading}</View> : null}
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.xs, marginLeft: leading ? undefined : 'auto' }}>
+          {beforeSearch}
+          <View ref={searchBtnRef} collapsable={false}>
+            <IconButton testID={`${testID}-search-open`} icon="search" label="Search" onPress={openSearch} />
+          </View>
+          <IconButton testID={`${testID}-filters`} icon="filter-outline" label="Filters" onPress={() => onFiltersOpenChange(true)} />
+          {trailing}
+          {layout && onLayoutChange ? <ViewLayoutToggle testID={`${testID}-layout`} layout={layout} onChange={onLayoutChange} /> : null}
         </View>
-        <IconButton testID={`${testID}-filters`} icon="filter-outline" label="Filters" onPress={() => onFiltersOpenChange(true)} />
-        {trailing}
-        {layout && onLayoutChange ? <ViewLayoutToggle testID={`${testID}-layout`} layout={layout} onChange={onLayoutChange} /> : null}
       </View>
       <SearchFieldPopup
         visible={searchOpen}

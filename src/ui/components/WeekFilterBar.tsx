@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, type ReactNode } from 'react';
 import { View } from 'react-native';
 
 import { PRIORITIES, type Priority } from '@/domain/models';
@@ -69,6 +69,10 @@ type Props = {
   layout?: ListLayout;
   onLayoutChange?: (next: ListLayout) => void;
   searchPlaceholder?: string;
+  /** Inline left heading (Today / week title). */
+  leading?: ReactNode;
+  /** Icon(s) before search — typically jump-to-today. */
+  beforeSearch?: ReactNode;
 };
 
 /** Compact filter dropdown + search popup for Week / Day planners. */
@@ -84,6 +88,8 @@ export function WeekFilterBar({
   layout,
   onLayoutChange,
   searchPlaceholder = 'Search: task, events, or folder',
+  leading,
+  beforeSearch,
 }: Props) {
   const p = useTheme();
   const [filtersOpen, setFiltersOpen] = useState(false);
@@ -121,6 +127,8 @@ export function WeekFilterBar({
         onFiltersOpenChange={setFiltersOpen}
         layout={layout}
         onLayoutChange={onLayoutChange}
+        leading={leading}
+        beforeSearch={beforeSearch}
         filterRows={[
           { testID: `${testID}-status`, icon: 'filter-outline', label: 'Status', value: statusLabel, onPress: () => openPicker('status') },
           {

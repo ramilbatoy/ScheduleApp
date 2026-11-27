@@ -37,13 +37,15 @@ type Props = {
   summaries?: Partial<Record<DateKey, DaySummary>>;
   onSelect: (date: DateKey) => void;
   testID?: string;
+  /** When false, omit the text Today button (Day uses an icon on the toolbar instead). */
+  showTodayButton?: boolean;
 };
 
 /**
- * Horizontal civil-date strip: arrows, swipe, tap-to-select, Today jump.
+ * Horizontal civil-date strip: arrows, swipe, tap-to-select, optional Today jump.
  * Nested inside a vertical ScrollView — locks to horizontal gestures where supported.
  */
-export function DateStrip({ selected, today, summaries, onSelect, testID = 'date-strip' }: Props) {
+export function DateStrip({ selected, today, summaries, onSelect, testID = 'date-strip', showTodayButton = true }: Props) {
   const p = useTheme();
   const scrollRef = useRef<ComponentRef<typeof ScrollView>>(null);
   const days = useMemo(() => dateStripWindow(selected), [selected]);
@@ -116,7 +118,7 @@ export function DateStrip({ selected, today, summaries, onSelect, testID = 'date
           onPress={() => onSelect(shiftSelectedDate(selected, 1))}
         />
       </View>
-      {selected !== today ? (
+      {showTodayButton && selected !== today ? (
         <Button
           testID={`${testID}-today`}
           label="Today"

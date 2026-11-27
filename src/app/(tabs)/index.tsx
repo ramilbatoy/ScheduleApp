@@ -20,7 +20,7 @@ import { PlannerDayGroups } from '@/ui/components/PlannerFolderGroups';
 import { ReadyScreen } from '@/ui/components/ReadyScreen';
 import { useWeekFilterState, WeekFilterBar } from '@/ui/components/WeekFilterBar';
 import { type ListLayout } from '@/ui/components/ViewLayoutToggle';
-import { AppText, Button, Card, ErrorState, Icon, LoadingState, SectionHeader, Segmented } from '@/ui/components/primitives';
+import { AppText, Button, Card, ErrorState, Icon, IconButton, LoadingState, SectionHeader, Segmented } from '@/ui/components/primitives';
 import { QuickAddButton } from '@/ui/components/QuickAddButton';
 import { useAction, useQuery, useTheme } from '@/ui/hooks';
 import { radius, spacing } from '@/ui/theme';
@@ -138,21 +138,7 @@ function TodayDashboard({
     dayGroups.unassigned.length > 0;
 
   return (
-    <View style={{ gap: spacing.md }} testID="dashboard-today">
-      <View style={{ paddingTop: spacing.sm }}>
-        <AppText variant="display" testID="today-heading">
-          {selectedDate === systemToday ? 'Today' : formatDateKey(selectedDate, 'EEEE, MMMM d')}
-        </AppText>
-      </View>
-
-      <DateStrip
-        selected={selectedDate}
-        today={systemToday}
-        summaries={summariesQ.data}
-        onSelect={onSelectDate}
-        testID="today-date-strip"
-      />
-
+    <View style={{ gap: spacing.sm }} testID="dashboard-today">
       <WeekFilterBar
         testID="today-status-filter"
         state={filterCtl.state}
@@ -164,6 +150,23 @@ function TodayDashboard({
         layout={layout}
         onLayoutChange={setLayout}
         searchPlaceholder="Search: task, events, or folder"
+        leading={
+          <AppText variant="title" testID="today-heading" numberOfLines={1}>
+            {selectedDate === systemToday ? 'Today' : formatDateKey(selectedDate, 'EEEE, MMMM d')}
+          </AppText>
+        }
+        beforeSearch={
+          <IconButton testID="today-jump" icon="today-outline" label="Today" onPress={() => onSelectDate(systemToday)} />
+        }
+      />
+
+      <DateStrip
+        selected={selectedDate}
+        today={systemToday}
+        summaries={summariesQ.data}
+        onSelect={onSelectDate}
+        testID="today-date-strip"
+        showTodayButton={false}
       />
 
       {dayQ.error ? <ErrorState message={dayQ.error} onRetry={dayQ.reload} /> : null}
@@ -172,7 +175,7 @@ function TodayDashboard({
       {dayQ.data && !hasListed ? <AppText muted testID="today-empty-copy">{EMPTY_DAY_COPY}</AppText> : null}
 
       {dayQ.data && hasListed ? (
-        <>
+        <View style={{ gap: spacing.sm }}>
           {pastOverdue.length > 0 ? (
             <SectionHeader
               title="Overdue on today"
@@ -220,7 +223,7 @@ function TodayDashboard({
           ) : null}
 
           {progress.total > 0 ? <ProgressCard completed={progress.completed} total={progress.total} carried={progress.carried} /> : null}
-        </>
+        </View>
       ) : null}
     </View>
   );
@@ -277,7 +280,7 @@ function TodayScreenReady() {
   return (
     <View style={{ flex: 1, backgroundColor: p.background }}>
       <ScrollView
-        contentContainerStyle={{ padding: spacing.lg, paddingBottom: 120, gap: spacing.md }}
+        contentContainerStyle={{ paddingHorizontal: spacing.lg, paddingTop: spacing.md, paddingBottom: 120, gap: spacing.sm }}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={refresh} />}
         nestedScrollEnabled>
         <Segmented<DashMode>
