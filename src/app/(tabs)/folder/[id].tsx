@@ -182,7 +182,7 @@ export default function FolderDetailScreen() {
           </View>
           <AppText color={folder.target.overdue && folder.progress.percent < 100 ? p.overdue : p.textSecondary}>{due}</AppText>
           <AppText variant="caption" muted>
-            Folder priority {PRIORITY_LABEL[folder.priority]}
+            Priority {PRIORITY_LABEL[folder.priority]}
             {folder.status !== 'active' ? ` · ${folder.status}` : ''}
           </AppText>
         </Card>
@@ -275,7 +275,7 @@ export default function FolderDetailScreen() {
                   if (!highlighted) return;
                   scrollRef.current?.scrollTo({ y: Math.max(0, listTop.current + e.nativeEvent.layout.y - spacing.md), animated: false });
                 }}>
-                <AgendaRow a={a} showDate compact={compact} testID={`folder-task-${i}`} />
+                <AgendaRow a={a} showDate compact={compact} collapseSubtasksByDefault testID={`folder-task-${i}`} />
               </View>
             );
           })}

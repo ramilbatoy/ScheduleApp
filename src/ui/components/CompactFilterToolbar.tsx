@@ -1,5 +1,6 @@
-import type { ComponentProps, ReactNode } from 'react';
-import { View } from 'react-native';
+import type { ComponentProps, ComponentRef, ReactNode } from 'react';
+import { useRef, useState } from 'react';
+import { View, type LayoutRectangle } from 'react-native';
 
 import { Sheet } from '@/ui/components/Pickers';
 import { SearchFieldPopup } from '@/ui/components/SearchFieldPopup';
@@ -16,8 +17,8 @@ export type FilterRow = {
 };
 
 /**
- * Filter icon (opens a sheet of rows) + search icon (opens popup) + optional layout icons.
- * Used on Day / Week / Month, folder detail, and similar list headers.
+ * Search → filter → listing toggle (Day / Week / Month, folder detail, etc.).
+ * Search opens an inline field anchored to the search icon.
  */
 export function CompactFilterToolbar({
   testID,
@@ -47,11 +48,29 @@ export function CompactFilterToolbar({
   /** Extra controls after the filter/search icons (before layout). */
   trailing?: ReactNode;
 }) {
+  const searchBtnRef = useRef<ComponentRef<typeof View>>(null);
+  const [anchor, setAnchor] = useState<LayoutRectangle | null>(null);
+
+  function openSearch() {
+    const node = searchBtnRef.current as (ComponentRef<typeof View> & { measureInWindow?: (cb: (x: number, y: number, width: number, height: number) => void) => void }) | null;
+    if (node?.measureInWindow) {
+      node.measureInWindow((x, y, width, height) => {
+        setAnchor({ x, y, width, height });
+        onSearchOpenChange(true);
+      });
+      return;
+    }
+    setAnchor(null);
+    onSearchOpenChange(true);
+  }
+
   return (
     <View style={{ gap: spacing.sm }} testID={testID}>
       <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-end', gap: spacing.xs, flexWrap: 'wrap' }}>
+        <View ref={searchBtnRef} collapsable={false}>
+          <IconButton testID={`${testID}-search-open`} icon="search" label="Search" onPress={openSearch} />
+        </View>
         <IconButton testID={`${testID}-filters`} icon="filter-outline" label="Filters" onPress={() => onFiltersOpenChange(true)} />
-        <IconButton testID={`${testID}-search-open`} icon="search" label="Search" onPress={() => onSearchOpenChange(true)} />
         {trailing}
         {layout && onLayoutChange ? <ViewLayoutToggle testID={`${testID}-layout`} layout={layout} onChange={onLayoutChange} /> : null}
       </View>
@@ -62,6 +81,7 @@ export function CompactFilterToolbar({
         onClose={() => onSearchOpenChange(false)}
         placeholder={searchPlaceholder}
         testID={`${testID}-search`}
+        anchor={anchor}
       />
       <Sheet visible={filtersOpen} title="Filters" onClose={() => onFiltersOpenChange(false)}>
         {filterRows.map((row) => (

@@ -8,7 +8,7 @@ import type { RecurrenceInput } from '@/domain/services/taskService';
 
 import { useTheme } from '../hooks';
 import { spacing } from '../theme';
-import { DatePickerModal } from './Pickers';
+import { DatePickerModal, OptionsModal } from './Pickers';
 import { AppText, Chip, Field, Input, SelectButton } from './primitives';
 
 const PRESETS: { value: RecurrencePreset | 'none'; label: string }[] = [
@@ -45,9 +45,11 @@ export function RecurrenceEditor({
 }) {
   const p = useTheme();
   const [endPicker, setEndPicker] = useState(false);
+  const [presetOpen, setPresetOpen] = useState(false);
   const preset: RecurrencePreset | 'none' = value ? presetFor(value) : 'none';
   const [customOpen, setCustomOpen] = useState(preset === 'custom');
   const shown = customOpen && value ? 'custom' : preset;
+  const presetLabel = PRESETS.find((o) => o.value === shown)?.label ?? 'Never';
 
   function choose(next: RecurrencePreset | 'none') {
     setCustomOpen(next === 'custom');
@@ -69,7 +71,13 @@ export function RecurrenceEditor({
       case 'yearly':
         return onChange({ ...base, frequency: 'yearly', byWeekday: null });
       case 'custom':
-        return onChange({ ...base, frequency: value?.frequency ?? 'daily', interval: Math.max(2, value?.interval ?? 2), byWeekday: value?.byWeekday ?? null, byMonthday: value?.byMonthday ?? null });
+        return onChange({
+          ...base,
+          frequency: value?.frequency ?? 'daily',
+          interval: Math.max(2, value?.interval ?? 2),
+          byWeekday: value?.byWeekday ?? null,
+          byMonthday: value?.byMonthday ?? null,
+        });
     }
   }
 
@@ -83,11 +91,21 @@ export function RecurrenceEditor({
 
   return (
     <View style={{ gap: spacing.md, opacity: disabled ? 0.5 : 1 }} pointerEvents={disabled ? 'none' : 'auto'}>
-      <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm }}>
-        {PRESETS.map((o) => (
-          <Chip key={o.value} testID={`repeat-${o.value}`} label={o.label} selected={shown === o.value} onPress={() => choose(o.value)} />
-        ))}
-      </View>
+      <SelectButton
+        testID="repeat-preset"
+        icon="repeat"
+        placeholder="Never"
+        value={presetLabel}
+        onPress={() => setPresetOpen(true)}
+      />
+      <OptionsModal<RecurrencePreset | 'none'>
+        visible={presetOpen}
+        title="Repeat"
+        value={shown}
+        options={PRESETS}
+        onChange={choose}
+        onClose={() => setPresetOpen(false)}
+      />
       {value && shown === 'custom' ? (
         <View style={{ gap: spacing.sm }}>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm }}>

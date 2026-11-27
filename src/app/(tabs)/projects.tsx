@@ -1,6 +1,6 @@
 import { router } from 'expo-router';
-import { useEffect, useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { useEffect, useRef, useState, type ComponentRef } from 'react';
+import { Pressable, ScrollView, StyleSheet, View, type LayoutRectangle } from 'react-native';
 
 import type { FolderCard, FolderListFilter, FolderSortKey } from '@/domain/folderProgress';
 import { useServices, useSettings } from '@/state/appStore';
@@ -72,6 +72,21 @@ function ProjectsScreenReady() {
   const [creating, setCreating] = useState(false);
   const [layout, setLayout] = useState<ListLayout>(settings.defaultFolderListView);
   const [picker, setPicker] = useState<null | 'filter' | 'sort'>(null);
+  const searchBtnRef = useRef<ComponentRef<typeof View>>(null);
+  const [searchAnchor, setSearchAnchor] = useState<LayoutRectangle | null>(null);
+
+  function openSearch() {
+    const node = searchBtnRef.current as (ComponentRef<typeof View> & { measureInWindow?: (cb: (x: number, y: number, width: number, height: number) => void) => void }) | null;
+    if (node?.measureInWindow) {
+      node.measureInWindow((x, y, width, height) => {
+        setSearchAnchor({ x, y, width, height });
+        setSearchOpen(true);
+      });
+      return;
+    }
+    setSearchAnchor(null);
+    setSearchOpen(true);
+  }
   const { columns, onGridLayout, compact } = useFolderGridColumns(layout);
   const all = useQuery((s) => s.folders.cards(), []);
   const shown = useQuery((s) => s.folders.cards({ text, filter, sort }), [text, filter, sort]);
@@ -109,7 +124,9 @@ function ProjectsScreenReady() {
             Folder
           </AppText>
           <View style={styles.titleControls}>
-            <IconButton testID="projects-search-open" icon="search" label="Search folders" onPress={() => setSearchOpen(true)} />
+            <View ref={searchBtnRef} collapsable={false}>
+              <IconButton testID="projects-search-open" icon="search" label="Search folders" onPress={openSearch} />
+            </View>
             <Chip
               testID="projects-filter"
               icon="filter-outline"
@@ -186,7 +203,15 @@ function ProjectsScreenReady() {
           })}
         </View>
       </ScrollView>
-      <SearchFieldPopup visible={searchOpen} value={text} onChangeText={setText} onClose={() => setSearchOpen(false)} placeholder="Search folders" testID="projects-search" />
+      <SearchFieldPopup
+        visible={searchOpen}
+        value={text}
+        onChangeText={setText}
+        onClose={() => setSearchOpen(false)}
+        placeholder="Search folders"
+        testID="projects-search"
+        anchor={searchAnchor}
+      />
       <Pressable
         testID="projects-add"
         accessibilityRole="button"

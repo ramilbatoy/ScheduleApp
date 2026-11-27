@@ -70,13 +70,11 @@ export function FolderCardChrome({
   const gap = compact ? spacing.xs : spacing.sm;
   const rowGap = compact ? spacing.sm : spacing.md;
 
-  const metaParts: { text: string; color: string }[] = [
-    { text: priorityLabel, color: priorityColor },
-    {
-      text: targetText && targetText.length ? targetText : 'No target',
-      color: targetUrgent ? p.overdue : p.textSecondary,
-    },
-  ];
+  const metaParts: { text: string; color: string }[] = [{ text: priorityLabel, color: priorityColor }];
+  // Omit target when unset — never show a "No target" label in folder listings.
+  if (targetText && targetText.length) {
+    metaParts.push({ text: targetText, color: targetUrgent ? p.overdue : p.textSecondary });
+  }
   if (statusLabel) metaParts.push({ text: statusLabel, color: p.textSecondary });
 
   const iconEl = (

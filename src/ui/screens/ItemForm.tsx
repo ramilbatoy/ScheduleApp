@@ -2,7 +2,7 @@ import { router, Stack } from 'expo-router';
 import { useEffect, useMemo, useRef, useState, type ComponentRef } from 'react';
 import { KeyboardAvoidingView, Platform, ScrollView, View } from 'react-native';
 
-import { combineDateTime, formatDateKey, formatTime, toDateKey, todayKey } from '@/domain/dates';
+import { combineDateTime, deadlineHasClockTime, formatDateKey, formatTime, toDateKey, todayKey } from '@/domain/dates';
 import type { DateKey, ItemKind, SubtaskNode } from '@/domain/models';
 import { describeOffset } from '@/domain/services/reminderService';
 import type { EditScope, ItemInput } from '@/domain/services/taskService';
@@ -153,9 +153,10 @@ function Form({
   useEffect(() => setError(null), [v]);
 
   const deadlineDate = v.deadlineAt ? toDateKey(new Date(v.deadlineAt)) : null;
-  const deadlineTime = v.deadlineAt
-    ? `${String(new Date(v.deadlineAt).getHours()).padStart(2, '0')}:${String(new Date(v.deadlineAt).getMinutes()).padStart(2, '0')}`
-    : null;
+  const deadlineTime =
+    v.deadlineAt && deadlineHasClockTime(v.deadlineAt)
+      ? `${String(new Date(v.deadlineAt).getHours()).padStart(2, '0')}:${String(new Date(v.deadlineAt).getMinutes()).padStart(2, '0')}`
+      : null;
   const category = categories.data?.find((c) => c.id === v.categoryId) ?? null;
   const folder = folders.data?.find((f) => f.id === v.folderId) ?? null;
   const inheriting = v.priorityExplicit === false && !!v.folderId;
@@ -287,7 +288,14 @@ function Form({
               </View>
               {deadlineDate ? (
                 <View style={{ flex: 2 }}>
-                  <SelectButton testID="input-deadline-time" icon="time-outline" placeholder="Time" value={deadlineTime ? formatTime(deadlineTime) : null} onPress={() => setPicker('deadlineTime')} />
+                  <SelectButton
+                    testID="input-deadline-time"
+                    icon="time-outline"
+                    placeholder="None"
+                    value={deadlineTime ? formatTime(deadlineTime) : null}
+                    onPress={() => setPicker('deadlineTime')}
+                    onClear={deadlineTime ? () => deadlineDate && set({ deadlineAt: combineDateTime(deadlineDate, null).toISOString() }) : undefined}
+                  />
                 </View>
               ) : null}
             </View>
@@ -299,6 +307,7 @@ function Form({
               folders={folders.data ?? []}
               value={v.folderId ?? null}
               includeArchivedId={v.folderId ?? null}
+              onAddNewFolder={() => setMakingFolder(true)}
               onChange={(folderId) => {
                 if (!folderId) {
                   // Clearing folder while inheriting → default medium; keep explicit if set.
@@ -320,7 +329,6 @@ function Form({
                 set({ folderId });
               }}
             />
-            <Button label="New folder" tone="ghost" compact icon="add" onPress={() => setMakingFolder(true)} />
           </Field>
 
           <Field label="Priority">
@@ -395,7 +403,7 @@ function Form({
         value={deadlineDate}
         today={today}
         title="End date"
-        onChange={(d) => set({ deadlineAt: combineDateTime(d, deadlineTime ?? '17:00').toISOString() })}
+        onChange={(d) => set({ deadlineAt: combineDateTime(d, deadlineTime).toISOString() })}
         onClose={() => setPicker(null)}
       />
       <TimePickerModal

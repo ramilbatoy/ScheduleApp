@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState, type ComponentRef, type RefObject } from 'react';
 import { Keyboard, Platform, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 
-import { combineDateTime, formatDateKey, formatDeadline, formatTime, toDateKey, todayKey } from '@/domain/dates';
+import { combineDateTime, deadlineHasClockTime, formatDateKey, formatDeadline, formatTime, toDateKey, todayKey } from '@/domain/dates';
 import type { SubtaskNode } from '@/domain/models';
 import { countSubtasks, flattenSubtaskTree } from '@/domain/services/subtaskService';
 import { useServices } from '@/state/appStore';
@@ -77,7 +77,10 @@ function deadlineParts(iso: string | null): { date: string | null; time: string 
   const d = new Date(iso);
   return {
     date: toDateKey(d),
-    time: `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`,
+    // Midnight means “date only” — do not treat it as a set clock time.
+    time: deadlineHasClockTime(iso)
+      ? `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`
+      : null,
   };
 }
 
@@ -103,6 +106,7 @@ export function SubtaskEditor({
   const services = useServices();
   const today = todayKey(services.clock);
   const [draft, setDraft] = useState('');
+  const [draftNotes, setDraftNotes] = useState('');
   const [draftDeadline, setDraftDeadline] = useState<string | null>(null);
   const [parentId, setParentId] = useState<string | null>(null);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -139,11 +143,18 @@ export function SubtaskEditor({
     const title = draft.trim();
     if (!title) return;
     const ok = await run(
-      (s) => s.subtasks.add(occurrenceId, { title, parentSubtaskId: parentId, deadlineAt: draftDeadline }),
+      (s) =>
+        s.subtasks.add(occurrenceId, {
+          title,
+          notes: draftNotes.trim() || undefined,
+          parentSubtaskId: parentId,
+          deadlineAt: draftDeadline,
+        }),
       'Subtask added',
     );
     if (ok) {
       setDraft('');
+      setDraftNotes('');
       setDraftDeadline(null);
       setParentId(null);
     }
@@ -211,14 +222,15 @@ export function SubtaskEditor({
                     onClear={() => setEditDeadline(null)}
                   />
                 </View>
-                {editParts.date ? (
+                    {editParts.date ? (
                   <View style={{ flex: 2 }}>
                     <SelectButton
                       testID={`${testID}-edit-deadline-time`}
                       icon="time-outline"
-                      placeholder="Time"
+                      placeholder="None"
                       value={editParts.time ? formatTime(editParts.time) : null}
                       onPress={() => setPicker('editTime')}
+                      onClear={editParts.time ? () => editParts.date && setEditDeadline(combineDateTime(editParts.date, null).toISOString()) : undefined}
                     />
                   </View>
                 ) : null}
@@ -330,6 +342,20 @@ export function SubtaskEditor({
             />
             <Button testID={`${testID}-add`} label="Add" compact onPress={add} disabled={!draft.trim()} />
           </View>
+          <Input
+            testID={`${testID}-new-notes`}
+            value={draftNotes}
+            onChangeText={setDraftNotes}
+            placeholder="Note (optional)"
+            multiline
+            onFocus={() => {
+              composerFocused.current = true;
+              setTimeout(revealComposer, Platform.OS === 'android' ? 280 : 80);
+            }}
+            onBlur={() => {
+              composerFocused.current = false;
+            }}
+          />
           <View style={{ flexDirection: 'row', gap: spacing.md }}>
             <View style={{ flex: 3 }}>
               <SelectButton
@@ -346,9 +372,10 @@ export function SubtaskEditor({
                 <SelectButton
                   testID={`${testID}-new-deadline-time`}
                   icon="time-outline"
-                  placeholder="Time"
+                  placeholder="None"
                   value={draftParts.time ? formatTime(draftParts.time) : null}
                   onPress={() => setPicker('draftTime')}
+                  onClear={draftParts.time ? () => draftParts.date && setDraftDeadline(combineDateTime(draftParts.date, null).toISOString()) : undefined}
                 />
               </View>
             ) : null}
@@ -361,7 +388,7 @@ export function SubtaskEditor({
         value={draftParts.date}
         today={today}
         title="Subtask deadline"
-        onChange={(d) => setDraftDeadline(combineDateTime(d, draftParts.time ?? '17:00').toISOString())}
+        onChange={(d) => setDraftDeadline(combineDateTime(d, draftParts.time).toISOString())}
         onClose={() => setPicker(null)}
       />
       <TimePickerModal
@@ -376,7 +403,7 @@ export function SubtaskEditor({
         value={editParts.date}
         today={today}
         title="Subtask deadline"
-        onChange={(d) => setEditDeadline(combineDateTime(d, editParts.time ?? '17:00').toISOString())}
+        onChange={(d) => setEditDeadline(combineDateTime(d, editParts.time).toISOString())}
         onClose={() => setPicker(null)}
       />
       <TimePickerModal

@@ -1,5 +1,5 @@
-import { useMemo, useState } from 'react';
-import { ScrollView, View } from 'react-native';
+import { useMemo, useRef, useState, type ComponentRef } from 'react';
+import { ScrollView, View, type LayoutRectangle } from 'react-native';
 
 import { todayKey } from '@/domain/dates';
 import { PRIORITIES, type ItemKind, type Priority } from '@/domain/models';
@@ -55,6 +55,21 @@ export function ItemBrowseScreen({ kind, title }: { kind: ItemKind; title: strin
   const [layout, setLayout] = useState<'list' | 'grid'>('grid');
   const { columns, compact, onGridLayout } = useFolderGridColumns(layout);
   const [picker, setPicker] = useState<Picker | null>(null);
+  const searchBtnRef = useRef<ComponentRef<typeof View>>(null);
+  const [searchAnchor, setSearchAnchor] = useState<LayoutRectangle | null>(null);
+
+  function openSearch() {
+    const node = searchBtnRef.current as (ComponentRef<typeof View> & { measureInWindow?: (cb: (x: number, y: number, width: number, height: number) => void) => void }) | null;
+    if (node?.measureInWindow) {
+      node.measureInWindow((x, y, width, height) => {
+        setSearchAnchor({ x, y, width, height });
+        setSearchOpen(true);
+      });
+      return;
+    }
+    setSearchAnchor(null);
+    setSearchOpen(true);
+  }
   const categories = useQuery((s) => s.categories.list(), []);
   const folders = useQuery((s) => s.folders.cards(), []);
   const kinds: ItemKind[] = [kind];
@@ -118,7 +133,9 @@ export function ItemBrowseScreen({ kind, title }: { kind: ItemKind; title: strin
           {title}
         </AppText>
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.xs, flexShrink: 0 }}>
-          <IconButton testID={`${kind}-search-open`} icon="search" label="Search" onPress={() => setSearchOpen(true)} />
+          <View ref={searchBtnRef} collapsable={false}>
+            <IconButton testID={`${kind}-search-open`} icon="search" label="Search" onPress={openSearch} />
+          </View>
           <IconButton testID={`${kind}-options`} icon="ellipsis-horizontal" label="Options" onPress={() => setOptionsOpen(true)} />
           <ViewLayoutToggle testID={`${kind}-layout`} layout={layout} onChange={setLayout} />
         </View>
@@ -182,6 +199,7 @@ export function ItemBrowseScreen({ kind, title }: { kind: ItemKind; title: strin
         onClose={() => setSearchOpen(false)}
         placeholder={kind === 'event' ? 'Search events' : 'Search tasks'}
         testID="search-input"
+        anchor={searchAnchor}
       />
       <QuickAddButton kind={kind} />
       <Sheet visible={optionsOpen} title="Options" onClose={() => setOptionsOpen(false)}>

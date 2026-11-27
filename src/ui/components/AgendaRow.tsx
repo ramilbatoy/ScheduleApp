@@ -1,5 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
+import { useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 
 import { formatDateKey, formatDeadline, formatTime, todayKey } from '@/domain/dates';
@@ -9,7 +10,7 @@ import { useAppStore } from '@/state/appStore';
 
 import { useAction, useTheme } from '../hooks';
 import { radius, spacing, TOUCH } from '../theme';
-import { AppText, Badge } from './primitives';
+import { AppText, Badge, Icon } from './primitives';
 import { AgendaSubtasks, SubtaskProgressBadge } from './SubtaskList';
 
 export const PRIORITY_LABEL = { low: 'Low', medium: 'Medium', high: 'High', urgent: 'Urgent' } as const;
@@ -94,11 +95,14 @@ export function AgendaRow({
   testID,
   /** Narrow folder grid cells (~400px / 2-col): tighter chrome, hide folder chip. */
   compact = false,
+  /** When true (folder detail), nested subtasks start collapsed. */
+  collapseSubtasksByDefault = false,
 }: {
   a: Agenda;
   showDate?: boolean;
   testID?: string;
   compact?: boolean;
+  collapseSubtasksByDefault?: boolean;
 }) {
   const p = useTheme();
   const run = useAction();
@@ -108,6 +112,7 @@ export function AgendaRow({
   const time = o.startTime ? `${formatTime(o.startTime)}${o.endTime ? ` – ${formatTime(o.endTime)}` : ''}` : a.task.allDay ? 'All day' : null;
   const accent = a.task.kind === 'event' ? (a.category?.color ?? p.primary) : p.priority[agendaPriority(a)];
   const hasSubtasks = a.task.kind === 'task' && a.subtasks.length > 0;
+  const [subsOpen, setSubsOpen] = useState(!collapseSubtasksByDefault);
   const checkW = compact ? 36 : TOUCH;
 
   return (
@@ -176,8 +181,25 @@ export function AgendaRow({
             {!compact ? <SubtaskProgressBadge nodes={a.subtasks} /> : null}
             <ItemBadges a={a} showDate={showDate} hideFolder={compact} compact={compact} />
           </Pressable>
+          {hasSubtasks && collapseSubtasksByDefault ? (
+            <Pressable
+              testID={testID ? `${testID}-subs-toggle` : undefined}
+              accessibilityRole="button"
+              accessibilityState={{ expanded: subsOpen }}
+              accessibilityLabel={subsOpen ? 'Collapse subtasks' : 'Expand subtasks'}
+              onPress={() => setSubsOpen((v) => !v)}
+              hitSlop={6}
+              style={{
+                width: 36,
+                alignItems: 'center',
+                justifyContent: 'center',
+                paddingTop: compact ? spacing.sm : spacing.md,
+              }}>
+              <Icon name={subsOpen ? 'chevron-up' : 'chevron-down'} size={18} color={p.primary} />
+            </Pressable>
+          ) : null}
         </View>
-        {hasSubtasks ? (
+        {hasSubtasks && subsOpen ? (
           <View
             style={[
               styles.subtaskRail,

@@ -13,6 +13,8 @@ type Props = {
   onChange: (folderId: string | null) => void;
   /** Include archived folders that match the current value. */
   includeArchivedId?: string | null;
+  /** Shown after “None” — opens create-folder flow in the parent. */
+  onAddNewFolder?: () => void;
   testID?: string;
 };
 
@@ -21,7 +23,7 @@ type Props = {
  * Trigger looks like "Folder: Name ▼". Selecting an option closes the sheet and
  * does not submit the surrounding form (Pressable, not a submit control).
  */
-export function FolderSelectDropdown({ folders, value, onChange, includeArchivedId, testID = 'folder-select' }: Props) {
+export function FolderSelectDropdown({ folders, value, onChange, includeArchivedId, onAddNewFolder, testID = 'folder-select' }: Props) {
   const p = useTheme();
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState('');
@@ -99,6 +101,20 @@ export function FolderSelectDropdown({ folders, value, onChange, includeArchived
                 <Icon name="folder-outline" size={18} color={p.textSecondary} />
                 <AppText color={!value ? p.primary : p.text}>None</AppText>
               </Pressable>
+              {onAddNewFolder ? (
+                <Pressable
+                  testID={`${testID}-add-new`}
+                  accessibilityRole="button"
+                  accessibilityLabel="Add New Folder"
+                  onPress={() => {
+                    setOpen(false);
+                    onAddNewFolder();
+                  }}
+                  style={styles.option}>
+                  <Icon name="add-circle-outline" size={18} color={p.primary} />
+                  <AppText color={p.primary}>Add New Folder</AppText>
+                </Pressable>
+              ) : null}
               {matches.map((f) => {
                 const selectedRow = f.id === value;
                 return (

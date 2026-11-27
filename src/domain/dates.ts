@@ -108,10 +108,38 @@ export function formatDateKey(key: DateKey, pattern = 'EEE, MMM d'): string {
   return format(fromDateKey(key), pattern);
 }
 
-/** Short local date and time for an ISO deadline. Lives here so agenda rows and subtasks do not import each other. */
+/**
+ * True when the ISO instant is local midnight — used as “date only, no clock time set”
+ * (End Date/Time defaults to none; picking a date without a time stores midnight).
+ */
+export function deadlineHasClockTime(iso: string): boolean {
+  const d = new Date(iso);
+  return d.getHours() !== 0 || d.getMinutes() !== 0;
+}
+
+/**
+ * Short local date, plus time only when a clock time was set.
+ * Assigned / Date on item detail uses {@link formatAssignedOrDate} in the same style.
+ */
 export function formatDeadline(iso: string): string {
   const d = new Date(iso);
+  if (!deadlineHasClockTime(iso)) {
+    return d.toLocaleString([], { month: 'short', day: 'numeric' });
+  }
   return d.toLocaleString([], { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
+}
+
+/** Assigned (task) / Date (event) display — same shape as {@link formatDeadline}. */
+export function formatAssignedOrDate(date: DateKey, startTime: TimeOfDay | null, allDay: boolean): string {
+  if (allDay || !startTime) {
+    return format(fromDateKey(date), 'MMM d');
+  }
+  return combineDateTime(date, startTime).toLocaleString([], {
+    month: 'short',
+    day: 'numeric',
+    hour: 'numeric',
+    minute: '2-digit',
+  });
 }
 
 export function minutesOf(time: TimeOfDay): number {

@@ -7,6 +7,7 @@ import { addDaysKey, formatDateKey, formatTime, todayKey } from '@/domain/dates'
 import type { DateKey, ItemKind, Priority, TimeOfDay } from '@/domain/models';
 import { parseQuickAdd } from '@/domain/quickParse';
 import { useAppStore, useServices, useSettings } from '@/state/appStore';
+import { FolderForm } from '@/ui/components/FolderForm';
 import { DatePickerModal, OptionsModal, TimePickerModal } from '@/ui/components/Pickers';
 import { FolderSelectDropdown } from '@/ui/components/FolderSelectDropdown';
 import { PrioritySelectDropdown } from '@/ui/components/PrioritySelectDropdown';
@@ -40,6 +41,7 @@ export default function QuickAddScreen() {
   const [priority, setPriority] = useState<Priority | null>(null);
   const [folderId, setFolderId] = useState<string | null>(typeof params.folderId === 'string' ? params.folderId : null);
   const [picker, setPicker] = useState<null | 'date' | 'time' | 'when'>(null);
+  const [makingFolder, setMakingFolder] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -55,7 +57,6 @@ export default function QuickAddScreen() {
     ? (categories.data?.find((c) => c.name.toLowerCase() === parsed.categoryName!.toLowerCase()) ?? null)
     : null;
   const title = parsed.title || text.trim();
-  const showFolders = !!(folders.data && folders.data.some((f) => f.status !== 'archived'));
   const tomorrow = addDaysKey(today, 1);
 
   const whenLabel = (() => {
@@ -167,33 +168,30 @@ export default function QuickAddScreen() {
           {category ? <Chip label={category.name} color={category.color} selected /> : null}
         </View>
 
-        {showFolders || kind === 'task' ? (
-          <View style={styles.folderPriorityRow} testID="quick-folder-priority">
-            {showFolders ? (
-              <View style={styles.folderPriorityCell}>
-                <FolderSelectDropdown
-                  testID="quick-folder"
-                  folders={folders.data ?? []}
-                  value={folderId}
-                  onChange={onFolderChange}
-                />
-              </View>
-            ) : null}
-            {kind === 'task' ? (
-              <View style={styles.folderPriorityCell}>
-                <PrioritySelectDropdown
-                  testID="quick-priority"
-                  compact
-                  value={effectivePriority}
-                  priorityExplicit={!inheriting}
-                  folderId={folderId}
-                  folderPriority={selectedFolder?.priority ?? null}
-                  onChange={({ priority: next }) => setPriority(next)}
-                />
-              </View>
-            ) : null}
+        <View style={styles.folderPriorityRow} testID="quick-folder-priority">
+          <View style={styles.folderPriorityCell}>
+            <FolderSelectDropdown
+              testID="quick-folder"
+              folders={folders.data ?? []}
+              value={folderId}
+              onChange={onFolderChange}
+              onAddNewFolder={() => setMakingFolder(true)}
+            />
           </View>
-        ) : null}
+          {kind === 'task' ? (
+            <View style={styles.folderPriorityCell}>
+              <PrioritySelectDropdown
+                testID="quick-priority"
+                compact
+                value={effectivePriority}
+                priorityExplicit={!inheriting}
+                folderId={folderId}
+                folderPriority={selectedFolder?.priority ?? null}
+                onChange={({ priority: next }) => setPriority(next)}
+              />
+            </View>
+          ) : null}
+        </View>
 
         {error ? <AppText color={p.error}>{error}</AppText> : null}
         <View style={{ flexDirection: 'row', gap: spacing.md }}>
@@ -201,6 +199,15 @@ export default function QuickAddScreen() {
           <Button testID="quick-save" label="Add" icon="add" onPress={add} loading={saving} disabled={!title} style={{ flex: 1 }} />
         </View>
       </View>
+      <FolderForm
+        visible={makingFolder}
+        onClose={() => setMakingFolder(false)}
+        onSaved={(created) => {
+          folders.reload();
+          setFolderId(created.id);
+          setPriority(null);
+        }}
+      />
       <OptionsModal<WhenChoice>
         visible={picker === 'when'}
         title={kind === 'event' ? 'When' : 'When'}
