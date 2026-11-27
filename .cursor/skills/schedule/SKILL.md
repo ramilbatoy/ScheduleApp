@@ -96,7 +96,7 @@ Use this skill for **any** work on `ramilbatoy/ScheduleApp` (display name NeoPla
 
 ## Accomplishments (keep current)
 
-**Last skill refresh:** 2026-11-27 Asia/Manila — Day/Week/Month header + quick-add All Day/Time + month double-tap (PR pending). Prior: #37 grid/list + Calendar→Month footer. NeoPlanner **1.3.2** via #36.  
+**Last skill refresh:** 2026-11-27 Asia/Manila — Day/Week/Month header + quick-add All Day/Time + month double-tap via #38. Prior: #37 grid/list + Calendar→Month footer. NeoPlanner **1.3.2** via #36.  
 Update this section whenever a phase finishes, a PR merges, or acceptance status changes. Date entries in Asia/Manila.
 
 ### Done
