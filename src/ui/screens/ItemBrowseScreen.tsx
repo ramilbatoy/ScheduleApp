@@ -185,7 +185,13 @@ export function ItemBrowseScreen({ kind, title }: { kind: ItemKind; title: strin
                 {item.kind === 'folder' ? (
                   <FolderTaskCard group={item.group} today={today} compact={compact} testID={`list-folder-${index}`} />
                 ) : (
-                  <AgendaRow a={item.agenda} showDate compact={compact} testID={`list-${index}`} />
+                  <AgendaRow
+                    a={item.agenda}
+                    showDate
+                    compact={compact}
+                    collapseSubtasksByDefault={kind === 'task'}
+                    testID={`list-${index}`}
+                  />
                 )}
               </View>
             ))}
